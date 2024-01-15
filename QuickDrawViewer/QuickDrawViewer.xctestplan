@@ -1,0 +1,29 @@
+{
+  "configurations" : [
+    {
+      "id" : "52A4598C-78BE-40B1-ACA7-5CCCCFD25AF2",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:QuickDrawViewer.xcodeproj",
+      "identifier" : "E59CDF672B42C0E500D7BB7B",
+      "name" : "QuickDrawViewer"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:QuickDrawViewer.xcodeproj",
+        "identifier" : "E59CDF7B2B42C0E600D7BB7B",
+        "name" : "QuickDrawViewerTests"
+      }
+    }
+  ],
+  "version" : 1
+}
