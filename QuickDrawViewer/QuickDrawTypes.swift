@@ -7,70 +7,18 @@
 
 import Foundation
 
-///  Quickdraw uses integer coordinates, most of the time.
-///  Some values can be fixed point (horizontal position in particular).
-///  So we use a fixed point value to represent coordinates.
-///  This type supports math operations that could be done quickly on a 68000 processor:
-///  - addition, substraction
-///  - shifts
-public struct FixedPoint : CustomStringConvertible, Equatable, AdditiveArithmetic {
-  
-  public init (rawValue: Int) {
-    self.fixedValue = rawValue;
-  }
-  
-  public init <T : BinaryInteger> (_ value: T) {
-    self.fixedValue = Int(value) * FixedPoint.multiplier;
-  }
-  
-  public var description: String {
-    return "\(value)";
-  }
-  
-  public var intValue : Int {
-    return fixedValue / FixedPoint.multiplier;
-  }
-  
-  public var value : Double {
-    return Double(fixedValue) / Double(FixedPoint.multiplier);
-  }
-  
-  private let fixedValue : Int;
-  private static let multiplier : Int = 0x10000;
-  
-  public static let zero = FixedPoint(rawValue: 0);
-  
-  public static func + (a: FixedPoint, b: FixedPoint) -> FixedPoint {
-    return FixedPoint(rawValue: a.fixedValue + b.fixedValue);
-  }
-  
-  public static func - (a: FixedPoint, b: FixedPoint) -> FixedPoint {
-    return FixedPoint(rawValue: a.fixedValue - b.fixedValue);
-  }
-  
-  static func >> (a: FixedPoint, b: Int) -> FixedPoint {
-    let raw = a.fixedValue >> b;
-    return FixedPoint(rawValue: raw);
-  }
-  
-  static func << (a: FixedPoint, b: Int) -> FixedPoint {
-    let raw = a.fixedValue << b;
-    return FixedPoint(rawValue: raw);
-  }
-  
-}
+
 
 /// Point in the QuickDraw space.
 struct QDPoint : CustomStringConvertible, Equatable {
   
-  init<T : BinaryInteger> (vertical : T, horizontal : T) {
-    self.vertical = FixedPoint(vertical);
-    self.horizontal = FixedPoint(horizontal);
-  }
-  
   init (vertical: FixedPoint, horizontal: FixedPoint) {
     self.vertical = vertical;
     self.horizontal = horizontal;
+  }
+  
+  public init <T : BinaryInteger> (vertical:  T, horizontal: T) {
+    self.init(vertical: FixedPoint(vertical), horizontal: FixedPoint(horizontal));
   }
   
   public var description: String {
@@ -81,6 +29,16 @@ struct QDPoint : CustomStringConvertible, Equatable {
     let vertical = point.vertical + delta.dv;
     let horizontal = point.horizontal + delta.dh;
     return QDPoint(vertical: vertical, horizontal: horizontal);
+  }
+  
+  static func - (point: QDPoint, delta: QDDelta) -> QDPoint {
+    return point + (-delta);
+  }
+  
+  static func - (p1: QDPoint, p2: QDPoint) -> QDDelta {
+    let dv = p1.vertical - p2.vertical;
+    let dh = p1.horizontal - p2.horizontal;
+    return QDDelta(dv: dv, dh: dh);
   }
   
   let vertical: FixedPoint;
@@ -111,30 +69,45 @@ struct QDDelta : CustomStringConvertible, Equatable, AdditiveArithmetic {
   
   let dh: FixedPoint;
   let dv: FixedPoint;
-  
-  static func - (a: QDDelta, b: QDDelta) -> QDDelta {
-    return QDDelta(dv: a.dv - b.dv, dh: a.dh - b.dh);
-  }
-  
+
   static func + (a: QDDelta, b: QDDelta) -> QDDelta {
     return QDDelta(dv: a.dv + b.dv, dh: a.dh + b.dh);
+  }
+  
+  static func - (lhs: QDDelta, rhs: QDDelta) -> QDDelta {
+    return lhs + (-rhs);
+  }
+
+  static prefix func -(d: QDDelta) -> QDDelta {
+    return QDDelta(dv: -d.dv, dh: -d.dh);
   }
   
   static let zero : QDDelta = QDDelta(dv: Int8(0), dh: Int8(0));
 }
 
+/// Rectangle
 struct QDRect : CustomStringConvertible, Equatable {
+  
+  init(topLeft: QDPoint, bottomRight: QDPoint) {
+    self.topLeft = topLeft;
+    self.bottomRight = bottomRight;
+  }
+  
+  init(topLeft: QDPoint, dimension : QDDelta) {
+    self.topLeft = topLeft;
+    self.bottomRight = topLeft + dimension;
+  }
+  
   public var description: String {
     return "Rect: ⌜\(topLeft),\(bottomRight)⌟"
   }
   
   let topLeft: QDPoint;
   let bottomRight: QDPoint;
+  
   var dimensions : QDDelta {
     get {
-      let dv = bottomRight.vertical - topLeft.vertical;
-      let dh = bottomRight.horizontal - topLeft.horizontal;
-      return QDDelta(dv: dv, dh: dh);
+      return bottomRight - topLeft;
     }
   }
   
@@ -153,11 +126,36 @@ struct QDRect : CustomStringConvertible, Equatable {
   static let empty = QDRect(topLeft: QDPoint.zero, bottomRight: QDPoint.zero);
 }
 
-struct QDPolygon {
-  var boundingBox : QDRect;
+class QDPolygon {
+  
+  init(boundingBox: QDRect?, points: [QDPoint]) {
+    self.boundingBox = boundingBox;
+    self.points = points;
+    self.closed  = false;
+  }
+  
+  convenience init() {
+    self.init(boundingBox: nil, points: []);
+  }
+  
+  var boundingBox : QDRect?;
   var points : [QDPoint];
+  var closed : Bool;
+  
+  func AddLine(line : [QDPoint]) {
+    if points.isEmpty {
+      self.points = line;
+      return;
+    }
+    if line.first == points.last {
+      points.removeLast();
+    }
+    points.append(contentsOf: line);
+  }
 }
 
+/// A single, raw line of the QuickDraw region.
+/// bitmap is one _byte_ per pixel.
 struct QDRegionLine {
   let lineNumber : Int;
   let bitmap : [UInt8];
@@ -165,8 +163,14 @@ struct QDRegionLine {
 
 let QDRegionEndMark = 0x7fff;
 
+/// Decodes one line of the region data.
+/// - Parameters:
+///   - boundingBox: bounding box of the region
+///   - data: region data, as an array of shorts
+///   - index: position in the data, will be updated.
+/// - Returns: a decoded line (line number + byte array)
 func DecodeRegionLine(boundingBox: QDRect, data: [UInt16], index : inout Int) -> QDRegionLine? {
-  var bitmap : [UInt8] = Array<UInt8>(repeating: 0, count: boundingBox.dimensions.dh.intValue);
+  var bitmap : [UInt8] = Array<UInt8>(repeating: 0, count: boundingBox.dimensions.dh.rounded);
   let lineNumber = Int(data[index]);
   if lineNumber == QDRegionEndMark {
     return nil;
@@ -185,12 +189,15 @@ func DecodeRegionLine(boundingBox: QDRect, data: [UInt16], index : inout Int) ->
       start = 0;
     }
     for i in start..<end {
-      bitmap[i - boundingBox.topLeft.horizontal.intValue] = 0xff;
+      bitmap[i - boundingBox.topLeft.horizontal.rounded] = 0xff;
     }
   }
   return QDRegionLine(lineNumber: lineNumber, bitmap:bitmap);
 }
 
+/// Convert a line of pixels into a sequence of ranges.
+/// - Parameter line: pixels of one line, one byte per pixel
+/// - Returns: set of ranges of active (non zero) pixels.
 func BitLineToRanges(line: [UInt8]) -> [Range<Int>] {
   var index = 0;
   var result : [Range<Int>] = [];
@@ -212,10 +219,20 @@ func BitLineToRanges(line: [UInt8]) -> [Range<Int>] {
   }
 }
 
-func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) -> [QDRect]{// Why
-  // Decode as bitmap
-  let width = boundingBox.dimensions.dh.intValue;
-  let height = boundingBox.dimensions.dv.intValue + 1;
+
+/// Decode the quickdraw  region data
+/// - Parameters:
+///   - boundingBox: bounding box of the region
+///   - data: region data as an array of shorts
+/// - Returns: two data structures representing the region,
+///            a sequence of rectanbles and a bitmap (2D array, one byte per pixel).
+func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], [[UInt8]])  {
+  /// Decode as bitmap
+  let width = boundingBox.dimensions.dh.rounded;
+  let height = boundingBox.dimensions.dv.rounded + 1;
+  guard width > 0 && height > 0 else {
+    throw QuickDrawError.corruptRegion(boundingBox: boundingBox);
+  }
   let emptyLine : [UInt8] = Array(repeating: 0, count: Int(width));
   var bitLines: [[UInt8]] = Array(repeating: emptyLine, count: Int(height));
   var index : Int = 0;
@@ -225,7 +242,7 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) -> [QDRect]{// Why
     if line == nil {
       break;
     }
-    let l = line!.lineNumber - boundingBox.topLeft.vertical.intValue;
+    let l = line!.lineNumber - boundingBox.topLeft.vertical.rounded;
     bitLines[l] = line!.bitmap;
   }
   /// Xor each line with the previous
@@ -234,32 +251,41 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) -> [QDRect]{// Why
       bitLines[y][x] = bitLines[y - 1][x] ^ bitLines[y][x];
     }
   }
-  // Convert to rectangles
-  // TODO: combine matching rects between lines
-  var result : [QDRect] = [];
+  /// Convert to rectangles
+  /// TODO: combine matching rects between lines
+  var rects : [QDRect] = [];
   for (l, line) in bitLines.enumerated() {
     let ranges = BitLineToRanges(line:line);
     for r in ranges {
       let topLeft = boundingBox.topLeft + QDDelta(dv: l, dh: r.lowerBound);
       let bottomRight = topLeft + QDDelta(dv : 1, dh : r.count);
-      result.append(QDRect(topLeft:topLeft, bottomRight: bottomRight));
+      rects.append(QDRect(topLeft:topLeft, bottomRight: bottomRight));
     }
   }
-  return result;
+  return (rects, bitLines);
 }
 
-struct QDRegion {
-  var boundingBox: QDRect;
+
+struct QDRegion : CustomStringConvertible {
+  
+  public var description: String {
+    return "Region \(boundingBox) \(rects.count) rects";
+  }
+  
+  var boundingBox: QDRect = QDRect.empty;
   var isRect : Bool {
     return rects.isEmpty;
   }
   
   let rects : [QDRect];
+  let bitlines: [[UInt8]];
 }
 
+
+/// Quickdraw stores RGB colours in 3 × 16 bit values.
 struct QDColor : CustomStringConvertible, Hashable {
   
-  var description: String {
+  public var description: String {
     var result = "Color: 0x";
     result += String(format: "%04X", red);
     result += "|";
@@ -273,6 +299,7 @@ struct QDColor : CustomStringConvertible, Hashable {
   let green: UInt16;
   let blue: UInt16;
   
+  /// Return classical 3 byte RGB representation.
   var rgb : [UInt8] {
     var data : [UInt8] = [];
     data.append(UInt8(red >> 8));
@@ -281,6 +308,7 @@ struct QDColor : CustomStringConvertible, Hashable {
     return data;
   }
   
+  // Constants that represent the colours of QuickDraw 1.
   static let black = QDColor(red: 0x00, green: 0x00, blue: 0x00);
   static let white = QDColor(red: 0xffff, green: 0xffff, blue: 0xffff);
   static let red = QDColor(red: 0xffff, green: 0x00, blue: 0x00);
@@ -291,6 +319,11 @@ struct QDColor : CustomStringConvertible, Hashable {
   static let yellow = QDColor(red: 0xffff, green: 0xffff, blue: 0x00);
 }
 
+/// Convert pict 1 colour into RGB Quickdraw colors.
+/// These colours are basically plotter bits, with one bit per pen-colour.
+/// - Parameter code: binary code representation
+/// - Throws: unsupported colour error for invalid bit combinations.
+/// - Returns: one of the constants defined in QDColor.
 func QD1Color(code: UInt32) throws -> QDColor {
   switch code {
     case 33: return QDColor.black;
@@ -314,6 +347,7 @@ enum QDVerb : UInt16 {
   case invert = 3;
   case fill = 4;
   case clip = 50;
+  case ignore = 0xFF;
 }
 
 enum QDColorSelection : UInt8 {
@@ -322,6 +356,7 @@ enum QDColorSelection : UInt8 {
   case operations = 2;
   case highlight = 3;
 }
+
 
 struct QDFontStyle : OptionSet {
   let rawValue: UInt8;
@@ -362,22 +397,71 @@ struct QuickDrawMode {
   static let defaultMode : QuickDrawMode  = QuickDrawMode(value: 0);
 }
 
-struct QDResolution {
+
+/// Operator  ⨴ is used for non commutative product between a structured type and a scalar or vector.
+precedencegroup ComparisonPrecedence {
+  associativity: left
+  higherThan: AdditionPrecedence
+}
+infix operator ⨴ : MultiplicationPrecedence
+
+
+/// Quickdraw picture resolution, in DPI.
+struct QDResolution : Equatable, CustomStringConvertible {
   let hRes : FixedPoint;
   let vRes : FixedPoint;
   
-  static let defaultResolution = QDResolution(hRes: FixedPoint(72), vRes : FixedPoint(72));
+  public var description: String {
+    return "\(hRes)×\(vRes)";
+  }
+  
+  /// Scale a delta as a function of the resolution, relative to the standard (72 DPI).
+  /// - Parameters:
+  ///   - dim: dimension to scale
+  ///   - resolution: resolution description
+  /// - Returns: scales dimension
+  public static func ⨴ (dim : QDDelta, resolution: QDResolution) -> QDDelta {
+    let h = dim.dh.value * defaultScalarResolution.value / resolution.hRes.value;
+    let v = dim.dv.value * defaultScalarResolution.value / resolution.vRes.value;
+    return QDDelta(dv: FixedPoint(v), dh: FixedPoint(h));
+  }
+  
+  /// Return a rectangle scaled for a given resolution
+  /// - Parameters:
+  ///   - rect: rectangle to scale
+  ///   - resolution: resolution to use for scaling
+  /// - Returns: a scaled rectangle.
+  public static func ⨴ (rect: QDRect, resolution: QDResolution) -> QDRect {
+    let d = rect.dimensions ⨴ resolution;
+    return QDRect(topLeft: rect.topLeft, dimension: d);
+  }
+  
+  static let defaultScalarResolution = FixedPoint(72);
+  static let defaultResolution = QDResolution(
+    hRes: defaultScalarResolution, vRes: defaultScalarResolution);
+  static let zeroResolution = QDResolution(hRes: FixedPoint.zero, vRes: FixedPoint.zero);
 }
 
-struct QDPattern {
+/// Black and white pattern (8×8 pixels)
+struct QDPattern : Equatable {
   let bytes : [UInt8];
+
+  /// Should the pattern represent a colour, i.e. the pattern was  used for dither.
+  public var isColor : Bool {
+    return [
+      QDPattern.black, QDPattern.white,
+      QDPattern.gray, QDPattern.darkGray,
+      QDPattern.lightGray
+    ].contains(where: {$0 == self} );
+  }
   
+  /// Scalar intensity of the pattern, going from 0 (white) to 1.0 (black).
   var intensity : Double {
     var total = 0;
     for b in bytes {
       total += b.nonzeroBitCount;
     }
-    return Double(total) / (8.0 * Double(bytes.count));
+    return Double(total) / (Double(UInt8.bitWidth) * Double(bytes.count));
   }
   
   func mixColors(fgColor: QDColor, bgColor: QDColor) -> QDColor {
@@ -389,22 +473,26 @@ struct QDPattern {
     return QDColor(red: red, green: green, blue: blue);
   }
   
-  static let full = QDPattern(bytes:[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
-  static let empty = QDPattern(bytes:[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  static let black = QDPattern(bytes:[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+  static let white = QDPattern(bytes:[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  static let gray = QDPattern(bytes:[0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55]);
+  static let darkGray =  QDPattern(bytes:[0x88, 0x00, 0x22, 0x00, 0x88, 0x00, 0x22, 0x00]);
+  static let lightGray = QDPattern(bytes:[0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77]);
 }
 
+/// All the state associated with drawing
 class PenState {
-  
   var location : QDPoint = QDPoint.zero;
-  var size: QDPoint = QDPoint(vertical: 1, horizontal: 1);
+  var penSize: QDPoint = defaultPen;
   var mode: QuickDrawMode = QuickDrawMode.defaultMode;
   var fgColor : QDColor = QDColor.black;
   var bgColor : QDColor = QDColor.white;
   var opColor : QDColor = QDColor.black;
   var highlightColor : QDColor = QDColor(red: 0, green: 0, blue: 0xffff);
-  var drawPattern: QDPattern = QDPattern.full;
-  var fillPattern: QDPattern = QDPattern.full;
+  var drawPattern: QDPattern = QDPattern.black;
+  var fillPattern: QDPattern = QDPattern.black;
   var ovalSize : QDDelta = QDDelta.zero;
+  
   
   var drawColor : QDColor {
     let result = drawPattern.mixColors(fgColor: fgColor, bgColor: bgColor);
@@ -416,8 +504,17 @@ class PenState {
   }
   
   var penWidth : FixedPoint {
-    return (size.horizontal + size.vertical) >> 1;
+    get {
+      return (penSize.horizontal + penSize.vertical) >> 1;
+    }
+    set(width) {
+      penSize = QDPoint(vertical: width, horizontal: width);
+    }
+    
   }
+  
+  static let defautPenWidth = FixedPoint.one;
+  static let defaultPen = QDPoint(vertical: defautPenWidth, horizontal: defautPenWidth);
 }
 
 struct QDGlyphState : OptionSet {
@@ -439,7 +536,7 @@ class QDFontState {
       case 2: return "New York";
       case 3: return "Geneva";
       case 4: return "Monaco";
-      case 5: return  "Venice";
+      case 5: return "Venice";
       case 6: return "Venice";
       case 7: return "Athens";
       case 8: return "San Francisco";
@@ -462,6 +559,29 @@ class QDFontState {
   var location : QDPoint = QDPoint.zero;
   var fontStyle : QDFontStyle = QDFontStyle.defaultStyle;
   var glyphState : QDGlyphState = QDGlyphState.defaultState;
+  var xRatio : Double = 1.0;
+  var yRatio : Double = 1.0;
+}
+
+enum QDTextJustification : UInt8 {
+  case justificationNone = 0;
+  case justificationLeft = 1;
+  case justificationCenter = 2;
+  case justificationRight = 3;
+  case justificationFull = 4;
+}
+
+enum QDTextFlip : UInt8 {
+  case textFlipNone = 0;
+  case textFlipHorizontal = 1;
+  case textFlipVertical = 2;
+}
+
+// Text annotation for text comments
+struct QDTextPictRecord {
+  let justification : QDTextJustification;
+  let flip : QDTextFlip;
+  let angle : FixedPoint;
 }
 
 enum QDPackType : UInt16 {
@@ -528,8 +648,13 @@ class QDBitMapInfo : CustomStringConvertible {
   var data : [UInt8] = [UInt8]();
   var pixMapInfo : QDPixMapInfo?;
   
+  var destinationRect : QDRect {
+    let resolution = pixMapInfo?.resolution ?? QDResolution.defaultResolution;
+    return dstRect! ⨴ resolution;
+  }
+  
   var height : Int {
-    return bounds.dimensions.dv.intValue;
+    return bounds.dimensions.dv.rounded;
   }
   
   var cmpSize : Int {
@@ -568,21 +693,13 @@ class QDBitMapInfo : CustomStringConvertible {
     }
     return result;
   }
-  
 }
 
 class QDColorTable : CustomStringConvertible {
   public var description: String {
-    let string_flag = String(format: "%0X", clutFlags);
-    var result = "flags: \(string_flag) ["
-    /*
-    for (index, color) in clut.enumerated() {
-      let rgb = color.rgb;
-      let color_str = String(format: "%02X|%02X|%02X", rgb[0], rgb[1], rgb[2]);
-      result += "\(index) - \(color_str), ";
-    }*/
-    result += "size \(clut.count) ";
-    result += "]";
+    let string_flag = String(format: "%0X ", clutFlags);
+    var result = "flags: \(string_flag) "
+    result += "size \(clut.count)";
     return result;
   }
   
@@ -601,48 +718,79 @@ class QDColorTable : CustomStringConvertible {
   static let blackWhite : QDColorTable = QDColorTable(clut:[QDColor.black, QDColor.white]);
 }
 
-class QuickTimePayload : CustomStringConvertible {
-  
-  public var description: String {
-    var result = "dstRect : \(dstRect) version \(version).\(revision) ";
-    result += "dimension : \(dimensions) type: \(payloadType)/\(compressorDevelopper) resolution: \(resolution) ";
-    result += "frame: \(frameNumber) depth: \(depth) name: \(name) ";
-    result += "data: \(data!.count)";
+class QuickTimeImage : CustomStringConvertible {
+  var description: String {
+    var result = "codec: '\(codecType)': compressor: '\(compressorDevelopper)'";
+    result += " compressionName: '\(compressionName)'";
+    result += " dimensions: \(dimensions), resolution: \(resolution)";
+    result += " frameCount: \(frameCount), depth: \(depth)";
+    result += " temporalQuality: \(temporalQuality) spatialQuality: \(spatialQuality)"
+    result += " clutId: \(clutId) dataSize: \(dataSize) idSize: \(idSize)";
+    if let d = data {
+      let subdata = d.subdata(in: 0..<16);
+      result += " Magic: "
+      result += subdata.map{ String(format:"%02x", $0) }.joined()
+    }
     return result;
   }
   
-  var dstRect : QDRect = QDRect.empty;
-  var size : Int = 0;
-  var compressorCreator : String = "";
+  var codecType : String = "";
+  var imageVersion : Int = 0;
+  var imageRevision : Int = 0;
   var compressorDevelopper : String = "";
-  var payloadType : String = "";
-  var version : Int = 0;
-  var revision : Int = 0;
   var temporalQuality : UInt32 = 0;
   var spatialQuality : UInt32 = 0;
-  var dimensions: QDDelta = QDDelta.zero;
-  var resolution: QDResolution = QDResolution.defaultResolution;
+  var dimensions : QDDelta = QDDelta.zero;
+  var resolution : QDResolution = QDResolution.defaultResolution;
   var dataSize : Int = 0;
-  var frameNumber : Int = 0;
+  var frameCount : Int = 0;
+  var compressionName : String = "";
   var depth : Int = 0;
-  var name : String = "";
   var clutId : Int = 0;
+  var idSize : Int = 0;
   var data : Data?;
 }
 
-class QDPicture : CustomStringConvertible {
-  init(size: UInt16, frame:QDRect) {
+class QuickTimePayload : CustomStringConvertible {
+  
+  public var description: String {
+    var result = "QT Payload mode: \(mode)";
+    if let mask = srcMask {
+      result += " dstMask: \(mask)"
+    }
+    result += " image: \(quicktimeImage)";
+    return result;
+  }
+  
+  var transform : [[FixedPoint]] = [[]];
+  var matte : QDRect = QDRect.empty;
+  var mode : QuickDrawMode = QuickDrawMode.defaultMode;
+  var srcMask : QDRegion?;
+  var accuracy : Int = 0;
+  
+  var quicktimeImage : QuickTimeImage = QuickTimeImage();
+}
+
+public class QDPicture : CustomStringConvertible {
+  init(size: UInt16, frame:QDRect, filename: String?) {
     self.size = size;
     self.frame = frame;
+    self.filename = filename;
   }
+  
   let size: UInt16;
-  let frame: QDRect;
-  var version: UInt8 = 1;
+  var frame: QDRect;
+  var resolution : QDResolution = QDResolution.defaultResolution;
+  var version: Int = 1;
   var opcodes: [OpCode] = [];
+  var filename : String?;
   
   public var description : String {
-    var result = "Picture size: \(size) version: \(version) ";
-    result += "frame: \(frame)\n";
+    var result = "Picture size: \(size) bytes, version: \(version) ";
+    if let name = filename {
+      result += "filename: \(name) ";
+    }
+    result += "frame: \(frame) @ \(resolution)\n";
     result += "===========================\n";
     for (index, opcode) in opcodes.enumerated() {
       result += "\(index): \(opcode)\n";

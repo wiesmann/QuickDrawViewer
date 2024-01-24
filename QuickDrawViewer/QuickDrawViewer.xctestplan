@@ -11,8 +11,8 @@
   "defaultOptions" : {
     "targetForVariableExpansion" : {
       "containerPath" : "container:QuickDrawViewer.xcodeproj",
-      "identifier" : "E59CDF672B42C0E500D7BB7B",
-      "name" : "QuickDrawViewer"
+      "identifier" : "E59CDF852B42C0E600D7BB7B",
+      "name" : "QuickDrawViewerUITests"
     }
   },
   "testTargets" : [

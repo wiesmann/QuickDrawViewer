@@ -6,13 +6,23 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
+			<string>Viewer</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.example.plain-text</string>
+				<string>com.apple.pict</string>
 			</array>
-			<key>NSUbiquitousDocumentUserActivityType</key>
-			<string>$(PRODUCT_BUNDLE_IDENTIFIER).example-document</string>
+			<key>CFBundleTypeName</key>
+			<string>Apple Quickdraw pictures</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>None</string>
+			<key>CFBundleTypeName</key>
+			<string>PDF</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.adobe.pdf</string>
+			</array>
 		</dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
@@ -23,14 +33,14 @@
 				<string>public.plain-text</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Example Text</string>
+			<string>Quickdraw Picture</string>
 			<key>UTTypeIdentifier</key>
-			<string>com.example.plain-text</string>
+			<string>com.apple.pict</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>exampletext</string>
+					<string>pict</string>
 				</array>
 			</dict>
 		</dict>

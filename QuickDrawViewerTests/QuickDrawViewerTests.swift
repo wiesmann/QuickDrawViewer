@@ -6,9 +6,10 @@
 //
 
 import XCTest
-@testable import QuickDrawViewer
 
-final class QuickDrawViewerTests: XCTestCase {
+// @testable import QuickDrawViewer
+
+final class QuickDrawTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -18,13 +19,88 @@ final class QuickDrawViewerTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func testFixedPoint() throws {
+      XCTAssertEqual(FixedPoint.zero.rounded, 0);
+      XCTAssertTrue(FixedPoint.zero.isRound);
+      XCTAssertEqual(FixedPoint.zero, FixedPoint.zero);
+      XCTAssertEqual(FixedPoint.one.rounded, 1);
+      XCTAssertTrue(FixedPoint.one.isRound);
+      XCTAssertEqual(FixedPoint.one, FixedPoint.one);
+      XCTAssertLessThan(FixedPoint.zero, FixedPoint.one);
+      let fzero = FixedPoint(0.0);
+      XCTAssertEqual(fzero, FixedPoint.zero);
+      XCTAssertTrue(fzero.isRound);
+      let fone = FixedPoint(1.0);
+      XCTAssertEqual(fone, FixedPoint.one);
+      XCTAssertTrue(fone.isRound);
+      let eight = FixedPoint(3) + FixedPoint(5);
+      XCTAssertTrue(eight.isRound);
+      XCTAssertEqual(eight, FixedPoint(8));
+      XCTAssertEqual(eight - FixedPoint.one, FixedPoint(7));
+      XCTAssertEqual(-eight, FixedPoint(-8));
+      XCTAssertEqual((FixedPoint.one << 3), eight);
+      XCTAssertEqual((FixedPoint(256) >> 4), FixedPoint(16));
+      let half = FixedPoint(0.5);
+      XCTAssertEqual(half, FixedPoint.one >> 1);
+      
+      XCTAssertEqual(half, FixedPoint.one / FixedPoint(2));
+      XCTAssertEqual(half, FixedPoint(100) / FixedPoint(200));
     }
+  
+  func testDelta() throws {
+    XCTAssertEqual(QDDelta.zero, QDDelta.zero);
+    XCTAssertEqual(QDDelta.zero, -QDDelta.zero);
+    XCTAssertEqual(QDDelta.zero, QDDelta.zero + QDDelta.zero);
+    XCTAssertEqual(QDDelta.zero, QDDelta.zero - QDDelta.zero);
+    let one = QDDelta(dv: FixedPoint.one, dh: FixedPoint.one);
+    XCTAssertEqual(QDDelta.zero + one, one);
+    XCTAssertEqual(one + QDDelta.zero, one);
+    XCTAssertEqual(QDDelta.zero - one, -one);
+    XCTAssertEqual(one - QDDelta.zero, one);
+    XCTAssertEqual(one - one, QDDelta.zero);
+    XCTAssertEqual(QDDelta(dv: FixedPoint(3), dh: FixedPoint(5)) + one,
+                   QDDelta(dv: FixedPoint(4), dh: FixedPoint(6)));
+  }
+
+  func testPointAndDelta() throws {
+    XCTAssertEqual(QDPoint.zero.vertical, FixedPoint.zero);
+    XCTAssertEqual(QDPoint.zero.horizontal, FixedPoint.zero);
+    let p = QDPoint(vertical: FixedPoint(5), horizontal: FixedPoint(7));
+    XCTAssertEqual(p, p);
+    XCTAssertEqual(p + QDDelta.zero, p);
+    XCTAssertEqual(p - QDDelta.zero, p);
+    let d = QDDelta(dv: FixedPoint(3), dh: FixedPoint(11));
+    let s = p + d;
+    XCTAssertEqual(s.vertical, FixedPoint(8));
+    XCTAssertEqual(s.horizontal, FixedPoint(18));
+    XCTAssertEqual(s - d, p);
+  }
+  
+  func testRects() throws {
+    let p1 = QDPoint(vertical: FixedPoint(16), horizontal: FixedPoint(32));
+    let p2 = QDPoint(vertical: FixedPoint(256), horizontal: FixedPoint(512));
+    let r = QDRect(topLeft: p1, bottomRight:  p2);
+    XCTAssertEqual(r, r);
+    XCTAssertNotEqual(r, QDRect.empty);
+    XCTAssertFalse(r.isEmpty);
+    XCTAssertNotEqual(r, QDRect.empty);
+    XCTAssertTrue(QDRect.empty.isEmpty);
+    // Dimensions
+    XCTAssertEqual(r.dimensions.dh.value, 480, "\(r.dimensions)");
+    XCTAssertEqual(r.dimensions.dv.value, 240, "\(r.dimensions)");
+    XCTAssertEqual(QDRect.empty.dimensions, QDDelta.zero);
+    // Center
+    XCTAssertEqual(r.center.horizontal.value, 272, "\(r.center)");
+    XCTAssertEqual(r.center.vertical.value, 136, "\(r.center)");
+    XCTAssertEqual(QDRect.empty.center, QDPoint.zero);
+  }
+  
+  func testRenderAngles() throws {
+    XCTAssertEqual(deg2rad(0),  -0.5 *  .pi);
+    XCTAssertEqual(deg2rad(90), -.pi);
+    XCTAssertEqual(deg2rad(180),  -1.5 * .pi);
+  }
+
 
     func testPerformanceExample() throws {
         // This is an example of a performance test case.

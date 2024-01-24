@@ -35,23 +35,43 @@ protocol FontStateOperation {
 /// Simple control opcodes
 /// -----------------
 
-struct NoOp : OpCode {
-  mutating func load(reader: QuickDrawDataReader) throws -> Void {}
+struct NoOp : OpCode, PictureOperation {
+  func execute(picture: inout QDPicture) {}
+  
+  mutating func load(reader: QuickDrawDataReader) throws {}
 }
 
-struct EndOp : OpCode {
-  mutating func load(reader: QuickDrawDataReader) throws {
-    let leftBytes = reader.data.count - reader.position;
-    print("EndOp: \(leftBytes)");
-  }
+struct EndOp : OpCode, PictureOperation {
+  func execute(picture: inout QDPicture) {}
+  
+  mutating func load(reader: QuickDrawDataReader) throws {}
 }
 
-struct ReservedOp : OpCode {
+enum ReservedOpType {
+  case fixedLength(bytes: Int);
+  case readLength(bytes: Int);
+}
+
+struct ReservedOp : OpCode, PictureOperation {
+  func execute(picture: inout QDPicture) {}
+  
   mutating func load(reader: QuickDrawDataReader) throws {
-    length = Data.Index(try reader.readUInt32());
+    switch reservedType {
+    case let .fixedLength(bytes):
+      length = bytes;
+    case let .readLength(bytes) where bytes == 4:
+      length = Data.Index(try reader.readUInt32());
+    case let .readLength(bytes) where bytes == 2:
+      length = Data.Index(try reader.readUInt16());
+    case let .readLength(bytes) where bytes == 1:
+      length = Data.Index(try reader.readUInt8());
+    default:
+      throw QuickDrawError.invalidReservedSize(reservedType: reservedType);
+    }
     reader.skip(bytes: length)
   }
   
+  let reservedType : ReservedOpType ;
   var length : Data.Index = 0;
 }
 
@@ -63,7 +83,7 @@ struct DefHiliteOp : OpCode {
 
 struct VersionOp : OpCode, PictureOperation {
   func execute(picture: inout QDPicture) {
-    picture.version = version;
+    picture.version = Int(version);
   }
   
   mutating func load(reader: QuickDrawDataReader) throws -> Void {
@@ -75,10 +95,24 @@ struct VersionOp : OpCode, PictureOperation {
   var version: UInt8 = 0;
 }
 
-struct Version2HeaderOp : OpCode {
+struct Version2HeaderOp : OpCode, PictureOperation {
   mutating func load(reader: QuickDrawDataReader) throws -> Void {
-    reader.skip(bytes: 24);
+    reader.skip(bytes: 4);
+    resolution = try reader.readResolution();
+    srcRect = try reader.readRect();
+    reader.skip(bytes: 4);
+    // reader.skip(bytes: 24);
   }
+  
+  func execute(picture: inout QDPicture) {
+    if resolution != QDResolution.zeroResolution {
+      picture.resolution = resolution;
+    }
+  }
+  
+  var resolution : QDResolution = QDResolution.defaultResolution;
+  var srcRect : QDRect = QDRect.empty;
+  
 }
 
 struct OriginOp : OpCode {
@@ -153,17 +187,6 @@ struct OvalSizeOp : OpCode, PenStateOperation {
   var size : QDDelta = QDDelta.zero;
 }
 
-
-///**Inside Macintosh** “Imaging with quickdraw” p 3-73
-/// Use the startAngle parameter to specify where the arc begins as modulo 360.
-/// Use the arcAngle parameter to specify how many degrees the arc covers.
-/// Specify whether the angles are in positive or negative degrees; a positive angle goes clockwise,
-/// while a negative angle goes counterclockwise. Zero degrees is at 12 o’clock high,
-/// 90° (or –270°) is at 3 o’clock, 180° (or –180°) is at 6 o’clock, and 270° (or –90°) is at 9 o’clock.
-/// Measure other angles relative to the bounding rectangle.
-/// A line from the center of the rectangle through its upper-right corner is at 45°,
-/// even if the rectangle isn’t square; a line through the lower-right corner is at 135°,
-/// and so on, as shown in Figure 3-20.
 struct ArcOp : OpCode {
   mutating func load(reader: QuickDrawDataReader) throws {
     if !same {
@@ -252,7 +275,7 @@ enum CommentType : UInt16 {
   case lineLayoutOff = 155;
   case lineLayoutOn = 156;
   case lineLayoutClient = 157;
-  case polyStart   = 160;
+  case polyBegin   = 160;
   case polyEnd   = 161;
   case polyCurve   = 162;
   case polyIgnore  = 163;
@@ -262,44 +285,90 @@ enum CommentType : UInt16 {
   case arrow2 = 171 ;
   case arrow3 = 172 ;
   case arrowEnd = 173;
+  case dashedLineBegin = 180;
+  case dashedLineEnd = 181;
+  case setLineWidth = 182;
   case postscriptStart = 190 ;
   case postscriptEnd = 191 ;
   case postscriptHandle = 192 ;
   case postscriptFile = 193 ;
   case textIsPostscript = 194 ;
   case resourcePostscript = 195;
-  case postscriptBeginNoSave = 196;
+  case postscriptBeginNoSave = 196 ;
   case setGrayLevel = 197;
   case rotateBegin = 200;
   case rotateEnd   = 201;
   case rotateCenter = 202;
+  case formsPrinting = 210;
+  case endFormsPrinting = 211;
   case creator = 498 ;
+  case scale = 499;
+  case bitmapThinBegin = 1000;
+  case bitmapThinEnd = 1001;
   case picLasso = 12345;
+  case unknown = 0xffff;
+}
+
+enum CommentPayload {
+  case noPayload;
+  case dataPayload(data: Data);
+  case postScriptPayLoad(postscript: String);
+  case textPictPayload(payload: QDTextPictRecord);
+  case setLineWidthPayload(width: FixedPoint);
+  case pointPayload(point: QDPoint);
+}
+
+func ReadTextPictRecord(reader: QuickDrawDataReader) throws -> QDTextPictRecord {
+  guard let justification = QDTextJustification(rawValue: try reader.readUInt8()) else {
+    throw QuickDrawError.quickDrawIoError(message: "Could not load textCenter payload");
+  }
+  guard let flip = QDTextFlip(rawValue: try reader.readUInt8()) else {
+    throw QuickDrawError.quickDrawIoError(message: "Could not load textCenter payload");
+  }
+  let angle1 = try reader.readInt16();
+  reader.skip(bytes: 2);
+  let angle2 = try reader.readFixed();
+  let angle = angle2 + FixedPoint(angle1);
+  return QDTextPictRecord(justification: justification, flip: flip, angle: angle);
 }
 
 struct CommentOp : OpCode {
   mutating func load(reader: QuickDrawDataReader) throws {
     let value = try reader.readUInt16();
-    kind = CommentType(rawValue: value);
+    kind = CommentType(rawValue: value) ?? .unknown;
+    if kind == .unknown {
+      print("Unknown comment \(value)")
+    }
     if long_comment {
       let size = Data.Index(try reader.readUInt16());
       switch kind {
       case .proprietary:
         creator = try reader.readString(bytes: 4);
-        data = try reader.readUInt8(bytes: size - 4);
+        payload = .dataPayload(data: try reader.readData(bytes: size - 4));
       case .postscriptBeginNoSave, .postscriptStart, .postscriptFile, .postscriptHandle:
-        postscript = try reader.readString(bytes: size);
+        payload = .postScriptPayLoad(postscript : try reader.readString(bytes: size));
+      case .textBegin:
+        let subreader = try reader.subReader(bytes: size);
+        payload = .textPictPayload(payload: try ReadTextPictRecord(reader: subreader));
+      case .setLineWidth:
+        let subreader = try reader.subReader(bytes: size);
+        let point = try subreader.readPoint();
+        payload = .setLineWidthPayload(width: point.vertical / point.horizontal);
+      case .textCenter:
+        let subreader = try reader.subReader(bytes: size);
+        let v = try subreader.readFixed();
+        let h = try subreader.readFixed();
+        payload = .pointPayload(point: QDPoint(vertical: v, horizontal: h));
       default:
-        data = try reader.readUInt8(bytes :size);
+       payload = .dataPayload(data: try reader.readData(bytes: size));
       }
     }
   }
   
   let long_comment : Bool;
-  var kind : CommentType?;
-  var creator : String?;
-  var data : [UInt8]?;
-  var postscript : String?;
+  var kind : CommentType = .unknown;
+  var creator : String = "";
+  var payload : CommentPayload = CommentPayload.noPayload;
 }
 
 /// -------------
@@ -307,14 +376,6 @@ struct CommentOp : OpCode {
 /// -------------
 
 struct ColorOp : OpCode, PenStateOperation {
-  func execute(penState: inout PenState) {
-    switch selection {
-    case QDColorSelection.foreground: penState.fgColor = color;
-    case QDColorSelection.background: penState.bgColor = color;
-    case QDColorSelection.operations: penState.opColor = color;
-    case QDColorSelection.highlight: penState.highlightColor = color;
-    }
-  }
   
   mutating func load(reader: QuickDrawDataReader) throws {
     if rgb {
@@ -322,6 +383,15 @@ struct ColorOp : OpCode, PenStateOperation {
     } else {
       let code = try reader.readUInt32();
       color = try QD1Color(code: code);
+    }
+  }
+  
+  func execute(penState: inout PenState) {
+    switch selection {
+    case QDColorSelection.foreground: penState.fgColor = color;
+    case QDColorSelection.background: penState.bgColor = color;
+    case QDColorSelection.operations: penState.opColor = color;
+    case QDColorSelection.highlight: penState.highlightColor = color;
     }
   }
   
@@ -350,41 +420,40 @@ struct PatternOp : OpCode, PenStateOperation  {
   }
   
   let verb : QDVerb;
-  var pattern : QDPattern = QDPattern.full;
+  var pattern : QDPattern = QDPattern.black;
 }
 
 struct PenSizeOp : OpCode, PenStateOperation {
   func execute(penState: inout PenState) {
-    penState.size = penSize;
+    penState.penSize = penSize;
   }
   
   mutating func load(reader: QuickDrawDataReader) throws {
     penSize = try reader.readPoint();
   }
-  
-  var penSize : QDPoint = QDPoint(vertical: 1, horizontal: 1);
+
+  var penSize = QDPoint.zero;
 }
 
 struct PenModeOp : OpCode, PenStateOperation {
-  func execute(penState: inout PenState) {
-    penState.mode = mode;
-  }
-  
   mutating func load(reader: QuickDrawDataReader) throws {
     mode = QuickDrawMode(value: try reader.readUInt16());
+  }
+  
+  func execute(penState: inout PenState) {
+    penState.mode = mode;
   }
   
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
 }
 
 struct TextModeOp : OpCode, FontStateOperation {
+  mutating func load(reader: QuickDrawDataReader) throws {
+    mode = QuickDrawMode(value: try reader.readUInt16());
+  }
   
   func execute(fontState: inout QDFontState) {
     fontState.fontMode = mode;
-  }
-  
-  mutating func load(reader: QuickDrawDataReader) throws {
-    mode = QuickDrawMode(value: try reader.readUInt16());
   }
   
   
@@ -395,8 +464,6 @@ struct TextModeOp : OpCode, FontStateOperation {
 /// --------------------------------------------------------
 /// Font operations
 /// --------------------------------------------------------
-
-
 
 struct FontOp : OpCode, FontStateOperation {
   func execute(fontState: inout QDFontState) {
@@ -464,14 +531,29 @@ struct GlyphStateOp : OpCode, FontStateOperation {
   var glyphState : QDGlyphState = QDGlyphState.defaultState;
 }
 
-struct TextRatioOp : OpCode {
+struct TextRatioOp : OpCode, FontStateOperation {
+  
   mutating func load(reader: QuickDrawDataReader) throws {
-    numerator = try reader.readPoint();
-    denominator = try reader.readPoint();
+    let numerator = try reader.readPoint();
+    let denominator = try reader.readPoint();
+    guard denominator.vertical.value != 0.0 else {
+      throw QuickDrawError.invalidFract(message: "Zero denominator");
+    }
+    guard denominator.horizontal.value != 0.0 else {
+      throw QuickDrawError.invalidFract(message: "Zero denominator");
+    }
+    x = numerator.horizontal.value / denominator.horizontal.value;
+    y = numerator.vertical.value / denominator.vertical.value;
+    
   }
   
-  var numerator : QDPoint?;
-  var denominator :QDPoint?;
+  func execute(fontState: inout QDFontState) {
+    fontState.xRatio = x;
+    fontState.yRatio = y;
+  }
+  
+  var x : Double = 1.0;
+  var y : Double = 1.0;
 }
 
 struct FontStyleOp : OpCode, FontStateOperation {
@@ -532,9 +614,7 @@ func readPixMapInfo(reader: QuickDrawDataReader) throws -> QDPixMapInfo {
   pixMapInfo.version = Int(try reader.readUInt16());
   pixMapInfo.packType = QDPackType(rawValue:try reader.readUInt16())!;
   pixMapInfo.packSize = Int(try reader.readUInt32());
-  let h_res = try reader.readFixed();
-  let v_res = try reader.readFixed();
-  pixMapInfo.resolution = QDResolution(hRes: h_res, vRes: v_res);
+  pixMapInfo.resolution = try reader.readResolution();
   pixMapInfo.pixelType = Int(try reader.readUInt16());
   pixMapInfo.pixelSize = Int(try reader.readUInt16());
   pixMapInfo.cmpCount = Int(try reader.readUInt16());
@@ -566,10 +646,9 @@ struct BitRectOpcode : OpCode {
       let clutSize = try reader.readUInt16();
       for index in 0...clutSize {
         let r_index = try reader.readUInt16();
-        if r_index != index {
+        // DeskDraw produces index with value 0x8000
+        if r_index != index && r_index != 0x8000 {
           print("Inconsistent index: \(r_index)≠\(index)");
-          /* throw QuickDrawError.corruptColorTableError(
-            message: "Inconsistent index: \(r_index)≠\(index)");*/
         }
         let color = try reader.readColor();
         colorTable.clut.append(color)
@@ -582,8 +661,8 @@ struct BitRectOpcode : OpCode {
     bitmapInfo.dstRect = try reader.readRect();
     bitmapInfo.mode = try QuickDrawMode(value: reader.readUInt16());
     
-    let rows = bitmapInfo.bounds.dimensions.dv.intValue;
-    for row in 0 ..< rows {
+    let rows = bitmapInfo.bounds.dimensions.dv.rounded;
+    for _ in 0 ..< rows {
       if !bitmapInfo.isPacked {
         let line_data = try reader.readUInt8(bytes: Data.Index(bitmapInfo.rowBytes));
         bitmapInfo.data.append(contentsOf: line_data);
@@ -596,13 +675,7 @@ struct BitRectOpcode : OpCode {
         lineLength = Data.Index(try reader.readUInt16());
       }
       let rowData = try reader.readUInt8(bytes: lineLength);
-      let decompressed = DecompressPackBit(data: rowData);
-      guard bitmapInfo.rowBytes == decompressed.count else {
-        throw QuickDrawError.corruptPackbitLine(
-          row: row,
-          expectedLength:  Data.Index(bitmapInfo.rowBytes),
-          actualLength:  Data.Index(decompressed.count))
-      }
+      let decompressed = try DecompressPackBit(data: rowData, unpackedSize: bitmapInfo.rowBytes);
       bitmapInfo.data.append(contentsOf: decompressed);
     }
   }
@@ -660,7 +733,7 @@ struct DirectBitOpcode : OpCode {
   ///
   mutating func loadPixelRunLength(reader: QuickDrawDataReader) throws {
     let rows = bitmapInfo.height;
-    for row in 0..<rows {
+    for _ in 0..<rows {
       var lineLength : Data.Index;
       if bitmapInfo.hasShortRows {
         lineLength = Data.Index(try reader.readUInt8());
@@ -668,13 +741,9 @@ struct DirectBitOpcode : OpCode {
         lineLength = Data.Index(try reader.readUInt16());
       }
       let line_data = try reader.readUInt8(bytes: lineLength);
-      let decompressed = DecompressPackBit(data: line_data, byteNum: 2);
-      guard bitmapInfo.rowBytes == decompressed.count else {
-        throw QuickDrawError.corruptPackbitLine(
-          row: row,
-          expectedLength: Data.Index(bitmapInfo.rowBytes),
-          actualLength: Data.Index(decompressed.count))
-      }
+      let decompressed = try DecompressPackBit(
+          data: line_data, unpackedSize: bitmapInfo.rowBytes, byteNum: 2);
+    
       bitmapInfo.data.append(contentsOf: decompressed);
     }
   }
@@ -688,7 +757,7 @@ struct DirectBitOpcode : OpCode {
     }
     
     let rowBytes = bitmapInfo.rowBytes * 3 / 4;
-    for row in 0..<rows {
+    for _ in 0..<rows {
       var lineLength : Data.Index;
       if bitmapInfo.hasShortRows {
         lineLength = Data.Index(try reader.readUInt8());
@@ -696,13 +765,7 @@ struct DirectBitOpcode : OpCode {
         lineLength = Data.Index(try reader.readUInt16());
       }
       let line_data = try reader.readUInt8(bytes: lineLength);
-      let decompressed = DecompressPackBit(data: line_data, byteNum: 1);
-      guard rowBytes == decompressed.count else {
-        throw QuickDrawError.corruptPackbitLine(
-          row: row,
-          expectedLength: Data.Index(bitmapInfo.rowBytes),
-          actualLength: Data.Index(decompressed.count))
-      }
+      let decompressed = try DecompressPackBit(data: line_data, unpackedSize: rowBytes, byteNum: 1);
       let w = decompressed.count  / 3;
       for i in 0..<w  {
         bitmapInfo.data.append(decompressed[i]);
@@ -721,44 +784,93 @@ struct DirectBitOpcode : OpCode {
   
 }
 
-struct QuickTimeOpcode : OpCode {
-  mutating func load(reader: QuickDrawDataReader) throws {
-    quicktimePayload.size = Int(try reader.readInt32());
-    reader.skip(bytes: 18);
-    quicktimePayload.version = Int(try reader.readUInt16());
-    quicktimePayload.revision = Int(try reader.readUInt16());
-    reader.skip(bytes: 30);
-    // 34 bytes to dimensions
-    /*
-    quicktimePayload.compressorVendor = try reader.readUInt32(); // 4
-    quicktimePayload.temporalQuality = try reader.readUInt16(); // 2
-    quicktimePayload.spatialQuality = try reader.readUInt16(); // 2
-     
-     let width = Int(try reader.readInt16());
-     let height = Int(try reader.readInt16());
-     quicktimePayload.dimensions = QDPoint(vertical: height, horizontal: width);
-     */
-    quicktimePayload.dstRect = try reader.readRect();
-    reader.skip(bytes: 12);
-    quicktimePayload.payloadType = try reader.readType();
-    reader.skip(bytes :12);
-    quicktimePayload.compressorDevelopper = try reader.readType();
-    quicktimePayload.temporalQuality = try reader.readUInt32();  // 4
-    quicktimePayload.spatialQuality = try reader.readUInt32(); // 4
-    quicktimePayload.dimensions = try reader.readDelta();  // 4
-    let hRes = try reader.readFixed();
-    let vRes = try reader.readFixed();
-    quicktimePayload.resolution = QDResolution(hRes: hRes, vRes: vRes);
-    quicktimePayload.dataSize = Int(try reader.readInt32());
-    quicktimePayload.frameNumber = Int(try reader.readInt16());
-    quicktimePayload.name = try reader.readStr31();
-    quicktimePayload.depth = Int(try reader.readInt16());
-    quicktimePayload.clutId = Int(try reader.readInt16());
-    let tailSize = quicktimePayload.size - quicktimePayload.dataSize - 154
-    print("\(tailSize)");
-    quicktimePayload.data = try reader.readData(bytes: quicktimePayload.dataSize);
-    // reader.skip(bytes: 128);
+func byteArrayLE<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
+  withUnsafeBytes(of: value.littleEndian, Array.init)
+}
+
+/// Some data types (BMP) are missing the header data. Reconstruct it if needed.
+/// - Parameter quicktimeImage: image whose data needs patching.
+/// - Throws: missingQuickTimeData if there is not data
+func patchQuickTimeImage(quicktimeImage : inout QuickTimeImage) throws {
+  if quicktimeImage.codecType != "WRLE" {
+    return;
+  }
+  guard let data = quicktimeImage.data else {
+    throw QuickDrawError.missingQuickTimeData(quicktimeImage: quicktimeImage);
   }
   
+  var patched = Data();
+  patched.append(contentsOf: [0x42, 0x4D]);
+  let bmpHeaderSize : Int32 = 14;
+  let dibHeaderSize : Int32 = 12;
+  let headerSize = bmpHeaderSize + dibHeaderSize;
+  let totalSize = headerSize + Int32(data.count);
+  patched.append(contentsOf: byteArrayLE(from: totalSize));
+  patched.append(contentsOf: [0x00, 0x00, 0x00, 0x00]);
+  patched.append(contentsOf: byteArrayLE(from: headerSize));
+  patched.append(contentsOf: byteArrayLE(from: dibHeaderSize));
+  let width = Int16(quicktimeImage.dimensions.dh.rounded);
+  let height = Int16(quicktimeImage.dimensions.dv.rounded);
+  patched.append(contentsOf: byteArrayLE(from: width));
+  patched.append(contentsOf: byteArrayLE(from: height));
+  let planes = Int16(1);
+  patched.append(contentsOf: byteArrayLE(from: planes));
+  let depth = Int16(quicktimeImage.depth);
+  patched.append(contentsOf: byteArrayLE(from: depth));
+  assert(patched.count == headerSize);
+  patched.append(data);
+  quicktimeImage.data = patched;
+}
+
+struct QuickTimeOpcode : OpCode {
+  mutating func load(reader: QuickDrawDataReader) throws {
+    dataSize = Int(try reader.readInt32());
+    let subReader = try reader.subReader(bytes: dataSize);
+    opcodeVersion = try subReader.readInt16();
+    for _ in 0..<3 {
+      var line : [FixedPoint] = [];
+      for _ in 0..<3 {
+        line.append(try subReader.readFixed());
+      }
+      quicktimePayload.transform.append(line);
+    }
+    matteSize = Int(try subReader.readInt32());
+    quicktimePayload.matte = try subReader.readRect();
+    quicktimePayload.mode = QuickDrawMode(value: try subReader.readUInt16());
+    let srcRect = try subReader.readRect();
+    quicktimePayload.accuracy = Int(try subReader.readUInt32());
+    maskSize = Int(try subReader.readUInt32());
+    // variable length parts
+    reader.skip(bytes: matteSize);
+    let maskData = try subReader.readUInt16(bytes: maskSize);
+    let (rects, bitlines) = try DecodeRegionData(boundingBox: srcRect, data: maskData);
+    quicktimePayload.srcMask = QDRegion(boundingBox: srcRect, rects: rects, bitlines: bitlines);
+    // Picture size
+    
+    quicktimePayload.quicktimeImage.idSize = Int(try subReader.readUInt32());
+    quicktimePayload.quicktimeImage.codecType = try subReader.readType();
+    subReader.skip(bytes: 8);
+    quicktimePayload.quicktimeImage.imageVersion = Int(try subReader.readUInt16());
+    quicktimePayload.quicktimeImage.imageRevision = Int(try subReader.readUInt16());
+    quicktimePayload.quicktimeImage.compressorDevelopper = try subReader.readType();
+    quicktimePayload.quicktimeImage.temporalQuality = try subReader.readUInt32();  // 4
+    quicktimePayload.quicktimeImage.spatialQuality = try subReader.readUInt32(); // 4
+    quicktimePayload.quicktimeImage.dimensions = try subReader.readDelta();
+    quicktimePayload.quicktimeImage.resolution = try subReader.readResolution();
+    quicktimePayload.quicktimeImage.dataSize = Int(try subReader.readInt32());
+    quicktimePayload.quicktimeImage.frameCount = Int(try subReader.readInt16());
+    quicktimePayload.quicktimeImage.compressionName = try subReader.readStr31();
+    quicktimePayload.quicktimeImage.depth = Int(try subReader.readInt16());
+    quicktimePayload.quicktimeImage.clutId = Int(try subReader.readInt16());
+    subReader.skip(bytes: quicktimePayload.quicktimeImage.idSize - 86);
+    quicktimePayload.quicktimeImage.data = try subReader.readData(bytes: subReader.remaining);
+    try patchQuickTimeImage(quicktimeImage: &quicktimePayload.quicktimeImage);
+  }
+
+  var opcodeVersion : Int16 = 0;
+  var dataSize : Int = 0;
+  var matteSize : Int = 0;
+  var maskSize : Int = 0;
   var quicktimePayload : QuickTimePayload = QuickTimePayload();
+  
 }

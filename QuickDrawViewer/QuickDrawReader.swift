@@ -7,6 +7,12 @@
 
 import Foundation
 
+extension Data {
+    var bytes: [UInt8] {
+        return [UInt8](self)
+    }
+}
+
 /// Class that handles reading from the data object.
 /// Handles deserialisation of various QuickDraw types.
 class QuickDrawDataReader {
@@ -16,20 +22,20 @@ class QuickDrawDataReader {
   ///   - data: object containing the QuickDraw pict data.
   ///   - position: offset in the data object where reading should start, typically 512 as this is the standart offset.
   init(data: Data, position: Data.Index=512) throws {
+    guard position <= data.count else {
+      throw QuickDrawError.quickDrawIoError(message:"Initial \(position) beyond \(data.count)");
+    }
     self.data = data;
     self.position = position;
   }
   
   func readUInt8() throws -> UInt8 {
-    if position >= data.count {
+    guard position <= data.count else {
       throw QuickDrawError.quickDrawIoError(message:"Read at \(position) beyond \(data.count)");
     }
-    let value : UInt8? = data[position];
-    if let v = value {
-      position += 1;
-      return v;
-    }
-    throw QuickDrawError.quickDrawIoError(message:"Read failure");
+    let value = data[position];
+    position += 1;
+    return value;
   }
   
   func readBool() throws -> Bool {
@@ -38,48 +44,47 @@ class QuickDrawDataReader {
   }
   
   func readUInt8(bytes: Data.Index) throws -> [UInt8] {
-    guard position + bytes < data.count else {
-      throw QuickDrawError.quickDrawIoError(message:"Read at \(position) beyond \(data.count)");
-    }
-    var result : [UInt8] = [];
-    for _ in position..<position + bytes {
-      try result.append(readUInt8());
-    }
-    return result;
+    let subdata = try readData(bytes: bytes);
+    return subdata.bytes;
   }
   
   func readData(bytes: Data.Index) throws -> Data {
-    guard position + bytes < data.count else {
-      throw QuickDrawError.quickDrawIoError(message:"Read at \(position) beyond \(data.count)");
+    let end = position + bytes;
+    guard end <= data.count else {
+      throw QuickDrawError.quickDrawIoError(message:"Read \(bytes):\(end) beyond \(data.count)");
     }
     let result = data.subdata(in: position..<position + bytes);
     position += bytes;
     return result;
   }
   
+  func subReader(bytes: Data.Index) throws -> QuickDrawDataReader {
+    let data = try readData(bytes : bytes);
+    return try QuickDrawDataReader(data: data, position: 0);
+  }
+  
   func readString(bytes: Data.Index) throws -> String {
     let data = try readUInt8(bytes: bytes);
-    if let str = String(bytes:data, encoding: String.Encoding.macOSRoman) {
-      return str;
+    guard let str = String(bytes:data, encoding: String.Encoding.macOSRoman) else {
+      throw QuickDrawError.quickDrawIoError(message: "Failed reading string");
     }
-    throw QuickDrawError.quickDrawIoError(message: "Failed reading string");
+    return str;
   }
   
   func readType() throws -> String {
     let data = try readUInt8(bytes: 4);
-    if let str = String(bytes:data, encoding: String.Encoding.macOSRoman) {
-      return str;
+    guard let str = String(bytes:data, encoding: String.Encoding.macOSRoman) else {
+      throw QuickDrawError.quickDrawIoError(message: "Failed reading Mac OS type");
     }
-    throw QuickDrawError.quickDrawIoError(message: "Failed reading string");
+    return str;
   }
-  
   
   /// Read a fixed length (31 bytes) pascal string
   /// - Returns: a string , with a maximum 31 characters.
   func readStr31() throws -> String {
     let length = Data.Index(try readUInt8());
     let tail = 31 - length ;
-    if tail < 0 {
+    guard tail >= 0 else {
       throw QuickDrawError.invalidStr32(length: length);
     }
     let result = try readString(bytes:length);
@@ -99,15 +104,18 @@ class QuickDrawDataReader {
   }
 
   func readUInt16() throws -> UInt16 {
-    let high = try readUInt8();
-    let low = try readUInt8();
-    return UInt16(high) << 8 | UInt16(low);
+    let bytes = try readUInt8(bytes: 2);
+    return UInt16(bytes[0]) << 8 | UInt16(bytes[1]);
   }
   
   func readUInt16(bytes: Data.Index) throws -> [UInt16] {
+    let num = bytes / 2;
+    let raw = try readUInt8(bytes: num * 2);
     var result :[UInt16] = [];
-    for _ in 0..<(bytes / 2) {
-      let v = try readUInt16();
+    result.reserveCapacity(num);
+    for index in 0..<(num) {
+      let p = index * 2;
+      let v = UInt16(raw[p]) << 8 | UInt16(raw[p+1]);
       result.append(v);
     }
     return result;
@@ -133,8 +141,8 @@ class QuickDrawDataReader {
   }
 
   func readPoint() throws -> QDPoint {
-    let v = try readInt16();
-    let h = try readInt16();
+    let v = FixedPoint(try readInt16());
+    let h = FixedPoint(try readInt16());
     return QDPoint(vertical: v, horizontal: h);
   }
 
@@ -148,6 +156,12 @@ class QuickDrawDataReader {
     let tl = try readPoint();
     let br = try readPoint();
     return QDRect(topLeft: tl, bottomRight: br);
+  }
+  
+  func readResolution() throws -> QDResolution {
+    let hRes = try readFixed();
+    let vRes = try readFixed();
+    return QDResolution(hRes: hRes, vRes: vRes);
   }
   
   func readPoly() throws -> QDPolygon {
@@ -181,13 +195,13 @@ class QuickDrawDataReader {
     let box = try readRect();
     if rgnDataSize > 0 {
       let data = try readUInt16(bytes: rgnDataSize);
-      let rects = DecodeRegionData(boundingBox: box, data: data);
-      return QDRegion(boundingBox:box, rects:rects);
+      let (rects, bitlines) = try DecodeRegionData(boundingBox: box, data: data);
+      return QDRegion(boundingBox:box, rects:rects, bitlines: bitlines);
     }
-    return QDRegion(boundingBox:box, rects: []);
+    return QDRegion(boundingBox:box, rects: [], bitlines:[[]]);
   }
   
-  func readOpcode(version: UInt8) throws -> UInt16 {
+  func readOpcode(version: Int) throws -> UInt16 {
     switch version {
     case 1:
       let opcode = try readUInt8()
@@ -205,6 +219,10 @@ class QuickDrawDataReader {
   
   func skip(bytes: Data.Index) -> Void {
     position += bytes;
+  }
+  
+  var remaining : Int {
+    return data.count - position;
   }
   
   var position: Data.Index;

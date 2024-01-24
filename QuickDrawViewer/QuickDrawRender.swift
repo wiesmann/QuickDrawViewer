@@ -9,14 +9,23 @@ import Foundation
 import CoreGraphics
 import CoreText
 import ImageIO
+import os
 
 enum CoreGraphicRenderError : Error {
-  case NotRgbColor(color: CGColor);
+  case noContext(message: String);
+  case noPdfContext(rect: CGRect);
+  case notRgbColor(color: CGColor);
+  case imageCreationFailed(message: String, quicktimeOpcode: QuickTimeOpcode);
+  case imageSourceFailure(status: CGImageSourceStatus);
+  case imageFailure(message: String);
+  case unsupportedOpcode(opcode: OpCode);
+  case inconsistentPoly(message: String);
+  case unsupportedMode(mode: QuickDrawMode);
 }
 
 protocol QuickDrawRenderer {
   func execute(opcode: OpCode) throws -> Void;
-  func execute(picture: QDPicture) throws -> Void;
+  func execute(picture: QDPicture, zoom: Double) throws -> Void;
 }
 
 extension CGPoint {
@@ -32,12 +41,13 @@ extension CGSize {
 }
 
 extension CGRect {
+  /// Construct a CoreGraphics rectangle from a QuickDraw one
+  /// - Parameter qdrect: QuickDraw rectangle.
   init(qdrect: QDRect) {
     let origin = CGPoint(qd_point: qdrect.topLeft);
     let size = CGSize(delta: qdrect.dimensions);
     self.init(origin:origin, size:size);
   }
-
 }
 
 extension CGContext {
@@ -51,6 +61,9 @@ extension CGContext {
   }
 }
 
+/// Convert a QuickDraw RGB color into a CoreGraphic one.
+/// - Parameter qdcolor: color to convert
+/// - Returns: corresponding Core Graphics Colour.
 func ToCGColor(qdcolor: QDColor) -> CGColor {
   let red = CGFloat(qdcolor.red) / 0x10000;
   let green = CGFloat(qdcolor.green) / 0x10000;
@@ -58,22 +71,33 @@ func ToCGColor(qdcolor: QDColor) -> CGColor {
   return CGColor(red: red, green: green, blue: blue, alpha: 1.0);
 }
 
+/// Convenience function to convert a float in the 0..1 range to a UInt16.
+/// - Parameter value: float value in the 0..1 range.
+/// - Returns: corresponding UInt16 value
 func FloatToUInt16(_ value: CGFloat) -> UInt16 {
   return UInt16(value * 0x10000);
 }
 
+/// Convert a CoreGraphics colour back into a QuickDraw one
+/// - Parameter color: Core Graphics color to
+/// - Throws: notRgbColor if the colour is not in the RGB format.
+/// - Returns:a QuickDraw color.
 func ToQDColor(color: CGColor) throws -> QDColor  {
-  if color.numberOfComponents == 3 {
-    if let components = color.components {
-      let red = FloatToUInt16(components[0]);
-      let green = FloatToUInt16(components[1]);
-      let blue = FloatToUInt16(components[2]);
-      return QDColor(red: red, green: green, blue: blue);
-    }
+  guard color.numberOfComponents == 3 else {
+    throw CoreGraphicRenderError.notRgbColor(color: color);
   }
-  throw CoreGraphicRenderError.NotRgbColor(color: color);
+  guard let components = color.components else {
+    throw CoreGraphicRenderError.notRgbColor(color: color);
+  }
+  let red = FloatToUInt16(components[0]);
+  let green = FloatToUInt16(components[1]);
+  let blue = FloatToUInt16(components[2]);
+  return QDColor(red: red, green: green, blue: blue);
 }
 
+/// Convert a font name from the classic mac universe ino a corresponding one on Mac OS X.
+/// - Parameter fontName: Font name
+/// - Returns: A font-name that probably exists on Mac OS X.
 func SubstituteFontName(fontName : String?) -> String {
   if let name = fontName {
     switch name {
@@ -85,8 +109,13 @@ func SubstituteFontName(fontName : String?) -> String {
   return "Helvetica";
 }
 
-func deg2rad(_ number: Int16) -> Double {
-    return Double(number) * .pi / 180
+let tau = 2.0 * .pi;
+
+/// Convert degrees as used in QuickDraw to radians as used by CoreGraphics
+/// - Parameter number: angle in degrees, 0° is vertical.
+/// - Returns: radians, from the X axis
+func deg2rad(_ angle: Int16) -> Double {
+  return -Double(angle + 90) * tau / 360;
 }
 
 /// Renderer that wraps a core-graphics context.
@@ -128,6 +157,14 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   }
   
   func paintPath() throws {
+    // Check if the pattern can be replaced with a color.
+    if penState.drawPattern.isColor {
+      let color = penState.drawColor;
+      context!.setFillColor(ToCGColor(qdcolor: color));
+      context!.fillPath();
+      return;
+    }
+    
     let area = CGRect(x: 0, y: 0, width: 8, height: 8);
     context!.saveGState();
     context!.clip();
@@ -151,7 +188,26 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     context!.restoreGState();
   }
   
+  func applyMode() throws {
+    switch penState.mode.mode {
+    case .copyMode:
+      context!.setBlendMode(.normal);
+    case .orMode:
+      context!.setBlendMode(.multiply);
+    case .xorMode:
+      context!.setBlendMode(.xor);
+    case .notOrMode:
+      context!.setBlendMode(.destinationAtop);
+    default:
+      throw CoreGraphicRenderError.unsupportedMode(mode: penState.mode);
+    }
+  }
+  
+  /// Main _painting_ function, renders the current path using a defined Quickdraw verb.
+  ///
+  /// - Parameter verb: type of rendering (paint, draw)
   func applyVerbToPath(verb: QDVerb) throws {
+    try applyMode();
     switch verb {
       // The difference between paint and fill verbs is that paint uses the
       // pen (frame) color.
@@ -177,33 +233,46 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
       context!.fillPath();
       context!.restoreGState();
+    case QDVerb.ignore:
+      break;
     }
+  
   }
   
   func executeOrigin(originOp: OriginOp) {
     context!.translateBy(x: -originOp.delta.dh.value, y: -originOp.delta.dv.value);
   }
   
-  func executeLine(lineop : LineOp) {
+  func executeLine(lineop : LineOp) throws {
     let qd_points = lineop.getPoints(current: penState.location);
-    let cg_points = qd_points.map({ CGPoint(qd_point:$0)});
-    context!.setStrokeColor(ToCGColor(qdcolor: penState.drawColor));
-    context!.setLineWidth(penState.penWidth.value);
-    context!.strokeLineSegments(between: cg_points);
+    // If we are inside a polygon, add the points and do nothing.
+    if let poly = polyAccumulator {
+      poly.AddLine(line: qd_points);
+    } else {
+      let cg_points = qd_points.map({ CGPoint(qd_point:$0)});
+      context!.addLines(between: cg_points);
+      try applyVerbToPath(verb: .frame);
+    }
     if let last = qd_points.last {
       penState.location = last;
+    }
+  }
+  
+  func executePoly(polygon: QDPolygon, verb: QDVerb) throws {
+    if polygon.points.count > 0 {
+      let cg_points = polygon.points.map({ CGPoint(qd_point:$0)});
+      context!.beginPath();
+      context!.addLines(between: cg_points);
+      if polygon.closed {
+        context!.closePath();
+      }
+      try applyVerbToPath(verb: verb);
     }
   }
 
   func executePoly(polyop: PolygonOp) throws {
     let poly = polyop.GetPolygon(last: lastPoly);
-    if poly.points.count > 0 {
-      let cg_points = poly.points.map({ CGPoint(qd_point:$0)});
-      context!.beginPath();
-      context!.addLines(between: cg_points);
-      // context!.closePath();
-      try applyVerbToPath(verb: polyop.verb);
-    }
+    try executePoly(polygon: poly, verb: polyop.verb);
   }
   
   func executeRect(rect : QDRect, verb: QDVerb) throws {
@@ -214,13 +283,13 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   }
   
   func executeRect(rectop : RectOp) throws {
-    let rect = rectop.rect ?? lastRect!;
+    let rect = rectop.rect ?? lastRect;
     try executeRect(rect : rect, verb: rectop.verb);
     lastRect = rect;
   }
   
   func executeRoundRect(roundRectOp : RoundRectOp) throws {
-    let rect = roundRectOp.rect ?? lastRoundRect!;
+    let rect = roundRectOp.rect ?? lastRect;
     context!.beginPath();
     let path = CGMutablePath();
     let cornerWidth = penState.ovalSize.dh.value;
@@ -232,36 +301,35 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   }
   
   func executeOval(ovalOp: OvalOp) throws {
-    let rect = ovalOp.rect ?? lastOval!;
+    let rect = ovalOp.rect ?? lastRect;
     context!.beginPath();
     context!.addEllipse(in: CGRect(qdrect: rect));
     context!.closePath();
     try applyVerbToPath(verb: ovalOp.verb);
-    lastOval = rect;
+    lastRect = rect;
   }
   
-
   func executeArc(arcOp: ArcOp) throws {
-    let rect = arcOp.rect!;
-    try executeRect(rect: rect, verb: QDVerb.frame);
+    let rect = arcOp.rect ?? lastRect;
+    // try executeRect(rect: rect, verb: QDVerb.frame);
     let width = rect.dimensions.dh.value;
     let height = rect.dimensions.dv.value;
     let startAngle = deg2rad(arcOp.startAngle);
-    let endAngle = deg2rad(arcOp.angle);
-    print("Arc: \(rect)")
+    let endAngle = deg2rad(arcOp.startAngle + arcOp.angle);
+    let clockwise = arcOp.angle > 0;
   
     context!.saveGState();
     context!.beginPath();
     context!.translateBy(x: rect.center.horizontal.value, y: rect.center.vertical.value);
-    context!.scaleBy(x: width * 0.5, y: height * 0.5);
-    /*context!.addRect(CGRect(origin: CGPoint(x: -0.5, y: -0.5), size: CGSize(width: 1.0, height: 1.0)));
-    context!.strokePath();*/
+    context!.scaleBy(x: -width * 0.5, y: height * 0.5);
     
     /// startAngle The angle to the starting point of the arc, measured in radians from the positive x-axis.
     /// endAngle The angle to the end point of the arc, measured in radians from the positive x-axis.
-    context!.addArc(center: CGPoint(x:0, y:0), radius: 1.0, startAngle: startAngle, endAngle: endAngle, clockwise: true);
-    // try applyVerbToPath(verb: arcOp.verb);
-    context!.fillPath();
+    context!.move(to: CGPoint(x: 0, y: 0));
+    context!.addArc(center: CGPoint(x:0, y:0), radius: 1.0, startAngle: startAngle, endAngle: endAngle, clockwise: clockwise);
+    context!.move(to: CGPoint(x: 0, y: 0));
+    try applyVerbToPath(verb: arcOp.verb);
+    // context!.fillPath();
     context!.restoreGState();
   }
   
@@ -315,7 +383,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     }
     // Start work
     context!.saveGState();
-    context!.textMatrix = CGAffineTransform(scaleX: 1.0, y: -1.0);
+    // Use the ratios, but invert the y axis
+    context!.textMatrix = CGAffineTransform(scaleX: fontState.xRatio, y: -fontState.yRatio);
     if fontState.fontStyle.contains(.outlineBit) {
       lineText.addAttribute(
         kCTForegroundColorAttributeName as NSAttributedString.Key, value: bgColor, range: range);
@@ -343,13 +412,34 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     renderString(text: textOp.text);
   }
   
-  func executeComment(commentOp: CommentOp) {
-    // Do something
+  func executeComment(commentOp: CommentOp) throws {
+    switch commentOp.kind {
+    case .polyBegin:
+      polyAccumulator = QDPolygon();
+    case .polyClose:
+      guard let poly = polyAccumulator else {
+        throw CoreGraphicRenderError.inconsistentPoly(message: "Closing non existing poly");
+      }
+      poly.closed = true;
+    case .polyEnd:
+      guard let poly = polyAccumulator else {
+        throw CoreGraphicRenderError.inconsistentPoly(message: "Ending non existing poly");
+      }
+      try executePoly(polygon: poly, verb: QDVerb.frame);
+      polyAccumulator = nil;
+    case .setLineWidth:
+      guard case let .setLineWidthPayload(width) = commentOp.payload else {
+        throw QuickDrawError.invalidCommentPayload(payload: commentOp.payload);
+      }
+      penState.penWidth = width;
+    default:
+      break;
+    }
   }
   
-  // Bitmap op
-  // https://gist.github.com/josephlord/e69d196cccc09b43769b
   
+  /// Execute palette bitmap operations
+  /// - Parameter bitRectOp: the opcode to execute
   func executeBitRect(bitRectOp: BitRectOpcode) throws {
     let colorSpace = try GetColorSpace(bit_opcode: bitRectOp);
     let bitmapInfo = CGBitmapInfo();
@@ -357,9 +447,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let bounds = bitRectOp.bitmapInfo.bounds;
     let cfData = CFDataCreate(nil, data, data.count)!;
     let provider = CGDataProvider(data: cfData)!;
-    let image = CGImage(
-      width: bounds.dimensions.dh.intValue,
-      height: bounds.dimensions.dv.intValue,
+    guard let image = CGImage(
+      width: bounds.dimensions.dh.rounded,
+      height: bounds.dimensions.dv.rounded,
       bitsPerComponent: bitRectOp.bitmapInfo.cmpSize,
       bitsPerPixel: bitRectOp.bitmapInfo.pixelSize,
       bytesPerRow: bitRectOp.bitmapInfo.rowBytes,
@@ -367,13 +457,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       provider: provider,
       decode: nil,
       shouldInterpolate: false,
-      intent: CGColorRenderingIntent.defaultIntent);
+      intent: CGColorRenderingIntent.defaultIntent) else {
+      throw CoreGraphicRenderError.imageFailure(message: "Could not create palette image");
+    }
     context!.drawFlipped(
-        image!,
+        image,
         in: CGRect(qdrect: bitRectOp.bitmapInfo.dstRect!));
   }
   
-  func executeDirectBitOp(directBitOp: DirectBitOpcode) {
+  func executeDirectBitOp(directBitOp: DirectBitOpcode) throws {
     var  bitmapInfo : CGBitmapInfo;
     if directBitOp.bitmapInfo.pixMapInfo?.pixelSize == 16 {
       bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
@@ -385,9 +477,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let bounds = directBitOp.bitmapInfo.bounds;
     let cfData = CFDataCreate(nil, data, data.count)!;
     let provider = CGDataProvider(data: cfData)!;
-    let image = CGImage(
-      width: bounds.dimensions.dh.intValue,
-      height: bounds.dimensions.dv.intValue,
+    guard let image = CGImage(
+      width: bounds.dimensions.dh.rounded,
+      height: bounds.dimensions.dv.rounded,
       bitsPerComponent: directBitOp.bitmapInfo.cmpSize,
       bitsPerPixel: directBitOp.bitmapInfo.pixelSize,
       bytesPerRow: directBitOp.bitmapInfo.rowBytes,
@@ -395,18 +487,72 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       provider: provider,
       decode: nil,
       shouldInterpolate: false,
-      intent: CGColorRenderingIntent.defaultIntent);
+      intent: CGColorRenderingIntent.defaultIntent) else {
+      throw CoreGraphicRenderError.imageFailure(message: "Could not create direct bitmap");
+    }
     context!.drawFlipped(
-        image!,
-        in: CGRect(qdrect: directBitOp.bitmapInfo.dstRect!));
+        image,
+        in: CGRect(qdrect: directBitOp.bitmapInfo.destinationRect));
   }
   
-  func executeQuickTime(quicktimeOp : QuickTimeOpcode) {
-    let imageSource = CGImageSourceCreateWithData(quicktimeOp.quicktimePayload.data! as CFData, nil);
-    let image = CGImageSourceCreateImageAtIndex(imageSource!, 0, nil);
+  /// Prevent error messages by forcing a clip.
+  func preventQuickTimeMessage() {
+    context!.addRect(CGRect(qdrect:QDRect.empty));
+    context!.clip();
+  }
+  
+  func executeRawQuickTime(quicktimeOp : QuickTimeOpcode) throws {
+    guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
+      throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
+    }
+    
+    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
+    let provider = CGDataProvider(data: payload as CFData)!;
+    let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
+    
+    guard let image = CGImage(
+      width: qtImage.dimensions.dh.rounded,
+      height: qtImage.dimensions.dv.rounded,
+      bitsPerComponent: 8,
+      bitsPerPixel: qtImage.depth,
+      bytesPerRow: qtImage.depth * qtImage.dimensions.dh.rounded / 8,
+      space: rgbSpace, bitmapInfo: bitmapInfo,
+      provider: provider,
+      decode: nil,
+      shouldInterpolate: false,
+      intent: CGColorRenderingIntent.defaultIntent) else {
+      throw CoreGraphicRenderError.imageFailure(message: "Could not create RAW QuickTime Image");
+    }
     context!.drawFlipped(
-        image!,
-        in: CGRect(qdrect: quicktimeOp.quicktimePayload.dstRect));
+        image,
+        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+    preventQuickTimeMessage();
+  }
+  
+  func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
+    if quicktimeOp.quicktimePayload.quicktimeImage.codecType == "raw " {
+      try executeRawQuickTime(quicktimeOp: quicktimeOp);
+      return;
+    }
+    
+    guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
+      throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
+    }
+    guard let imageSource = CGImageSourceCreateWithData(payload as CFData, nil) else {
+      throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateWithData", quicktimeOpcode: quicktimeOp);
+    }
+    let status = CGImageSourceGetStatus(imageSource);
+    guard status == .statusComplete else {
+      throw CoreGraphicRenderError.imageSourceFailure(status: status);
+    }
+    let count = CGImageSourceGetCount(imageSource);
+    guard let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+      throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateImageAtIndex \(imageSource): \(count)", quicktimeOpcode: quicktimeOp);
+    }
+    context!.drawFlipped(
+        image,
+        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+    preventQuickTimeMessage()
   }
   
   func executeDefHighlight() throws {
@@ -415,6 +561,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     }
   }
   
+  /// Opcode dispatching function
+  /// - Parameter opcode: opcode to dispatch
   func execute(opcode: OpCode) throws {
     switch opcode {
     case let penOp as PenStateOperation:
@@ -423,14 +571,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       fontOp.execute(fontState: &fontState);
     case let textOp as LongTextOp:
       executeText(textOp: textOp);
-    case is PictureOperation:
-      break;
     case let originOp as OriginOp:
       executeOrigin(originOp:originOp);
     case let textOp as DHDVTextOp:
       executeText(textOp : textOp);
     case let lienOp as LineOp:
-      executeLine(lineop: lienOp);
+      try executeLine(lineop: lienOp);
     case let rectop as RectOp:
       try executeRect(rectop: rectop);
     case let roundRectOp as RoundRectOp:
@@ -442,63 +588,101 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     case let bitRectOp as BitRectOpcode:
       try executeBitRect(bitRectOp: bitRectOp);
     case let directBitOp as DirectBitOpcode:
-      executeDirectBitOp(directBitOp: directBitOp);
+      try executeDirectBitOp(directBitOp: directBitOp);
     case let ovalOp as OvalOp:
       try executeOval(ovalOp: ovalOp);
     case let regionOp as RegionOp:
       try executeRegion(regionOp: regionOp);
     case let quicktimeOp as QuickTimeOpcode:
-      executeQuickTime(quicktimeOp: quicktimeOp);
+      try executeQuickTime(quicktimeOp: quicktimeOp);
    case let commentOp as CommentOp:
-      executeComment(commentOp:commentOp);
+      try executeComment(commentOp:commentOp);
     case is DefHiliteOp:
       try executeDefHighlight();
-    default:
-      print("     Ignoring \(opcode)");
+    case is PictureOperation:
       break;
+    default:
+      throw CoreGraphicRenderError.unsupportedOpcode(opcode: opcode);
     }
   }
   
-  // https://developer.apple.com/documentation/coregraphics/cgpdfcontext/auxiliary_dictionary_keys?language=objc
-  func execute(picture: QDPicture) throws {
-    
+  /// Executes the picture into the graphical context.
+  /// - Parameter picture: the quickdraw picture to render
+  public func execute(picture: QDPicture, zoom: Double) throws {
+    guard context != nil else {
+      throw CoreGraphicRenderError.noContext(message: "No context associated with renderer.");
+    }
+    self.picture = picture;
+    let origin = CGPoint(qd_point: picture.frame.topLeft);
+    context!.translateBy(x: -origin.x, y: -origin.y);
+    context!.scaleBy(x: zoom, y: zoom);
     for opcode in picture.opcodes {
-      try execute(opcode:opcode);
+      do {
+        try execute(opcode:opcode);
+      } catch {
+        logger.log(level: .error, "Failed rendering: \(error)");
+      }
     }
   }
   
+  // Target context.
   var context : CGContext?;
-  
+  // Picture being rendered.
+  var picture : QDPicture?;
+  // All QuickDraw operations are RGB space.
+  let rgbSpace : CGColorSpace;
+  // Native highlight color, get converted into QuickDraw
+  // by DefHilite opcode.
+  var highlightColor : CGColor?;
+  // Quickdraw state
   var penState : PenState;
   var fontState : QDFontState;
+  // Last shapes, used by the SameXXX operations.
   var lastPoly : QDPolygon?;
-  var lastRect : QDRect?;
-  var lastRoundRect: QDRect?;
-  var lastOval : QDRect?;
+  var lastRect : QDRect = QDRect.empty;
   var lastRegion :QDRegion?;
-  let rgbSpace : CGColorSpace;
-  var highlightColor : CGColor?;
+  // Polygon for reconstruction.
+  var polyAccumulator : QDPolygon?;
   
+  // Logger
+  let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "render");
 }
 
+/// Render the picture inside a PDF context.
 class PDFRenderer : QuickdrawCGRenderer {
+  
    init(url : CFURL)  {
-     self.url = url;
+     self.consumer = CGDataConsumer(url: url)!;
+     super.init(context: nil);
+  }
+  
+  init(data: CFMutableData) {
+    self.consumer = CGDataConsumer(data: data)!;
     super.init(context: nil);
   }
   
-  override func execute(picture: QDPicture) throws {
+  override func execute(picture: QDPicture, zoom: Double) throws {
     var mediabox = CGRect(qdrect: picture.frame);
-    context = CGContext(url, mediaBox: &mediabox, nil);
-    context!.beginPDFPage(nil);
-    context!.scaleBy(x: 1.0, y: -1.0);
+    var meta  = [kCGPDFContextCreator: "QuickDrawCFRenderer"];
+    if let filename = picture.filename {
+      meta[kCGPDFContextTitle] = filename;
+    }
+    guard let context = CGContext(consumer: consumer, mediaBox: &mediabox, meta as CFDictionary) else {
+      throw CoreGraphicRenderError.noPdfContext(rect: mediabox);
+    }
+    self.context = context;
+    context.beginPDFPage(nil);
+    // Flip for old-school PDF coordinates
     let height = picture.frame.dimensions.dv.value;
-    context!.translateBy(x: 0.0, y: -height);
-    context!.translateBy(x: 0 , y: 2.0 * -picture.frame.topLeft.vertical.value);
-    try super.execute(picture: picture);
-    context!.endPDFPage();
-    context!.closePDF();
+    context.scaleBy(x: 1.0, y: -1.0);
+    context.translateBy(x: 0.0, y: -height);
+    let origin = CGPoint(qd_point: picture.frame.topLeft);
+    context.translateBy(x: origin.x, y: -origin.y);
+    try super.execute(picture: picture, zoom: zoom);
+    context.endPDFPage();
+    context.closePDF();
   }
   
-  let url : CFURL;
+  let consumer : CGDataConsumer;
+  // let url : CFURL;
 }
