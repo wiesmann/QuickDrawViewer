@@ -47,6 +47,7 @@ Currently, the following QuickDraw features don't work:
   * Photo-CD
   * Apple Video (`RPZA`)
   
+
 ## Application
 
 The application is currently very simple, you can view pictures, copy-paste them to Preview. There is some primitive drag-drop that works when the target is Notes or Pages, but not when the target expects a file, like the Finder or Mail.
