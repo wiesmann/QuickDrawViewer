@@ -14,6 +14,7 @@
 		E50ADB992B599CE3009EA7AF /* QuickDrawViewerDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6D2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift */; };
 		E55E05F72B61A74A00EA1AD8 /* RoadPizza.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */; };
 		E55E05F82B61A74A00EA1AD8 /* RoadPizza.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */; };
+		E55E05FA2B63D6A600EA1AD8 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = E55E05F92B63D6A600EA1AD8 /* Credits.rtf */; };
 		E59CDF6C2B42C0E500D7BB7B /* QuickDrawViewerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6B2B42C0E500D7BB7B /* QuickDrawViewerApp.swift */; };
 		E59CDF6E2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6D2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift */; };
 		E59CDF702B42C0E500D7BB7B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6F2B42C0E500D7BB7B /* ContentView.swift */; };
@@ -53,6 +54,7 @@
 		E55E05F42B6193D200EA1AD8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E55E05F52B61943300EA1AD8 /* License.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = License.txt; sourceTree = "<group>"; };
 		E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadPizza.swift; sourceTree = "<group>"; };
+		E55E05F92B63D6A600EA1AD8 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		E59CDF682B42C0E500D7BB7B /* QuickDrawViewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickDrawViewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E59CDF6B2B42C0E500D7BB7B /* QuickDrawViewerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawViewerApp.swift; sourceTree = "<group>"; };
 		E59CDF6D2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawViewerDocument.swift; sourceTree = "<group>"; };
@@ -139,6 +141,7 @@
 				E59CDF762B42C0E600D7BB7B /* Info.plist */,
 				E59CDF772B42C0E600D7BB7B /* QuickDrawViewer.entitlements */,
 				E59CDF732B42C0E600D7BB7B /* Preview Content */,
+				E55E05F92B63D6A600EA1AD8 /* Credits.rtf */,
 			);
 			path = QuickDrawViewer;
 			sourceTree = "<group>";
@@ -241,6 +244,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E59CDF752B42C0E600D7BB7B /* Preview Assets.xcassets in Resources */,
+				E55E05FA2B63D6A600EA1AD8 /* Credits.rtf in Resources */,
 				E59CDF722B42C0E600D7BB7B /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

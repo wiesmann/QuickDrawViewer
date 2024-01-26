@@ -33,10 +33,10 @@ func DecompressPackBit(data : [UInt8], unpackedSize: Int, byteNum : Int = 1) thr
       }
     } else {
       let discrete_len = Int(tag) + 1;
-      for _ in 0 ..< discrete_len * byteNum {
-        decompressed.append(data[index]);
-        index += 1;
-      }
+      let offset = discrete_len * byteNum;
+      let slice = data[index..<index + offset];
+      decompressed.append(contentsOf: slice);
+      index += offset;
     }
   }
   guard decompressed.count == unpackedSize else {
