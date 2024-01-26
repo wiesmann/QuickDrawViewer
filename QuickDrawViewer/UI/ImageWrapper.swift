@@ -24,7 +24,6 @@ extension QDPicture {
   }
 }
 
-
 extension QDPicture : Transferable {
   public static var transferRepresentation: some TransferRepresentation {
     DataRepresentation(exportedContentType: .pdf) {
@@ -40,3 +39,7 @@ func ProvidePicture(picture: QDPicture) -> [NSItemProvider] {
   return [pdfProvider];
 }
 
+func MakePdfFilename(picture: QDPicture) -> String {
+  let filename = picture.filename ?? "picture.pict";
+  return filename.replacingOccurrences(of: "pict", with: "pdf");
+}
