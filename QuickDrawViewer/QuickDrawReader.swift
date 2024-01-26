@@ -29,11 +29,15 @@ class QuickDrawDataReader {
     self.position = position;
   }
   
-  func readUInt8() throws -> UInt8 {
+  func peekUInt8() throws -> UInt8 {
     guard position <= data.count else {
       throw QuickDrawError.quickDrawIoError(message:"Read at \(position) beyond \(data.count)");
     }
-    let value = data[position];
+    return data[position];
+  }
+  
+  func readUInt8() throws -> UInt8 {
+    let value = try peekUInt8();
     position += 1;
     return value;
   }

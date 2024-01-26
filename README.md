@@ -1,6 +1,6 @@
 #  QuickDraw Viewer
 
-![](Icon128.png)
+![](QuickDrawViewer/Assets.xcassets/AppIcon.appiconset/Icon128.png)
 
 I wanted to teach myself Swift programming, and needed something a bit more involved than just _Hello World_, so I decided the write a program that would decode QuickDraw image files and display them. This was basically a rewrite of the [Java Quickdraw](https://github.com/wiesmann/JavaQuickDraw) code I wrote, many years back.
 
@@ -31,6 +31,7 @@ The library basically parses QuickDraw version 1 and version 2 files, and suppor
 * QuickTime embedded images with the following codecs:
   * JPEG, TIFF, PNG, BMP
   * RAW
+  * Apple Video (`RPZA`)
 
 Some basic comment parsing is used to improve images, in particular:
 
@@ -43,12 +44,13 @@ Currently, the following QuickDraw features don't work:
 
 * All modes except `copy`
 * Text rotation
-* Exotic QuickTime codes, in particular:
-  * Photo-CD
-  * Apple Video (`RPZA`)
-  
+* Exotic QuickTime codes, like for instance Photo-CD
+
 
 ## Application
 
 The application is currently very simple, you can view pictures, copy-paste them to Preview. There is some primitive drag-drop that works when the target is Notes or Pages, but not when the target expects a file, like the Finder or Mail.
 
+## License 
+
+The code is distributed under the [Apache 2.0 License](License.txt).

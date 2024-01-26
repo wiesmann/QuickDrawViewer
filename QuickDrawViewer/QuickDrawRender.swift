@@ -436,8 +436,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       break;
     }
   }
-  
-  
+
   /// Execute palette bitmap operations
   /// - Parameter bitRectOp: the opcode to execute
   func executeBitRect(bitRectOp: BitRectOpcode) throws {
@@ -529,12 +528,48 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     preventQuickTimeMessage();
   }
   
-  func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
-    if quicktimeOp.quicktimePayload.quicktimeImage.codecType == "raw " {
-      try executeRawQuickTime(quicktimeOp: quicktimeOp);
-      return;
+  func executeRPZAQuickTime(quicktimeOp : QuickTimeOpcode) throws {
+    guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
+      throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
     }
     
+    let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
+    let rpza = RoadPizzaImage(dimensions: qtImage.dimensions);
+    try rpza.load(data: payload);
+    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
+    let data = Data(rpza.pixmap);
+    let provider = CGDataProvider(data: data as CFData)!;
+    guard let image = CGImage(
+      width: qtImage.dimensions.dh.rounded,
+      height: qtImage.dimensions.dv.rounded,
+      bitsPerComponent: 5,
+      bitsPerPixel: 16,
+      bytesPerRow: rpza.rowBytes,
+      space: rgbSpace, bitmapInfo: bitmapInfo,
+      provider: provider,
+      decode: nil,
+      shouldInterpolate: false,
+      intent: CGColorRenderingIntent.defaultIntent) else {
+      throw CoreGraphicRenderError.imageFailure(message: "Could not create RPZA QuickTime Image");
+    }
+    context!.drawFlipped(
+        image,
+        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+    preventQuickTimeMessage();
+  }
+  
+  func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
+    switch quicktimeOp.quicktimePayload.quicktimeImage.codecType {
+    case "raw ":
+      try executeRawQuickTime(quicktimeOp: quicktimeOp);
+      return;
+    case "rpza":
+      try executeRPZAQuickTime(quicktimeOp: quicktimeOp);
+      return;
+    default:
+      break;
+    }
+      
     guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
       throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
     }
