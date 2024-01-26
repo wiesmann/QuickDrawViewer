@@ -14,6 +14,7 @@ import Foundation
 /// PackBit run-length decompressor, by default works on 1 byte quantities.
 /// - Parameters:
 ///   - data: compressed data
+///   - unpackedSize: size of the unpacked data
 ///   - byteNum: number of bytes in a chunk (default 1)
 /// - Returns: decompressed data
 func DecompressPackBit(data : [UInt8], unpackedSize: Int, byteNum : Int = 1) throws -> [UInt8] {

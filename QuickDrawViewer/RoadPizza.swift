@@ -8,8 +8,6 @@
 import Foundation
 import CoreGraphics
 
-
-
 /// Pixel in ARGB555 format with the alpha in the first bit.
 struct ARGB555 {
   
@@ -66,6 +64,7 @@ enum RoadPizzaError : Error {
 
 /// Image compressed with the RPZA (RoadPizza) compression.
 /// Decode the sequence of opcodes into a ARGB555 buffer.
+/// Skipped blocks will have transparent pixels.
 class RoadPizzaImage {
   
   init(dimensions: QDDelta) {
@@ -124,6 +123,9 @@ class RoadPizzaImage {
   }
   
   func executeDirectColor(block: Int, data: [ARGB555]) throws {
+    assert(data.count == RoadPizzaImage.blockSize * RoadPizzaImage.blockSize,
+           "Invalid direct color data size");
+    
     for line in 0..<RoadPizzaImage.blockSize {
       try writePixelLine(block: block, line: line, color4: data[line*4..<(line + 1)*4]);
     }
@@ -164,15 +166,15 @@ class RoadPizzaImage {
           try executeDirectColor(block: block, data: data);
           block += 1;
         }
-      case 0x80:  // Skip
+      case 0x80:  /// Skip the block
         block += blockCount;
-      case 0xa0:  // Single color
+      case 0xa0:  /// Single color block(s)
         colorA = try reader.ReadRGB555();
         for i in block..<block + blockCount {
           try execute1Color(block: i, color: colorA);
         }
         block += blockCount;
-      case 0xc0:  // Index color blocks
+      case 0xc0:  /// Index color blocks
         colorA = try reader.ReadRGB555();
         colorB = try reader.ReadRGB555();
         for i in block..<block + blockCount {

@@ -39,6 +39,8 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
       return "¼";
     case 0xc000:
       return "¾";
+    case 0x2000:
+      return "⅛";
     case let fixedValue where fixedValue & FixedPoint.fractionMask == 0:
         return "\(rounded)";
     default:
@@ -114,6 +116,11 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
     return a.fixedValue < b.fixedValue;
   }
   
+  /// We need division to parse `fract` types.
+  /// - Parameters:
+  ///   - a: numerator
+  ///   - b: denominator
+  /// - Returns: a/b
   public static func / (a : FixedPoint, b: FixedPoint) -> FixedPoint {
     return FixedPoint(a.value / b.value);
   }
