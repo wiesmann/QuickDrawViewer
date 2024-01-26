@@ -500,6 +500,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     context!.clip();
   }
   
+  /// Decode the Quicktime payload as `raw `  _codec_, basically these are just RGB values.
+  /// - Parameter quicktimeOp: quicktime operation to decode.
   func executeRawQuickTime(quicktimeOp : QuickTimeOpcode) throws {
     guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
       throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
@@ -536,9 +538,10 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
     let rpza = RoadPizzaImage(dimensions: qtImage.dimensions);
     try rpza.load(data: payload);
-    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
-    let data = Data(rpza.pixmap);
-    let provider = CGDataProvider(data: data as CFData)!;
+    // We have an α channel, but setting it crashes copy/paste.
+    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
+    let cfData = CFDataCreate(nil, rpza.pixmap, rpza.pixmap.count)!;
+    let provider = CGDataProvider(data: cfData)!;
     guard let image = CGImage(
       width: qtImage.dimensions.dh.rounded,
       height: qtImage.dimensions.dv.rounded,
@@ -569,7 +572,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     default:
       break;
     }
-      
     guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
       throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
     }

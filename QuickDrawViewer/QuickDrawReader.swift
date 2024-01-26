@@ -96,7 +96,7 @@ class QuickDrawDataReader {
     return result;
   }
   
-  /// Read a Pascal string
+  /// Read a Pascal string (length byte, followed by text bytes).
   /// - Returns: a string, with a maximum of 255 characters.
   func readPascalString() throws -> String {
     let length = Data.Index(try readUInt8());
@@ -189,7 +189,6 @@ class QuickDrawDataReader {
     return QDColor(red: red, green: green, blue: blue);
   }
   
-
   func readRegion() throws -> QDRegion {
     var len = UInt16(try readUInt16());
     if len < 10 {
