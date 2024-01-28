@@ -173,23 +173,23 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let provider = CGDataProvider(data: cfData)!;
     let bitmapInfo = CGBitmapInfo();
     let patternImage = CGImage(
-          width: 8,
-          height: 8,
-          bitsPerComponent: 1,
-          bitsPerPixel: 1,
-          bytesPerRow: 1,
-          space: paintColorSpace(),
-          bitmapInfo: bitmapInfo,
-          provider: provider,
-          decode: nil,
-          shouldInterpolate: false,
-          intent: CGColorRenderingIntent.defaultIntent)!;
+      width: 8,
+      height: 8,
+      bitsPerComponent: 1,
+      bitsPerPixel: 1,
+      bytesPerRow: 1,
+      space: paintColorSpace(),
+      bitmapInfo: bitmapInfo,
+      provider: provider,
+      decode: nil,
+      shouldInterpolate: false,
+      intent: CGColorRenderingIntent.defaultIntent)!;
     context!.drawFlipped(patternImage, in: area, byTiling: true);
     context!.restoreGState();
   }
   
-  func applyMode() throws {
-    switch penState.mode.mode {
+  func applyMode(mode: QuickDrawTransferMode) throws {
+    switch mode {
     case .copyMode:
       context!.setBlendMode(.normal);
     case .orMode:
@@ -207,7 +207,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   ///
   /// - Parameter verb: type of rendering (paint, draw)
   func applyVerbToPath(verb: QDVerb) throws {
-    try applyMode();
+    try applyMode(mode: penState.mode.mode);
     switch verb {
       // The difference between paint and fill verbs is that paint uses the
       // pen (frame) color.
@@ -236,7 +236,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     case QDVerb.ignore:
       break;
     }
-  
+    
   }
   
   func executeOrigin(originOp: OriginOp) {
@@ -269,7 +269,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       try applyVerbToPath(verb: verb);
     }
   }
-
+  
   func executePoly(polyop: PolygonOp) throws {
     let poly = polyop.GetPolygon(last: lastPoly);
     try executePoly(polygon: poly, verb: polyop.verb);
@@ -292,8 +292,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let rect = roundRectOp.rect ?? lastRect;
     context!.beginPath();
     let path = CGMutablePath();
-    let cornerWidth = penState.ovalSize.dh.value;
-    let cornerHeight = penState.ovalSize.dv.value;
+    // Core graphics dies if the corners are too big
+    let cornerWidth = min(penState.ovalSize.dh, rect.dimensions.dh >> 1).value;
+    let cornerHeight = min(penState.ovalSize.dv, rect.dimensions.dv >> 1).value;
     path.addRoundedRect(in: CGRect(qdrect: rect), cornerWidth: cornerWidth, cornerHeight: cornerHeight);
     context!.addPath(path);
     context!.closePath();
@@ -317,7 +318,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let startAngle = deg2rad(arcOp.startAngle);
     let endAngle = deg2rad(arcOp.startAngle + arcOp.angle);
     let clockwise = arcOp.angle > 0;
-  
+    
     context!.saveGState();
     context!.beginPath();
     context!.translateBy(x: rect.center.horizontal.value, y: rect.center.vertical.value);
@@ -366,13 +367,13 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   
   func renderString(text : String) {
     let fontName = SubstituteFontName(fontName: fontState.getFontName()) as CFString;
-    let fontSize = CGFloat(fontState.fontSize);
+    let fontSize = CGFloat(fontState.fontSize.value);
     let fgColor = ToCGColor(qdcolor: penState.fgColor);
     let bgColor = ToCGColor(qdcolor: penState.bgColor);
     let parentFont = CTFontCreateWithName(fontName, fontSize, nil);
     let mask : CTFontSymbolicTraits = [.traitItalic, .traitBold];
     let font = CTFontCreateCopyWithSymbolicTraits(
-        parentFont, fontSize, nil, getTraits(), mask) ?? parentFont ;
+      parentFont, fontSize, nil, getTraits(), mask) ?? parentFont ;
     let lineText = NSMutableAttributedString(string: text);
     let range = NSMakeRange(0, lineText.length);
     lineText.addAttribute(
@@ -384,7 +385,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     // Start work
     context!.saveGState();
     // Use the ratios, but invert the y axis
-    context!.textMatrix = CGAffineTransform(scaleX: fontState.xRatio, y: -fontState.yRatio);
+    context!.textMatrix = CGAffineTransform(scaleX: fontState.xRatio.value, y: -fontState.yRatio.value);
     if fontState.fontStyle.contains(.outlineBit) {
       lineText.addAttribute(
         kCTForegroundColorAttributeName as NSAttributedString.Key, value: bgColor, range: range);
@@ -396,10 +397,14 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
         kCTForegroundColorAttributeName as NSAttributedString.Key, value: fgColor, range: range);
       context!.setTextDrawingMode(.fill);
     }
+    
+    // TODO: use fontState.textCenter to adjust the width of strings.
+    
     let lineToDraw: CTLine = CTLineCreateWithAttributedString(lineText);
     context!.textPosition = CGPoint(qd_point: fontState.location);
     CTLineDraw(lineToDraw, context!);
     context!.restoreGState();
+    fontState.textCenter = nil;
   }
   
   func executeText(textOp: LongTextOp) {
@@ -413,30 +418,29 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   }
   
   func executeComment(commentOp: CommentOp) throws {
-    switch commentOp.kind {
-    case .polyBegin:
+    switch (commentOp.kind, commentOp.payload) {
+    case (.polyBegin, _):
       polyAccumulator = QDPolygon();
-    case .polyClose:
+    case (.polyClose, _):
       guard let poly = polyAccumulator else {
         throw CoreGraphicRenderError.inconsistentPoly(message: "Closing non existing poly");
       }
       poly.closed = true;
-    case .polyEnd:
+    case (.polyEnd, _):
       guard let poly = polyAccumulator else {
         throw CoreGraphicRenderError.inconsistentPoly(message: "Ending non existing poly");
       }
       try executePoly(polygon: poly, verb: QDVerb.frame);
       polyAccumulator = nil;
-    case .setLineWidth:
-      guard case let .setLineWidthPayload(width) = commentOp.payload else {
-        throw QuickDrawError.invalidCommentPayload(payload: commentOp.payload);
-      }
-      penState.penWidth = width;
+    case (_, .penStatePayload(let penOp)):
+      penOp.execute(penState: &penState);
+    case (_, .fontStatePayload(let fontOp)):
+      fontOp.execute(fontState: &fontState);
     default:
       break;
     }
   }
-
+  
   /// Execute palette bitmap operations
   /// - Parameter bitRectOp: the opcode to execute
   func executeBitRect(bitRectOp: BitRectOpcode) throws {
@@ -459,9 +463,10 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(message: "Could not create palette image");
     }
+    try applyMode(mode: bitRectOp.bitmapInfo.mode.mode);
     context!.drawFlipped(
-        image,
-        in: CGRect(qdrect: bitRectOp.bitmapInfo.dstRect!));
+      image,
+      in: CGRect(qdrect: bitRectOp.bitmapInfo.dstRect!));
   }
   
   func executeDirectBitOp(directBitOp: DirectBitOpcode) throws {
@@ -471,7 +476,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     } else {
       bitmapInfo = CGBitmapInfo();
     }
-      
+    
     let data = directBitOp.bitmapInfo.data;
     let bounds = directBitOp.bitmapInfo.bounds;
     let cfData = CFDataCreate(nil, data, data.count)!;
@@ -489,9 +494,10 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(message: "Could not create direct bitmap");
     }
+    try applyMode(mode: directBitOp.bitmapInfo.mode.mode);
     context!.drawFlipped(
-        image,
-        in: CGRect(qdrect: directBitOp.bitmapInfo.destinationRect));
+      image,
+      in: CGRect(qdrect: directBitOp.bitmapInfo.destinationRect));
   }
   
   /// Prevent error messages by forcing a clip.
@@ -525,8 +531,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       throw CoreGraphicRenderError.imageFailure(message: "Could not create RAW QuickTime Image");
     }
     context!.drawFlipped(
-        image,
-        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+      image,
+      in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
     preventQuickTimeMessage();
   }
   
@@ -556,8 +562,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       throw CoreGraphicRenderError.imageFailure(message: "Could not create RPZA QuickTime Image");
     }
     context!.drawFlipped(
-        image,
-        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+      image,
+      in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
     preventQuickTimeMessage();
   }
   
@@ -587,8 +593,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateImageAtIndex \(imageSource): \(count)", quicktimeOpcode: quicktimeOp);
     }
     context!.drawFlipped(
-        image,
-        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+      image,
+      in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
     preventQuickTimeMessage()
   }
   
@@ -632,7 +638,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       try executeRegion(regionOp: regionOp);
     case let quicktimeOp as QuickTimeOpcode:
       try executeQuickTime(quicktimeOp: quicktimeOp);
-   case let commentOp as CommentOp:
+    case let commentOp as CommentOp:
       try executeComment(commentOp:commentOp);
     case is DefHiliteOp:
       try executeDefHighlight();
@@ -688,9 +694,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
 /// Render the picture inside a PDF context.
 class PDFRenderer : QuickdrawCGRenderer {
   
-   init(url : CFURL)  {
-     self.consumer = CGDataConsumer(url: url)!;
-     super.init(context: nil);
+  init(url : CFURL)  {
+    self.consumer = CGDataConsumer(url: url)!;
+    super.init(context: nil);
   }
   
   init(data: CFMutableData) {

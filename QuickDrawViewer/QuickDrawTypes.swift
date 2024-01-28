@@ -357,7 +357,6 @@ enum QDColorSelection : UInt8 {
   case highlight = 3;
 }
 
-
 struct QDFontStyle : OptionSet {
   let rawValue: UInt8;
   static let boldBit = QDFontStyle(rawValue: 1 << 0);
@@ -532,35 +531,38 @@ class QDFontState {
     if let name = self.fontName {
       return name;
     }
+    /// List of classic fonts with their canonical IDs.
     switch fontId {
-      case 2: return "New York";
-      case 3: return "Geneva";
-      case 4: return "Monaco";
-      case 5: return "Venice";
-      case 6: return "Venice";
-      case 7: return "Athens";
-      case 8: return "San Francisco";
-      case 9: return "Toronto";
-      case 11: return "Cairo";
-      case 12: return "Los Angeles";
-      case 20: return "Times";
-      case 21: return "Helvetica";
-      case 22: return "Courrier";
-      case 23: return "Symbol";
-      case 24: return "Mobile";
-      default:
-        return nil;
+    case 2: return "New York";
+    case 3: return "Geneva";
+    case 4: return "Monaco";
+    case 5: return "Venice";
+    case 6: return "Venice";
+    case 7: return "Athens";
+    case 8: return "San Francisco";
+    case 9: return "Toronto";
+    case 11: return "Cairo";
+    case 12: return "Los Angeles";
+    case 20: return "Times";
+    case 21: return "Helvetica";
+    case 22: return "Courrier";
+    case 23: return "Symbol";
+    case 24: return "Mobile";
+    default:
+      return nil;
     }  // Switch
   }
   var fontId : Int = 0;
   var fontName : String?;
-  var fontSize : Int = 12;
+  var fontSize = FixedPoint(12);
   var fontMode : QuickDrawMode = QuickDrawMode.defaultMode;
   var location : QDPoint = QDPoint.zero;
   var fontStyle : QDFontStyle = QDFontStyle.defaultStyle;
   var glyphState : QDGlyphState = QDGlyphState.defaultState;
-  var xRatio : Double = 1.0;
-  var yRatio : Double = 1.0;
+  var xRatio : FixedPoint = FixedPoint.one;
+  var yRatio : FixedPoint = FixedPoint.one;
+  var textCenter: QDDelta?;
+  var textPictRecord : QDTextPictRecord?;
 }
 
 enum QDTextJustification : UInt8 {
@@ -569,6 +571,8 @@ enum QDTextJustification : UInt8 {
   case justificationCenter = 2;
   case justificationRight = 3;
   case justificationFull = 4;
+  case justification5 = 5;  // Found in MacDraw 1
+  case justification6 = 6;  // Found in MacDraw 1
 }
 
 enum QDTextFlip : UInt8 {

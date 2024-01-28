@@ -15,6 +15,8 @@ import Foundation
 ///  - shifts
 public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmetic {
   
+  public typealias Magnitude = Self;
+  
   public init (rawValue: Int) {
     self.fixedValue = rawValue;
   }
@@ -28,7 +30,19 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
     self.fixedValue = Int(value) * FixedPoint.multiplier;
   }
   
-  /// Return a compact, Unicode description.
+  private let fixedValue : Int;
+  private static let multiplier : Int = 0x10000;
+  private static let fractionMask : Int = multiplier - 1;
+  
+  public static let zero = FixedPoint(rawValue: 0);
+  public static let one = FixedPoint(rawValue: multiplier);
+  
+  public var magnitude: FixedPoint {
+    return FixedPoint(rawValue: Int(fixedValue.magnitude));
+  }
+  
+  /// Return a compact, description.
+  /// Use Unicode fraction to denote _perfect_ fractions that are typically used for line width and such.
   public var description: String {
     switch fixedValue {
       case 0 :
@@ -41,6 +55,8 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
       return "¾";
     case 0x2000:
       return "⅛";
+    case 0x6000:
+      return "⅜";
     case let fixedValue where fixedValue & FixedPoint.fractionMask == 0:
         return "\(rounded)";
     default:
@@ -59,14 +75,7 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
   public var isRound : Bool {
     return fixedValue & FixedPoint.fractionMask == 0;
   }
-  
-  private let fixedValue : Int;
-  private static let multiplier : Int = 0x10000;
-  private static let fractionMask : Int = multiplier - 1;
-  
-  public static let zero = FixedPoint(rawValue: 0);
-  public static let one = FixedPoint(rawValue: multiplier);
-  
+    
   /// Addition
   /// - Parameters:
   ///   - a: left hand value to add
@@ -112,8 +121,16 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
     return FixedPoint(rawValue: raw);
   }
   
-  public static func < (a: FixedPoint, b: FixedPoint) -> Bool {
-    return a.fixedValue < b.fixedValue;
+  public static func < (lhs: FixedPoint, rhs: FixedPoint) -> Bool {
+    return lhs.fixedValue < rhs.fixedValue;
+  }
+  
+  public static func * (lhs: FixedPoint, rhs: FixedPoint) -> FixedPoint {
+    return FixedPoint(rawValue: lhs.fixedValue * rhs.fixedValue / multiplier);
+  }
+  
+  public static func *= (lhs: inout FixedPoint, rhs: FixedPoint) {
+    lhs = lhs * rhs;
   }
   
   /// We need division to parse `fract` types.

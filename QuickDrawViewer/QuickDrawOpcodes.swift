@@ -221,7 +221,14 @@ struct PolygonOp : OpCode {
 /// Line operations
 /// ------------
 
-struct LineOp : OpCode {
+enum LineDestination {
+  case unset;
+  case relative(delta: QDDelta);
+  case absolute(point: QDPoint);
+}
+
+struct LineOp : OpCode, CustomStringConvertible {
+  
   mutating func load(reader: QuickDrawDataReader) throws {
     if !from {
       start = try reader.readPoint();
@@ -229,28 +236,49 @@ struct LineOp : OpCode {
     if short {
       let dh = try reader.readInt8();
       let dv = try reader.readInt8();
-      delta = QDDelta(dv: dv, dh:dh);
+      end = .relative(delta: QDDelta(dv: dv, dh:dh))
     } else {
-      end = try reader.readPoint();
+      end = .absolute(point: try reader.readPoint());
     }
   }
   
   // Get the set of points for the line (2).
-  // current is required for `from` operations. 
+  // current is required for `from` operations.
   func getPoints(current : QDPoint?) -> [QDPoint] {
-    var points : [QDPoint] = [];
     let p1 = (start ?? current)!;
-    points.append(p1);
-    let p2 = end ?? p1 + delta!;
-    points.append(p2);
+    var points : [QDPoint] = [p1];
+    switch end {
+    case .absolute(let point):
+      points.append(point);
+    case .relative(let delta):
+      points.append(p1 + delta);
+    case .unset:
+      break;
+    }
     return points;
   }
+  
+  public var description: String {
+    var result = "Line ";
+    if let s = start {
+      result += "\(s)"
+    }
+    switch end {
+    case .absolute(let point):
+      result += "→ \(point)";
+    case .relative(let delta):
+      result += "→ \(delta)";
+    case .unset:
+      break;
+    }
+    return result;
+  }
+  
   
   let short : Bool;
   let from : Bool;
   var start : QDPoint?;
-  var end : QDPoint?;
-  var delta : QDDelta?;
+  var end : LineDestination = .unset;
 }
 
 /// ----------------
@@ -309,26 +337,56 @@ enum CommentType : UInt16 {
   case unknown = 0xffff;
 }
 
-enum CommentPayload {
-  case noPayload;
-  case dataPayload(data: Data);
-  case postScriptPayLoad(postscript: String);
-  case textPictPayload(payload: QDTextPictRecord);
-  case setLineWidthPayload(width: FixedPoint);
-  case pointPayload(point: QDPoint);
+/// Define pen and font comment  payloads as operations, so they can be executed like opcodes.
+/// This allows some generic processing on the renderer code.
+
+struct LineWidthPayload : PenStateOperation {
+  func execute(penState: inout PenState) {
+    penState.penWidth = width;
+  }
+  let width: FixedPoint;
 }
 
-func ReadTextPictRecord(reader: QuickDrawDataReader) throws -> QDTextPictRecord {
-  guard let justification = QDTextJustification(rawValue: try reader.readUInt8()) else {
-    throw QuickDrawError.quickDrawIoError(message: "Could not load textCenter payload");
+struct TextCenterPayload : FontStateOperation {
+  func execute(fontState: inout QDFontState) {
+    fontState.textCenter = center;
   }
-  guard let flip = QDTextFlip(rawValue: try reader.readUInt8()) else {
-    throw QuickDrawError.quickDrawIoError(message: "Could not load textCenter payload");
+  let center : QDDelta;
+}
+
+struct TextPictPayload : FontStateOperation {
+  func execute(fontState: inout QDFontState) {
+    fontState.textPictRecord = textPictRecord;
   }
-  let angle1 = try reader.readInt16();
+  let textPictRecord : QDTextPictRecord;
+}
+
+enum CommentPayload {
+  case noPayload;
+  case dataPayload(creator: String, data: Data);
+  case postScriptPayLoad(postscript: String);
+  case fontStatePayload(fontOperation: FontStateOperation);
+  case penStatePayload(penOperation: PenStateOperation);
+  case unknownPayload(rawType: Int, data: Data);
+}
+
+func readTextPictRecord(reader: QuickDrawDataReader) throws -> QDTextPictRecord {
+  let raw_justification = try reader.readUInt8();
+  guard let justification = QDTextJustification(rawValue: raw_justification) else {
+    throw QuickDrawError.quickDrawIoError(message: "Could not parse justification value \(raw_justification)");
+  }
+  let raw_flip = try reader.readUInt8();
+  guard let flip = QDTextFlip(rawValue: raw_flip) else {
+    throw QuickDrawError.quickDrawIoError(message: "Could not parse flip value \(raw_flip)");
+  }
+  let angle1 = FixedPoint(try reader.readInt16());
   reader.skip(bytes: 2);
+  // MacDraw 1 comments are shorter
+  if reader.remaining < 4 {
+    return QDTextPictRecord(justification: justification, flip: flip, angle: angle1);
+  }
   let angle2 = try reader.readFixed();
-  let angle = angle2 + FixedPoint(angle1);
+  let angle = angle2 + angle1
   return QDTextPictRecord(justification: justification, flip: flip, angle: angle);
 }
 
@@ -336,38 +394,44 @@ struct CommentOp : OpCode {
   mutating func load(reader: QuickDrawDataReader) throws {
     let value = try reader.readUInt16();
     kind = CommentType(rawValue: value) ?? .unknown;
-    if kind == .unknown {
-      print("Unknown comment \(value)")
-    }
-    if long_comment {
-      let size = Data.Index(try reader.readUInt16());
-      switch kind {
-      case .proprietary:
-        creator = try reader.readString(bytes: 4);
-        payload = .dataPayload(data: try reader.readData(bytes: size - 4));
-      case .postscriptBeginNoSave, .postscriptStart, .postscriptFile, .postscriptHandle:
-        payload = .postScriptPayLoad(postscript : try reader.readString(bytes: size));
-      case .textBegin:
-        let subreader = try reader.subReader(bytes: size);
-        payload = .textPictPayload(payload: try ReadTextPictRecord(reader: subreader));
-      case .setLineWidth:
-        let subreader = try reader.subReader(bytes: size);
-        let point = try subreader.readPoint();
-        payload = .setLineWidthPayload(width: point.vertical / point.horizontal);
-      case .textCenter:
-        let subreader = try reader.subReader(bytes: size);
-        let v = try subreader.readFixed();
-        let h = try subreader.readFixed();
-        payload = .pointPayload(point: QDPoint(vertical: v, horizontal: h));
-      default:
-       payload = .dataPayload(data: try reader.readData(bytes: size));
-      }
+    let size = long_comment ? Data.Index(try reader.readUInt16()) : Data.Index(0);
+    switch (kind, size) {
+    case (.proprietary, let size) where size > 4:
+      payload = .dataPayload(creator: try reader.readString(bytes: 4), data: try reader.readData(bytes: size - 4));
+    case (.postscriptBeginNoSave, _),
+      (.postscriptStart, _),
+      (.postscriptFile, _),
+      (.postscriptHandle, _):
+      payload = .postScriptPayLoad(postscript : try reader.readString(bytes: size));
+    case (.textBegin, let size) where size > 0:
+      let subreader = try reader.subReader(bytes: size);
+      let fontOp =  TextPictPayload(textPictRecord: try readTextPictRecord(reader: subreader));
+      payload = .fontStatePayload(fontOperation: fontOp);
+    case (.setLineWidth, let size) where size > 0:
+      let subreader = try reader.subReader(bytes: size);
+      let point = try subreader.readPoint();
+      let penOp = LineWidthPayload(width: point.vertical / point.horizontal);
+      payload = .penStatePayload(penOperation: penOp);
+    case (.textCenter, let size) where size > 0:
+      let subreader = try reader.subReader(bytes: size);
+      // readDelta assumes integer, here we want to read fixed points.
+      let v = try subreader.readFixed();
+      let h = try subreader.readFixed();
+      let fontOp = TextCenterPayload(center: QDDelta(dv: v, dh: h));
+      payload = .fontStatePayload(fontOperation: fontOp);
+    case (_, 0):
+      payload = .noPayload;
+    case (.unknown, let size) where size > 0:
+      payload = .unknownPayload(rawType: Int(value), data: try reader.readData(bytes: size));
+    case (_, let size) where size > 0:
+      payload = .dataPayload(creator: "APPL", data: try reader.readData(bytes: size));
+    default:
+      payload = .unknownPayload(rawType: Int(value), data: try reader.readData(bytes: size));
     }
   }
   
   let long_comment : Bool;
   var kind : CommentType = .unknown;
-  var creator : String = "";
   var payload : CommentPayload = CommentPayload.noPayload;
 }
 
@@ -395,8 +459,8 @@ struct ColorOp : OpCode, PenStateOperation {
     }
   }
   
-  let rgb : Bool;
-  let selection : QDColorSelection;
+  let rgb : Bool;  // should color be loaded as RGB (true), or old style QuickDraw?
+  let selection : QDColorSelection;  // What xxh
   var color : QDColor = QDColor.white;
 }
 
@@ -431,7 +495,7 @@ struct PenSizeOp : OpCode, PenStateOperation {
   mutating func load(reader: QuickDrawDataReader) throws {
     penSize = try reader.readPoint();
   }
-
+  
   var penSize = QDPoint.zero;
 }
 
@@ -443,7 +507,6 @@ struct PenModeOp : OpCode, PenStateOperation {
   func execute(penState: inout PenState) {
     penState.mode = mode;
   }
-  
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
 }
 
@@ -455,9 +518,6 @@ struct TextModeOp : OpCode, FontStateOperation {
   func execute(fontState: inout QDFontState) {
     fontState.fontMode = mode;
   }
-  
-  
-  
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
 }
 
@@ -484,7 +544,7 @@ struct FontOp : OpCode, FontStateOperation {
       fontId = Int(try reader.readUInt16());
     }
   }
-
+  
   let longOp: Bool;
   var fontId: Int?;
   var fontName: String?;
@@ -497,10 +557,10 @@ struct FontSizeOp : OpCode, FontStateOperation {
   }
   
   mutating func load(reader: QuickDrawDataReader) throws {
-    textSize = Int(try reader.readUInt16());
+    textSize = FixedPoint(try reader.readUInt16());
   }
   
-  var textSize : Int = 0;
+  var textSize = FixedPoint.zero;
 }
 
 struct GlyphStateOp : OpCode, FontStateOperation {
@@ -542,8 +602,8 @@ struct TextRatioOp : OpCode, FontStateOperation {
     guard denominator.horizontal.value != 0.0 else {
       throw QuickDrawError.invalidFract(message: "Zero denominator");
     }
-    x = numerator.horizontal.value / denominator.horizontal.value;
-    y = numerator.vertical.value / denominator.vertical.value;
+    x = numerator.horizontal / denominator.horizontal;
+    y = numerator.vertical / denominator.vertical;
     
   }
   
@@ -552,8 +612,8 @@ struct TextRatioOp : OpCode, FontStateOperation {
     fontState.yRatio = y;
   }
   
-  var x : Double = 1.0;
-  var y : Double = 1.0;
+  var x : FixedPoint = FixedPoint.one;
+  var y : FixedPoint = FixedPoint.one;
 }
 
 struct FontStyleOp : OpCode, FontStateOperation {
@@ -561,15 +621,11 @@ struct FontStyleOp : OpCode, FontStateOperation {
     fontState.fontStyle = fontStyle;
   }
   
-  init() {
-    fontStyle = QDFontStyle(rawValue:0);
-  }
-  
   mutating func load(reader: QuickDrawDataReader) throws {
     fontStyle = QDFontStyle(rawValue: try reader.readUInt8());
   }
   
-  var fontStyle : QDFontStyle;
+  var fontStyle = QDFontStyle(rawValue:0);
 }
 
 struct DHDVTextOp : OpCode {
@@ -589,7 +645,7 @@ struct DHDVTextOp : OpCode {
   let readDh : Bool;
   let readDv : Bool;
   var delta : QDDelta = QDDelta.zero;
-
+  
   var text : String = "";
   
 }
@@ -602,7 +658,6 @@ struct LongTextOp : OpCode {
   
   var position : QDPoint = QDPoint.zero;
   var text : String = "";
-  
 }
 
 /// ---------------
@@ -719,7 +774,7 @@ struct DirectBitOpcode : OpCode {
   
   /// Pack 2
   /// This is basically 24-bits RGB, Quickdraw would actually pad this to 32 bits.
-  /// We just load it as 24-bits and update rowBytes to reflect this. 
+  /// We just load it as 24-bits and update rowBytes to reflect this.
   mutating func loadRemovePad(reader: QuickDrawDataReader) throws {
     let rows = bitmapInfo.height;
     let rowBytes = bitmapInfo.rowBytes * 3 / 4;
@@ -742,8 +797,8 @@ struct DirectBitOpcode : OpCode {
       }
       let line_data = try reader.readUInt8(bytes: lineLength);
       let decompressed = try DecompressPackBit(
-          data: line_data, unpackedSize: bitmapInfo.rowBytes, byteNum: 2);
-    
+        data: line_data, unpackedSize: bitmapInfo.rowBytes, byteNum: 2);
+      
       bitmapInfo.data.append(contentsOf: decompressed);
     }
   }
@@ -774,7 +829,7 @@ struct DirectBitOpcode : OpCode {
       }
       
     }
-    /// Update the pixel information to reflect reality. There is no alpha. 
+    /// Update the pixel information to reflect reality. There is no alpha.
     bitmapInfo.rowBytes = rowBytes ;
     bitmapInfo.pixMapInfo?.pixelSize = 24;
   }
@@ -789,6 +844,7 @@ func byteArrayLE<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
 }
 
 /// Some data types (BMP) are missing the header data. Reconstruct it if needed.
+/// This way this can be treated like an embedded file like TIFF or JPEG.
 /// - Parameter quicktimeImage: image whose data needs patching.
 /// - Throws: missingQuickTimeData if there is not data
 func patchQuickTimeImage(quicktimeImage : inout QuickTimeImage) throws {
@@ -866,7 +922,7 @@ struct QuickTimeOpcode : OpCode {
     quicktimePayload.quicktimeImage.data = try subReader.readData(bytes: subReader.remaining);
     try patchQuickTimeImage(quicktimeImage: &quicktimePayload.quicktimeImage);
   }
-
+  
   var opcodeVersion : Int16 = 0;
   var dataSize : Int = 0;
   var matteSize : Int = 0;
