@@ -26,11 +26,10 @@ func DecompressPackBit(data : [UInt8], unpackedSize: Int, byteNum : Int = 1) thr
     index += 1;
     if (tag < 0) {
       let run_len = (Int(tag) * -1) + 1;
-      let v = data[index..<index + byteNum];
+      let element = data[index..<index + byteNum];
+      let repeated = repeatElement(element, count: run_len);
+      decompressed.append(contentsOf: repeated.joined());
       index += byteNum
-      for _ in 0 ..< run_len {
-        decompressed.append(contentsOf: v);
-      }
     } else {
       let discrete_len = Int(tag) + 1;
       let offset = discrete_len * byteNum;
