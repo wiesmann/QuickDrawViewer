@@ -762,6 +762,7 @@ class QuickTimePayload : CustomStringConvertible {
     if let mask = srcMask {
       result += " dstMask: \(mask)"
     }
+    result += " transform: \(transform)";
     result += " image: \(quicktimeImage)";
     return result;
   }

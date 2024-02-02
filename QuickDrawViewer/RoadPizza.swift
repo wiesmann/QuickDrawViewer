@@ -39,9 +39,9 @@ struct ARGB555 {
 
 /// Creates a ARGB555 color that is ⅔ color a and ⅓ color b.
 /// - Parameters:
-///   - a: <#a description#>
-///   - b: <#b description#>
-/// - Returns: <#description#>
+///   - a: color to mix ⅔ from
+///   - b: color to mix ⅓ from
+/// - Returns: a color which is on the line in RGB space between a and b.
 func mix⅔(_ a: ARGB555, _ b: ARGB555) -> ARGB555 {
   return ARGB555(
     red: (a.red * 21 + b.red * 11) >> 5,
@@ -142,7 +142,7 @@ class RoadPizzaImage {
     var colorA = ARGB555.zero;
     var colorB = ARGB555.zero;
     
-    while reader.remaining > 0 {
+    while reader.remaining > 1 {
       let rawOpcode = try reader.readUInt8();
       let opcode = rawOpcode & 0xe0;
       let blockCount = Int(rawOpcode & 0x1f) + 1;

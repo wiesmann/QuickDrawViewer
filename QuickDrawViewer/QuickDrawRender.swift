@@ -61,6 +61,15 @@ extension CGContext {
   }
 }
 
+extension CGAffineTransform {
+  init(qdTransform: [[FixedPoint]]) {
+    self.init(
+      qdTransform[0][0].value, qdTransform[0][1].value,
+      qdTransform[1][0].value, qdTransform[1][1].value,
+      qdTransform[2][0].value, qdTransform[2][1].value);
+  }
+}
+
 /// Convert a QuickDraw RGB color into a CoreGraphic one.
 /// - Parameter qdcolor: color to convert
 /// - Returns: corresponding Core Graphics Colour.
@@ -507,16 +516,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   }
   
   /// Decode the Quicktime payload as `raw `  _codec_, basically these are just RGB values.
-  /// - Parameter quicktimeOp: quicktime operation to decode.
-  func executeRawQuickTime(quicktimeOp : QuickTimeOpcode) throws {
-    guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
-      throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
-    }
-    
+  func getRawImage(qtImage: QuickTimeImage, payload : Data) throws -> CGImage {
     let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
     let provider = CGDataProvider(data: payload as CFData)!;
-    let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
-    
     guard let image = CGImage(
       width: qtImage.dimensions.dh.rounded,
       height: qtImage.dimensions.dv.rounded,
@@ -530,18 +532,10 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(message: "Could not create RAW QuickTime Image");
     }
-    context!.drawFlipped(
-      image,
-      in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
-    preventQuickTimeMessage();
+    return image;
   }
   
-  func executeRPZAQuickTime(quicktimeOp : QuickTimeOpcode) throws {
-    guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
-      throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
-    }
-    
-    let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
+  func getRPZAIMage(qtImage: QuickTimeImage, payload : Data) throws -> CGImage {
     let rpza = RoadPizzaImage(dimensions: qtImage.dimensions);
     try rpza.load(data: payload);
     // We have an α channel, but setting it crashes copy/paste.
@@ -561,26 +555,39 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(message: "Could not create RPZA QuickTime Image");
     }
-    context!.drawFlipped(
-      image,
-      in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
-    preventQuickTimeMessage();
+    return image;
+  }
+  
+  func getYuv2Image(qtImage: QuickTimeImage, payload : Data) throws -> CGImage {
+    return try convertYuv2(dimensions: qtImage.dimensions, data: payload);
   }
   
   func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
-    switch quicktimeOp.quicktimePayload.quicktimeImage.codecType {
-    case "raw ":
-      try executeRawQuickTime(quicktimeOp: quicktimeOp);
-      return;
-    case "rpza":
-      try executeRPZAQuickTime(quicktimeOp: quicktimeOp);
-      return;
-    default:
-      break;
-    }
     guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
       throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
     }
+    let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
+    
+    var image : CGImage?;
+    switch quicktimeOp.quicktimePayload.quicktimeImage.codecType {
+    case "raw ":
+      image = try getRawImage(qtImage: qtImage, payload: payload);
+    case "rpza":
+      image = try getRPZAIMage(qtImage: qtImage, payload: payload);
+    case "yuv2":
+      image = try getYuv2Image(qtImage: qtImage, payload: payload);
+    default:
+      break;
+    }
+    if let img = image {
+      context!.drawFlipped(
+        img,
+        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+      preventQuickTimeMessage();
+      return;
+    }
+    
+    // TODO: use QuickTime transform.
     guard let imageSource = CGImageSourceCreateWithData(payload as CFData, nil) else {
       throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateWithData", quicktimeOpcode: quicktimeOp);
     }
