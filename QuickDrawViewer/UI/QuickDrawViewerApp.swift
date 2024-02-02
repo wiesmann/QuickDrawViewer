@@ -7,13 +7,25 @@
 
 import SwiftUI
 
-// https://troz.net/post/2021/swiftui_mac_menus/
+
+struct HelpMenu: View {
+  var body: some View {
+    Group {
+      Link("QuickDraw Viewer Project", destination: URL(
+        string: "https://github.com/wiesmann/QuickDrawViewer")!)
+    }
+  }
+}
 
 @main
 struct QuickDrawViewerApp: App {
-    var body: some Scene {
-        DocumentGroup(newDocument: QuickDrawViewerDocument()) { file in
-            ContentView(document: file.$document)
-        }
+  var body: some Scene {
+    DocumentGroup(newDocument: QuickDrawViewerDocument()) { file in
+      ContentView(document: file.$document)
+    }.commands {
+      CommandGroup(replacing: .help) {
+        HelpMenu()
+      }
     }
+  }
 }

@@ -37,11 +37,6 @@ struct ContentView: View {
     }
   }
   
-  func onCopy() -> [NSItemProvider] {
-    let picture = $document.picture.wrappedValue!;
-    return ProvidePicture(picture:picture);
-  }
-  
   func render(context : inout GraphicsContext, dimension : CGSize) -> Void {
     context.withCGContext(content: self.renderCG);
   }
@@ -50,13 +45,12 @@ struct ContentView: View {
     isExporting = false;
   }
   
-  //
   func QDView() -> some View {
     let picture = $document.picture.wrappedValue!;
     let width = picture.frame.dimensions.dh.value * renderZoom;
     let height = picture.frame.dimensions.dv.value * renderZoom;
     let canvas = Canvas(opaque: true, colorMode: ColorRenderingMode.linear, rendersAsynchronously: true, renderer: self.render).frame(width: width, height: height);
-    return canvas.focusable().onCopyCommand(perform: self.onCopy).draggable(picture).fileExporter(isPresented: $isExporting, item: picture, contentTypes: [.pdf], defaultFilename: MakePdfFilename(picture:picture), onCompletion: exportDone).toolbar {
+    return canvas.focusable().copyable([picture]).draggable(picture).fileExporter(isPresented: $isExporting, item: picture, contentTypes: [.pdf], defaultFilename: MakePdfFilename(picture:picture), onCompletion: exportDone).toolbar {
       ToolbarItem() {
         Button {
           isExporting = true
