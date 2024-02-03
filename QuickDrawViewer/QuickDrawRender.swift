@@ -138,11 +138,18 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     rgbSpace = CGColorSpaceCreateDeviceRGB();
   }
   
+  /// Get a color-space (aka palette) for a bit-rec operation
+  /// - Parameter bit_opcode: the opcode
+  /// - Returns: a color-space appropriate for the operation
   func GetColorSpace(bit_opcode: BitRectOpcode) throws -> CGColorSpace {
     let clut = bit_opcode.bitmapInfo.clut;
     return try ToColorSpace(clut: clut);
   }
   
+  
+  /// Convert a QuickDraw CLUT (color-table) to a Core-Graphic Color-Space
+  /// - Parameter clut: A Quickdraw color-table with a most 256 entries.
+  /// - Returns: A Core Graphics color-space
   func ToColorSpace(clut: QDColorTable) throws -> CGColorSpace {
     var data : [UInt8] = [];
     for color in clut.clut {
@@ -158,6 +165,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     return result!;
   }
   
+  /// Build a color space to paint using the a 1 bit pattern.
+  /// - Returns: A 1 bit color-space with the background color (0) and the foreground color (1).
   func paintColorSpace() -> CGColorSpace {
     var data : [UInt8] = [];
     data.append(contentsOf: penState.bgColor.rgb);
@@ -165,9 +174,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     return CGColorSpace(indexedBaseSpace: rgbSpace, last: 1, colorTable: &data)!;
   }
   
+  
+  /// Paint the current path using the current pattern.
   func paintPath() throws {
     // Check if the pattern can be replaced with a color.
-    if penState.drawPattern.isColor {
+    if penState.drawPattern.isShade {
       let color = penState.drawColor;
       context!.setFillColor(ToCGColor(qdcolor: color));
       context!.fillPath();
@@ -202,7 +213,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     case .copyMode:
       context!.setBlendMode(.normal);
     case .orMode:
-      context!.setBlendMode(.multiply);
+      context!.setBlendMode(.darken);
     case .xorMode:
       context!.setBlendMode(.xor);
     case .notOrMode:
@@ -245,7 +256,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     case QDVerb.ignore:
       break;
     }
-    
   }
   
   func executeOrigin(originOp: OriginOp) {

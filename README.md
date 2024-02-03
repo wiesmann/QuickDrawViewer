@@ -24,14 +24,14 @@ The library basically parses QuickDraw version 1 and version 2 files, and suppor
 * Basic Shapes (Rectangles, Ovals, Round-Rectangles and Arcs)
 * Regions
 * Text
-* Patterns (black & white(
+* Patterns (black & white)
 * Colours
 * Palette images
 * Direct (RGB) images
 * QuickTime embedded images with the following codecs:
   * JPEG, TIFF, PNG, BMP
   * RAW
-  * Apple Video (`RPZA`)
+  * Apple Video (`RPZA`), Apple Component Video (`YUV2`)
 
 Some basic comment parsing is used to improve images, in particular:
 
@@ -43,12 +43,16 @@ Some basic comment parsing is used to improve images, in particular:
 Currently, the following QuickDraw features don't work:
 
 * All modes except `copy`
-* Text rotation
+* Text rotation, alignement
+* Polygon smoothing
+* Color patterns
 * Exotic QuickTime codes, like for instance Photo-CD
 
 ## User Interface Application
 
-The application is currently very simple, you can view pictures, copy-paste them to Preview. There is some primitive drag-drop that works when the target is Notes or Pages, but not when the target expects a file, like the Finder or Mail.
+The application is currently very simple, you can view pictures, copy-paste them to Preview. 
+There is an export icon in the toolbar that allows you to export to PDF files. 
+There is some primitive drag-drop that works when the target is Notes or Pages, but not when the target expects a file, like the Finder or Mail.
 
 ## License 
 

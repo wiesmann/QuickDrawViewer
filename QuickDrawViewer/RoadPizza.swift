@@ -9,7 +9,7 @@ import Foundation
 import CoreGraphics
 
 /// Pixel in ARGB555 format with the alpha in the first bit.
-struct ARGB555 {
+struct ARGB555: RawRepresentable {
   
   init(rawValue: UInt16) {
     self.rawValue = rawValue

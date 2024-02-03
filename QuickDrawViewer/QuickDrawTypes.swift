@@ -7,8 +7,6 @@
 
 import Foundation
 
-
-
 /// Point in the QuickDraw space.
 struct QDPoint : CustomStringConvertible, Equatable {
   
@@ -233,13 +231,13 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], 
   guard width > 0 && height > 0 else {
     throw QuickDrawError.corruptRegion(boundingBox: boundingBox);
   }
-  let emptyLine : [UInt8] = Array(repeating: 0, count: Int(width));
-  var bitLines: [[UInt8]] = Array(repeating: emptyLine, count: Int(height));
+  let emptyLine : [UInt8] = Array(repeating: 0, count: width);
+  var bitLines: [[UInt8]] = Array(repeating: emptyLine, count: height);
   var index : Int = 0;
   /// Decode the region lines.
   while index < data.count {
     let line = DecodeRegionLine(boundingBox: boundingBox, data: data, index: &index);
-    if line == nil {
+    guard line != nil else {
       break;
     }
     let l = line!.lineNumber - boundingBox.topLeft.vertical.rounded;
@@ -383,17 +381,27 @@ enum QuickDrawTransferMode : UInt16 {
   case notBic = 7;
 }
 
-struct QuickDrawMode {
-  init(value: UInt16) {
-    mode = QuickDrawTransferMode(rawValue: value % 8)!;
-    isPattern = value & 8 != 0;
-    isDither = value & 64 != 0;
+struct QuickDrawMode : RawRepresentable {
+  
+  
+  init(rawValue: UInt16) {
+    mode = QuickDrawTransferMode(rawValue: rawValue % 8)!;
+    isPattern = rawValue & QuickDrawMode.patternMask  != 0;
+    isDither = rawValue & QuickDrawMode.ditherMask != 0;
   }
+  var rawValue: UInt16 {
+    return mode.rawValue | (isPattern ? QuickDrawMode.patternMask : 0)
+      | (isDither ? QuickDrawMode.ditherMask : 0);
+  }
+  
+  
   let mode : QuickDrawTransferMode;
   let isPattern : Bool;
   let isDither: Bool;
   
-  static let defaultMode : QuickDrawMode  = QuickDrawMode(value: 0);
+  static private let patternMask : UInt16 = 0x08;
+  static private let ditherMask : UInt16 = 0x40;
+  static let defaultMode : QuickDrawMode  = QuickDrawMode(rawValue: 0);
 }
 
 
@@ -445,12 +453,12 @@ struct QDResolution : Equatable, CustomStringConvertible {
 struct QDPattern : Equatable {
   let bytes : [UInt8];
 
-  /// Should the pattern represent a colour, i.e. the pattern was  used for dither.
-  public var isColor : Bool {
+  /// Should the pattern represent a shade of color, i.e. the pattern was  used for dither.
+  public var isShade : Bool {
     return [
       QDPattern.black, QDPattern.white,
       QDPattern.gray, QDPattern.darkGray,
-      QDPattern.lightGray
+      QDPattern.lightGray, QDPattern.batmanGray
     ].contains(where: {$0 == self} );
   }
   
@@ -477,6 +485,7 @@ struct QDPattern : Equatable {
   static let gray = QDPattern(bytes:[0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55]);
   static let darkGray =  QDPattern(bytes:[0x88, 0x00, 0x22, 0x00, 0x88, 0x00, 0x22, 0x00]);
   static let lightGray = QDPattern(bytes:[0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77]);
+  static let batmanGray = QDPattern(bytes: [0x88, 0x00, 0x22, 0x88, 0x00, 0x22]);
 }
 
 /// All the state associated with drawing
@@ -492,7 +501,6 @@ class PenState {
   var fillPattern: QDPattern = QDPattern.black;
   var ovalSize : QDDelta = QDDelta.zero;
   
-  
   var drawColor : QDColor {
     let result = drawPattern.mixColors(fgColor: fgColor, bgColor: bgColor);
     return result;
@@ -502,6 +510,7 @@ class PenState {
     return fillPattern.mixColors(fgColor: fgColor, bgColor: bgColor);
   }
   
+  /// Pen width, assuming a square pen (height = width).
   var penWidth : FixedPoint {
     get {
       return (penSize.horizontal + penSize.vertical) >> 1;
@@ -509,13 +518,13 @@ class PenState {
     set(width) {
       penSize = QDPoint(vertical: width, horizontal: width);
     }
-    
   }
   
   static let defautPenWidth = FixedPoint.one;
   static let defaultPen = QDPoint(vertical: defautPenWidth, horizontal: defautPenWidth);
 }
 
+/// Text rendering options
 struct QDGlyphState : OptionSet {
   let rawValue: UInt8;
   static let outlinePreferred = QDGlyphState(rawValue: 1 << 0);
@@ -648,10 +657,11 @@ class QDBitMapInfo : CustomStringConvertible {
   var bounds : QDRect = QDRect.empty;
   var srcRect : QDRect?;
   var dstRect : QDRect?;
-  var mode : QuickDrawMode = QuickDrawMode(value: 0);
+  var mode : QuickDrawMode = QuickDrawMode.defaultMode;
   var data : [UInt8] = [UInt8]();
   var pixMapInfo : QDPixMapInfo?;
   
+  // TODO: probably bogus, the whole port should be scaled
   var destinationRect : QDRect {
     let resolution = pixMapInfo?.resolution ?? QDResolution.defaultResolution;
     return dstRect! ⨴ resolution;

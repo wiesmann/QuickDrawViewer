@@ -7,40 +7,49 @@
 
 import Foundation
 import CoreGraphics
-import Accelerate
-import VideoToolbox
 
-// Use Core video to decode yuv2 format.
-func ToCvPixelBuffer(_ data: Data, width: Int, height: Int) -> CVPixelBuffer {
-  data.withUnsafeBytes { buffer in
-    var pixelBuffer: CVPixelBuffer!
-    // kCVPixelFormatType_422YpCbCr8_yuvs gets the image Y right, but UV are off.
-    let pixelFormat = kCVPixelFormatType_422YpCbCr8_yuvs;
-    let result = CVPixelBufferCreate(kCFAllocatorDefault, width, height, pixelFormat, nil, &pixelBuffer)
-    guard result == kCVReturnSuccess else { fatalError() }
-    
-    CVPixelBufferLockBaseAddress(pixelBuffer, [])
-    defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
-    
-    let destRowBytes = CVPixelBufferGetBytesPerRow(pixelBuffer);
-    let srcRowBytes = width * 2;
-    
-    let sourceStart = buffer.baseAddress!
-    let destStart = CVPixelBufferGetBaseAddress(pixelBuffer)!;
-    // Destination buffer is padded, copy each line to the right place.
-    for line in 0..<height {
-      let src = sourceStart + (srcRowBytes * line);
-      let dest = destStart + (destRowBytes * line);
-      memcpy(dest, src, srcRowBytes);
-    }
-    return pixelBuffer
-  }
+/// It would be nice to use something like the accelerate framework to decode this.
+/// Sadly this particular version uses _signed_ int8 for u and v, not a cut-off of 128.
+/// So we code it explicitely. 
+func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> [UInt8] {
+  let nu = Double(Int8(bitPattern: u));
+  let nv = Double(Int8(bitPattern: v));
+  let ny = Double(y);
+  let r = Int(ny + (1.370705 * nv));
+  let g = Int(ny - (0.698001 * nv) - 0.337633 * nu);
+  let b = Int(ny + (1.732446 * nu));
+  return [UInt8(clamping: r), UInt8(clamping: g), UInt8(clamping: b)];
 }
 
 func convertYuv2(dimensions: QDDelta, data: Data) throws -> CGImage {
-  let pixelBuffer = ToCvPixelBuffer(
-      data, width: dimensions.dh.rounded, height: dimensions.dv.rounded);
-  var cgImage: CGImage?;
-  VTCreateCGImageFromCVPixelBuffer(pixelBuffer, options: nil, imageOut: &cgImage);
-  return cgImage!;
+  var rgb : [UInt8] = [];
+  let pixelPairCount = data.count / 4;
+  for i in 0..<pixelPairCount {
+    let start = i * 4;
+    let y1 = data[start];
+    let u  = data[start + 1];
+    let y2 = data[start + 2];
+    let v  = data[start + 3];
+    rgb.append(contentsOf: yuv2Rgb(y:y1, u:u, v:v));
+    rgb.append(contentsOf: yuv2Rgb(y:y2, u:u, v:v));
+  }
+  let bitmapInfo = CGBitmapInfo();
+  let cfData = CFDataCreate(nil, rgb, rgb.count)!;
+  let provider = CGDataProvider(data: cfData)!;
+  guard let image = CGImage(
+    width: dimensions.dh.rounded,
+    height: dimensions.dv.rounded,
+    bitsPerComponent: 8,
+    bitsPerPixel: 24,
+    bytesPerRow: dimensions.dh.rounded * 3,
+    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: bitmapInfo,
+    provider: provider,
+    decode: nil,
+    shouldInterpolate: false,
+    intent: CGColorRenderingIntent.defaultIntent) else {
+    throw CoreGraphicRenderError.imageFailure(message: "Could not create direct yuv pixmap");
+  }
+  return image;
 }
+
+  

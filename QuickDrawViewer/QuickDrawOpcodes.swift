@@ -285,7 +285,7 @@ struct LineOp : OpCode, CustomStringConvertible {
 /// Comment operations
 /// ----------------
 
-enum CommentType : UInt16 {
+enum CommentType : UInt16, CaseIterable {
   case groupBegin = 0;
   case groupEnd = 1;
   case proprietary = 100;
@@ -501,7 +501,7 @@ struct PenSizeOp : OpCode, PenStateOperation {
 
 struct PenModeOp : OpCode, PenStateOperation {
   mutating func load(reader: QuickDrawDataReader) throws {
-    mode = QuickDrawMode(value: try reader.readUInt16());
+    mode = QuickDrawMode(rawValue: try reader.readUInt16());
   }
   
   func execute(penState: inout PenState) {
@@ -512,7 +512,7 @@ struct PenModeOp : OpCode, PenStateOperation {
 
 struct TextModeOp : OpCode, FontStateOperation {
   mutating func load(reader: QuickDrawDataReader) throws {
-    mode = QuickDrawMode(value: try reader.readUInt16());
+    mode = QuickDrawMode(rawValue: try reader.readUInt16());
   }
   
   func execute(fontState: inout QDFontState) {
@@ -714,7 +714,7 @@ struct BitRectOpcode : OpCode {
     
     bitmapInfo.srcRect = try reader.readRect();
     bitmapInfo.dstRect = try reader.readRect();
-    bitmapInfo.mode = try QuickDrawMode(value: reader.readUInt16());
+    bitmapInfo.mode = try QuickDrawMode(rawValue: reader.readUInt16());
     
     let rows = bitmapInfo.bounds.dimensions.dv.rounded;
     for _ in 0 ..< rows {
@@ -751,7 +751,7 @@ struct DirectBitOpcode : OpCode {
     bitmapInfo.pixMapInfo = try readPixMapInfo(reader:reader);
     bitmapInfo.srcRect = try reader.readRect();
     bitmapInfo.dstRect = try reader.readRect();
-    bitmapInfo.mode = try QuickDrawMode(value: reader.readUInt16());
+    bitmapInfo.mode = try QuickDrawMode(rawValue: reader.readUInt16());
     switch bitmapInfo.pixMapInfo!.packType {
     case .noPack, .defaultPack:
       try loadUnpacked(reader:reader);
@@ -892,7 +892,7 @@ struct QuickTimeOpcode : OpCode {
     }
     matteSize = Int(try subReader.readInt32());
     quicktimePayload.matte = try subReader.readRect();
-    quicktimePayload.mode = QuickDrawMode(value: try subReader.readUInt16());
+    quicktimePayload.mode = QuickDrawMode(rawValue: try subReader.readUInt16());
     let srcRect = try subReader.readRect();
     quicktimePayload.accuracy = Int(try subReader.readUInt32());
     maskSize = Int(try subReader.readUInt32());
