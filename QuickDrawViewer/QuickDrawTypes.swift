@@ -167,7 +167,7 @@ let QDRegionEndMark = 0x7fff;
 ///   - data: region data, as an array of shorts
 ///   - index: position in the data, will be updated.
 /// - Returns: a decoded line (line number + byte array)
-func DecodeRegionLine(boundingBox: QDRect, data: [UInt16], index : inout Int) -> QDRegionLine? {
+func DecodeRegionLine(boundingBox: QDRect, data: [UInt16], index : inout Int) throws -> QDRegionLine? {
   var bitmap : [UInt8] = Array<UInt8>(repeating: 0, count: boundingBox.dimensions.dh.rounded);
   let lineNumber = Int(data[index]);
   if lineNumber == QDRegionEndMark {
@@ -175,7 +175,7 @@ func DecodeRegionLine(boundingBox: QDRect, data: [UInt16], index : inout Int) ->
   }
   index += 1
   while index < data.count {
-    var start = Int(data[index]);
+    var start = Int(Int16(bitPattern: data[index]));
     index += 1;
     if (start == QDRegionEndMark) {
       return QDRegionLine(lineNumber: lineNumber, bitmap:bitmap);
@@ -186,8 +186,15 @@ func DecodeRegionLine(boundingBox: QDRect, data: [UInt16], index : inout Int) ->
       end = start;
       start = 0;
     }
+    guard start <= end  else {
+      throw QuickDrawError.corruptRegionLine(line: lineNumber);
+    }
     for i in start..<end {
-      bitmap[i - boundingBox.topLeft.horizontal.rounded] = 0xff;
+      let p = i - boundingBox.topLeft.horizontal.rounded;
+      guard p >= 0 && p < bitmap.count else {
+        throw QuickDrawError.corruptRegionLine(line: lineNumber);
+      }
+      bitmap[p] = 0xff;
     }
   }
   return QDRegionLine(lineNumber: lineNumber, bitmap:bitmap);
@@ -236,7 +243,7 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], 
   var index : Int = 0;
   /// Decode the region lines.
   while index < data.count {
-    let line = DecodeRegionLine(boundingBox: boundingBox, data: data, index: &index);
+    let line = try DecodeRegionLine(boundingBox: boundingBox, data: data, index: &index);
     guard line != nil else {
       break;
     }
@@ -636,14 +643,21 @@ class QDPixMapInfo : CustomStringConvertible {
   var cmpCount : Int = 0;
   var cmpSize : Int = 0;
   var planeByte : Int64 = 0;
-  var clutId : String = "";
-  var clutSeed : String = "";
+  var clutId : MacTypeCode = MacTypeCode.zero;
+  var clutSeed : MacTypeCode = MacTypeCode.zero;
   var clut : QDColorTable?;
-
 }
 
+// Abstract view of a bitmap information
+protocol PixMapMetadata {
+  var rowBytes : Int {get};
+  var cmpSize : Int {get};
+  var pixelSize : Int {get};
+  var dimensions : QDDelta {get};
+}
 
-class QDBitMapInfo : CustomStringConvertible {
+class QDBitMapInfo : CustomStringConvertible, PixMapMetadata {
+  
   init(isPacked: Bool) {
     self.isPacked = isPacked;
   }
@@ -661,10 +675,12 @@ class QDBitMapInfo : CustomStringConvertible {
   var data : [UInt8] = [UInt8]();
   var pixMapInfo : QDPixMapInfo?;
   
-  // TODO: probably bogus, the whole port should be scaled
   var destinationRect : QDRect {
-    let resolution = pixMapInfo?.resolution ?? QDResolution.defaultResolution;
-    return dstRect! ⨴ resolution;
+    return dstRect!;
+  }
+  
+  var dimensions: QDDelta {
+    return bounds.dimensions;
   }
   
   var height : Int {
@@ -732,59 +748,7 @@ class QDColorTable : CustomStringConvertible {
   static let blackWhite : QDColorTable = QDColorTable(clut:[QDColor.black, QDColor.white]);
 }
 
-class QuickTimeImage : CustomStringConvertible {
-  var description: String {
-    var result = "codec: '\(codecType)': compressor: '\(compressorDevelopper)'";
-    result += " compressionName: '\(compressionName)'";
-    result += " dimensions: \(dimensions), resolution: \(resolution)";
-    result += " frameCount: \(frameCount), depth: \(depth)";
-    result += " temporalQuality: \(temporalQuality) spatialQuality: \(spatialQuality)"
-    result += " clutId: \(clutId) dataSize: \(dataSize) idSize: \(idSize)";
-    if let d = data {
-      let subdata = d.subdata(in: 0..<16);
-      result += " Magic: "
-      result += subdata.map{ String(format:"%02x", $0) }.joined()
-    }
-    return result;
-  }
-  
-  var codecType : String = "";
-  var imageVersion : Int = 0;
-  var imageRevision : Int = 0;
-  var compressorDevelopper : String = "";
-  var temporalQuality : UInt32 = 0;
-  var spatialQuality : UInt32 = 0;
-  var dimensions : QDDelta = QDDelta.zero;
-  var resolution : QDResolution = QDResolution.defaultResolution;
-  var dataSize : Int = 0;
-  var frameCount : Int = 0;
-  var compressionName : String = "";
-  var depth : Int = 0;
-  var clutId : Int = 0;
-  var idSize : Int = 0;
-  var data : Data?;
-}
 
-class QuickTimePayload : CustomStringConvertible {
-  
-  public var description: String {
-    var result = "QT Payload mode: \(mode)";
-    if let mask = srcMask {
-      result += " dstMask: \(mask)"
-    }
-    result += " transform: \(transform)";
-    result += " image: \(quicktimeImage)";
-    return result;
-  }
-  
-  var transform : [[FixedPoint]] = [[]];
-  var matte : QDRect = QDRect.empty;
-  var mode : QuickDrawMode = QuickDrawMode.defaultMode;
-  var srcMask : QDRegion?;
-  var accuracy : Int = 0;
-  
-  var quicktimeImage : QuickTimeImage = QuickTimeImage();
-}
 
 public class QDPicture : CustomStringConvertible {
   init(size: UInt16, frame:QDRect, filename: String?) {

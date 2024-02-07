@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CoreGraphics
 
 /// Pixel in ARGB555 format with the alpha in the first bit.
 struct ARGB555: RawRepresentable {

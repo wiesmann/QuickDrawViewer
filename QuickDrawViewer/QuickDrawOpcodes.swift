@@ -843,40 +843,7 @@ func byteArrayLE<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
   withUnsafeBytes(of: value.littleEndian, Array.init)
 }
 
-/// Some data types (BMP) are missing the header data. Reconstruct it if needed.
-/// This way this can be treated like an embedded file like TIFF or JPEG.
-/// - Parameter quicktimeImage: image whose data needs patching.
-/// - Throws: missingQuickTimeData if there is not data
-func patchQuickTimeImage(quicktimeImage : inout QuickTimeImage) throws {
-  if quicktimeImage.codecType != "WRLE" {
-    return;
-  }
-  guard let data = quicktimeImage.data else {
-    throw QuickDrawError.missingQuickTimeData(quicktimeImage: quicktimeImage);
-  }
-  
-  var patched = Data();
-  patched.append(contentsOf: [0x42, 0x4D]);
-  let bmpHeaderSize : Int32 = 14;
-  let dibHeaderSize : Int32 = 12;
-  let headerSize = bmpHeaderSize + dibHeaderSize;
-  let totalSize = headerSize + Int32(data.count);
-  patched.append(contentsOf: byteArrayLE(from: totalSize));
-  patched.append(contentsOf: [0x00, 0x00, 0x00, 0x00]);
-  patched.append(contentsOf: byteArrayLE(from: headerSize));
-  patched.append(contentsOf: byteArrayLE(from: dibHeaderSize));
-  let width = Int16(quicktimeImage.dimensions.dh.rounded);
-  let height = Int16(quicktimeImage.dimensions.dv.rounded);
-  patched.append(contentsOf: byteArrayLE(from: width));
-  patched.append(contentsOf: byteArrayLE(from: height));
-  let planes = Int16(1);
-  patched.append(contentsOf: byteArrayLE(from: planes));
-  let depth = Int16(quicktimeImage.depth);
-  patched.append(contentsOf: byteArrayLE(from: depth));
-  assert(patched.count == headerSize);
-  patched.append(data);
-  quicktimeImage.data = patched;
-}
+
 
 struct QuickTimeOpcode : OpCode {
   mutating func load(reader: QuickDrawDataReader) throws {

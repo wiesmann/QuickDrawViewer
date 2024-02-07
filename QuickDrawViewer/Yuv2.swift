@@ -21,7 +21,7 @@ func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> [UInt8] {
   return [UInt8(clamping: r), UInt8(clamping: g), UInt8(clamping: b)];
 }
 
-func convertYuv2(dimensions: QDDelta, data: Data) throws -> CGImage {
+func convertYuv2Data(data: Data) -> [UInt8] {
   var rgb : [UInt8] = [];
   let pixelPairCount = data.count / 4;
   for i in 0..<pixelPairCount {
@@ -33,23 +33,9 @@ func convertYuv2(dimensions: QDDelta, data: Data) throws -> CGImage {
     rgb.append(contentsOf: yuv2Rgb(y:y1, u:u, v:v));
     rgb.append(contentsOf: yuv2Rgb(y:y2, u:u, v:v));
   }
-  let bitmapInfo = CGBitmapInfo();
-  let cfData = CFDataCreate(nil, rgb, rgb.count)!;
-  let provider = CGDataProvider(data: cfData)!;
-  guard let image = CGImage(
-    width: dimensions.dh.rounded,
-    height: dimensions.dv.rounded,
-    bitsPerComponent: 8,
-    bitsPerPixel: 24,
-    bytesPerRow: dimensions.dh.rounded * 3,
-    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: bitmapInfo,
-    provider: provider,
-    decode: nil,
-    shouldInterpolate: false,
-    intent: CGColorRenderingIntent.defaultIntent) else {
-    throw CoreGraphicRenderError.imageFailure(message: "Could not create direct yuv pixmap");
-  }
-  return image;
+  return rgb;
 }
+
+
 
   

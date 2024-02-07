@@ -75,12 +75,9 @@ class QuickDrawDataReader {
     return str;
   }
   
-  func readType() throws -> String {
-    let data = try readUInt8(bytes: 4);
-    guard let str = String(bytes:data, encoding: String.Encoding.macOSRoman) else {
-      throw QuickDrawError.quickDrawIoError(message: "Failed reading Mac OS type");
-    }
-    return str;
+  func readType() throws -> MacTypeCode {
+    let data = try readUInt32();
+    return MacTypeCode(rawValue:data);
   }
   
   /// Read a fixed length (31 bytes) pascal string

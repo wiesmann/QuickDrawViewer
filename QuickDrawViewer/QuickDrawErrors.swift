@@ -26,5 +26,6 @@ enum QuickDrawError: Error {
   case missingQuickTimeData(quicktimeImage: QuickTimeImage);
   case invalidCommentPayload(payload: CommentPayload);
   case invalidReservedSize(reservedType: ReservedOpType);
-  
+  case corruptRegionLine(line: Int);
+  case missingDestinationRect(message: String);
 }

@@ -127,6 +127,7 @@ func deg2rad(_ angle: Int16) -> Double {
   return -Double(angle + 90) * tau / 360;
 }
 
+
 /// Renderer that wraps a core-graphics context.
 /// All QuickDraw operations are translated into Core Graphics, Core Text, or Core Image ones.
 class QuickdrawCGRenderer : QuickDrawRenderer {
@@ -488,35 +489,52 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       in: CGRect(qdrect: bitRectOp.bitmapInfo.dstRect!));
   }
   
-  func executeDirectBitOp(directBitOp: DirectBitOpcode) throws {
-    var  bitmapInfo : CGBitmapInfo;
-    if directBitOp.bitmapInfo.pixMapInfo?.pixelSize == 16 {
-      bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
-    } else {
-      bitmapInfo = CGBitmapInfo();
+  func GetBitmapInfo(metadata: PixMapMetadata) -> CGBitmapInfo {
+    switch metadata.pixelSize {
+    case 16:
+      return CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
+    case 32:
+      return CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
+    default:
+      return CGBitmapInfo();
     }
-    
-    let data = directBitOp.bitmapInfo.data;
-    let bounds = directBitOp.bitmapInfo.bounds;
+  }
+  
+  /// Render an RGB (direct) image
+  /// - Parameters:
+  ///   - metadata: header information with the dimension, rowBytees, depth etc.
+  ///   - destination: QuickDraw destination rectangle.
+  ///   - mode: QuickDraw rendering mode.
+  ///   - data: raw data to render.
+  func executeRGBImage(metadata: PixMapMetadata, destination: QDRect, mode: QuickDrawTransferMode, data: [UInt8]) throws {
+    let bitmapInfo = GetBitmapInfo(metadata: metadata);
     let cfData = CFDataCreate(nil, data, data.count)!;
     let provider = CGDataProvider(data: cfData)!;
     guard let image = CGImage(
-      width: bounds.dimensions.dh.rounded,
-      height: bounds.dimensions.dv.rounded,
-      bitsPerComponent: directBitOp.bitmapInfo.cmpSize,
-      bitsPerPixel: directBitOp.bitmapInfo.pixelSize,
-      bytesPerRow: directBitOp.bitmapInfo.rowBytes,
+      width: metadata.dimensions.dh.rounded,
+      height: metadata.dimensions.dv.rounded,
+      bitsPerComponent: metadata.cmpSize,
+      bitsPerPixel: metadata.pixelSize,
+      bytesPerRow: metadata.rowBytes,
       space: rgbSpace, bitmapInfo: bitmapInfo,
       provider: provider,
       decode: nil,
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent) else {
-      throw CoreGraphicRenderError.imageFailure(message: "Could not create direct bitmap");
+      throw CoreGraphicRenderError.imageFailure(message: "Could not create RGB bitmap");
     }
-    try applyMode(mode: directBitOp.bitmapInfo.mode.mode);
+    try applyMode(mode: mode);
     context!.drawFlipped(
       image,
-      in: CGRect(qdrect: directBitOp.bitmapInfo.destinationRect));
+      in: CGRect(qdrect: destination));
+  }
+  
+  func executeDirectBitOp(directBitOp: DirectBitOpcode) throws {
+    return try executeRGBImage(
+      metadata: directBitOp.bitmapInfo,
+      destination: directBitOp.bitmapInfo.destinationRect,
+      mode: directBitOp.bitmapInfo.mode.mode,
+      data: directBitOp.bitmapInfo.data);
   }
   
   /// Prevent error messages by forcing a clip.
@@ -525,80 +543,27 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     context!.clip();
   }
   
-  /// Decode the Quicktime payload as `raw `  _codec_, basically these are just RGB values.
-  func getRawImage(qtImage: QuickTimeImage, payload : Data) throws -> CGImage {
-    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
-    let provider = CGDataProvider(data: payload as CFData)!;
-    guard let image = CGImage(
-      width: qtImage.dimensions.dh.rounded,
-      height: qtImage.dimensions.dv.rounded,
-      bitsPerComponent: 8,
-      bitsPerPixel: qtImage.depth,
-      bytesPerRow: qtImage.depth * qtImage.dimensions.dh.rounded / 8,
-      space: rgbSpace, bitmapInfo: bitmapInfo,
-      provider: provider,
-      decode: nil,
-      shouldInterpolate: false,
-      intent: CGColorRenderingIntent.defaultIntent) else {
-      throw CoreGraphicRenderError.imageFailure(message: "Could not create RAW QuickTime Image");
-    }
-    return image;
-  }
-  
-  func getRPZAIMage(qtImage: QuickTimeImage, payload : Data) throws -> CGImage {
-    let rpza = RoadPizzaImage(dimensions: qtImage.dimensions);
-    try rpza.load(data: payload);
-    // We have an α channel, but setting it crashes copy/paste.
-    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
-    let cfData = CFDataCreate(nil, rpza.pixmap, rpza.pixmap.count)!;
-    let provider = CGDataProvider(data: cfData)!;
-    guard let image = CGImage(
-      width: qtImage.dimensions.dh.rounded,
-      height: qtImage.dimensions.dv.rounded,
-      bitsPerComponent: 5,
-      bitsPerPixel: 16,
-      bytesPerRow: rpza.rowBytes,
-      space: rgbSpace, bitmapInfo: bitmapInfo,
-      provider: provider,
-      decode: nil,
-      shouldInterpolate: false,
-      intent: CGColorRenderingIntent.defaultIntent) else {
-      throw CoreGraphicRenderError.imageFailure(message: "Could not create RPZA QuickTime Image");
-    }
-    return image;
-  }
-  
-  func getYuv2Image(qtImage: QuickTimeImage, payload : Data) throws -> CGImage {
-    return try convertYuv2(dimensions: qtImage.dimensions, data: payload);
-  }
-  
   func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
+    let mode = quicktimeOp.quicktimePayload.mode.mode;
+    // TODO: use QuickTime transform.
     guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
       throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
     }
-    let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
+    guard let destRec = quicktimeOp.quicktimePayload.srcMask?.boundingBox else {
+      throw QuickDrawError.missingDestinationRect(message: "No destination for \(quicktimeOp)")
+    }
     
-    var image : CGImage?;
-    switch quicktimeOp.quicktimePayload.quicktimeImage.codecType {
-    case "raw ":
-      image = try getRawImage(qtImage: qtImage, payload: payload);
-    case "rpza":
-      image = try getRPZAIMage(qtImage: qtImage, payload: payload);
-    case "yuv2":
-      image = try getYuv2Image(qtImage: qtImage, payload: payload);
+    let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
+    switch qtImage.dataStatus {
+    case let  .decoded(metadata):
+      try executeRGBImage(
+        metadata: metadata, destination: destRec, mode: mode, data: Array(payload))
+      preventQuickTimeMessage();
     default:
       break;
     }
-    if let img = image {
-      context!.drawFlipped(
-        img,
-        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
-      preventQuickTimeMessage();
-      return;
-    }
-    
-    // TODO: use QuickTime transform.
-    guard let imageSource = CGImageSourceCreateWithData(payload as CFData, nil) else {
+    let options : NSDictionary = [ kCGImageSourceTypeIdentifierHint: codecToContentType(qtImage:qtImage)];
+    guard let imageSource = CGImageSourceCreateWithData(payload as CFData, options) else {
       throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateWithData", quicktimeOpcode: quicktimeOp);
     }
     let status = CGImageSourceGetStatus(imageSource);
@@ -610,8 +575,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateImageAtIndex \(imageSource): \(count)", quicktimeOpcode: quicktimeOp);
     }
     context!.drawFlipped(
-      image,
-      in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+        image,
+        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
     preventQuickTimeMessage()
   }
   
