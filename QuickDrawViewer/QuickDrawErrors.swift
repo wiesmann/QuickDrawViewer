@@ -23,7 +23,8 @@ enum QuickDrawError: Error {
   case corruptPayload(message: String);
   case invalidFract(message: String);
   case missingQuickTimePayload(quicktimeOpcode: QuickTimeOpcode);
-  case missingQuickTimeData(quicktimeImage: QuickTimeImage);
+  case missingQuickTimeData(quicktimeImage: QuickTimeIdsc);
+  case invalidPhotoShopDepth(depth: Int);
   case invalidCommentPayload(payload: CommentPayload);
   case invalidReservedSize(reservedType: ReservedOpType);
   case corruptRegionLine(line: Int);

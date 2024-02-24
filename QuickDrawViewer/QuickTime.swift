@@ -7,14 +7,17 @@
 
 /// Utility code to handle QuickTime images embedded inside QuickDraw pictures.
 
-import Foundation
+/// https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.8.sdk/System/Library/Frameworks/QuickTime.framework/Versions/A/Headers/ImageCompression.h
+/// https://github.com/TheDiamondProject/Graphite/blob/aa6636a1fe09eb2439e4972c4501724b3282ac7c/libGraphite/quicktime/planar.cpp
 
+import Foundation
 
 struct ConvertedImageMeta : PixMapMetadata {
   let rowBytes: Int;
   let cmpSize: Int;
   let pixelSize: Int;
   let dimensions: QDDelta;
+  let colorTable: QDColorTable?;
 }
 
 enum QuickTimePictureDataStatus {
@@ -23,19 +26,21 @@ enum QuickTimePictureDataStatus {
   case decoded(decodedMetaData: ConvertedImageMeta);
 }
 
-class QuickTimeImage : CustomStringConvertible {
+class QuickTimeIdsc : CustomStringConvertible {
   var description: String {
     var result = "codec: '\(codecType)': compressor: '\(compressorDevelopper)'";
     result += " compressionName: '\(compressionName)'";
+    result += " version \(imageVersion).\(imageRevision)";
     result += " dimensions: \(dimensions), resolution: \(resolution)";
     result += " frameCount: \(frameCount), depth: \(depth)";
     result += " temporalQuality: \(temporalQuality) spatialQuality: \(spatialQuality)"
-    result += " clutId: \(clutId) dataSize: \(dataSize) idSize: \(idSize)";
+    result += " clutId: \(clutId) dataSize: \(dataSize) idscSize: \(idscSize)";
     result += " data status: \(dataStatus)";
     if let d = data {
       let subdata = d.subdata(in: 0..<16);
       result += " Magic: "
       result += subdata.map{ String(format:"%02x", $0) }.joined()
+      result += " (\(d.count) bytes)"
     }
     return result;
   }
@@ -53,9 +58,35 @@ class QuickTimeImage : CustomStringConvertible {
   var compressionName : String = "";
   var depth : Int = 0;
   var clutId : Int = 0;
-  var idSize : Int = 0;
+  var idscSize : Int = 0;
   var data : Data?;
   var dataStatus : QuickTimePictureDataStatus = QuickTimePictureDataStatus.unchanged;
+  
+  var clut : QDColorTable? {
+    return QDColorTable.forClutId(clutId: clutId);
+  }
+}
+
+extension QuickDrawDataReader {
+  func readQuickTimeIdsc() throws -> QuickTimeIdsc {
+    let idsc = QuickTimeIdsc();
+    idsc.idscSize = Int(try readUInt32());
+    idsc.codecType = try readType();
+    skip(bytes: 8);
+    idsc.imageVersion = Int(try readUInt16());
+    idsc.imageRevision = Int(try readUInt16());
+    idsc.compressorDevelopper = try readType();
+    idsc.temporalQuality = try readUInt32();  // 4
+    idsc.spatialQuality = try readUInt32(); // 4
+    idsc.dimensions = try readDelta();
+    idsc.resolution = try readResolution();
+    idsc.dataSize = Int(try readInt32());
+    idsc.frameCount = Int(try readInt16());
+    idsc.compressionName = try readStr31();
+    idsc.depth = Int(try readInt16());
+    idsc.clutId = Int(try readInt16());
+    return idsc;
+  }
 }
 
 class QuickTimePayload : CustomStringConvertible {
@@ -66,20 +97,21 @@ class QuickTimePayload : CustomStringConvertible {
       result += " dstMask: \(mask)"
     }
     result += " transform: \(transform)";
-    result += " image: \(quicktimeImage)";
+    result += " matte: \(matte)"
+    result += " idsc: \(idsc)";
     return result;
   }
   
-  var transform : [[FixedPoint]] = [[]];
+  var transform : [[FixedPoint]] = [];
   var matte : QDRect = QDRect.empty;
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
   var srcMask : QDRegion?;
   var accuracy : Int = 0;
   
-  var quicktimeImage : QuickTimeImage = QuickTimeImage();
+  var idsc : QuickTimeIdsc = QuickTimeIdsc();
 }
 
-func patchQuickTimeBMP(quicktimeImage : inout QuickTimeImage) throws {
+func patchQuickTimeBMP(quicktimeImage : inout QuickTimeIdsc) throws {
   guard let data = quicktimeImage.data else {
     throw QuickDrawError.missingQuickTimeData(quicktimeImage: quicktimeImage);
   }
@@ -119,7 +151,7 @@ func patchQuickTimeBMP(quicktimeImage : inout QuickTimeImage) throws {
 /// raw data is left in place (it is technically already decoded). 
 /// - Parameter quicktimeImage: <#quicktimeImage description#>
 /// - Throws: <#description#>
-func patchQuickTimeImage(quicktimeImage : inout QuickTimeImage) throws {
+func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
   guard let data = quicktimeImage.data else {
     throw QuickDrawError.missingQuickTimeData(quicktimeImage: quicktimeImage);
   }
@@ -131,7 +163,8 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeImage) throws {
       rowBytes: quicktimeImage.dimensions.dh.rounded * 4,
       cmpSize: 8,
       pixelSize: 32,
-      dimensions: quicktimeImage.dimensions)
+      dimensions: quicktimeImage.dimensions,
+      colorTable: nil);
     quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata)
   case "rpza":
     let rpza = RoadPizzaImage(dimensions: quicktimeImage.dimensions);
@@ -140,7 +173,8 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeImage) throws {
       rowBytes: rpza.rowBytes,
       cmpSize: 5,
       pixelSize: 16,
-      dimensions: quicktimeImage.dimensions);
+      dimensions: quicktimeImage.dimensions,
+      colorTable: nil);
     quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
     quicktimeImage.data = Data(rpza.pixmap);
   case "yuv2":
@@ -149,9 +183,23 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeImage) throws {
       rowBytes: quicktimeImage.dimensions.dh.rounded * 3,
       cmpSize: 8,
       pixelSize: 24,
-      dimensions: quicktimeImage.dimensions);
+      dimensions: quicktimeImage.dimensions,
+      colorTable: nil);
     quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
     quicktimeImage.data = Data(rgb);
+  case "8BPS":
+    let planar = try PlanarImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth);
+    try planar.load(data: data);
+    let rgb = planar.pixmap;
+    let metadata = ConvertedImageMeta(
+      rowBytes: planar.rowBytes,
+      cmpSize: planar.cmpSize,
+      pixelSize: planar.pixelSize,
+      dimensions: planar.dimensions,
+      colorTable: quicktimeImage.clut);
+    quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
+    quicktimeImage.data = Data(rgb);
+    break;
   default:
     break;
   }
@@ -162,11 +210,51 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeImage) throws {
 ///  Despite the fact that Preview can handle Targa files, CoreImage cannot.
 /// - Parameter qtImage: image whose codec will be translated.
 /// - Returns: a type description as used on OS X.
-func codecToContentType(qtImage : QuickTimeImage) -> String {
+func codecToContentType(qtImage : QuickTimeIdsc) -> String {
   switch qtImage.codecType.description {
   case "tga ":
     return "com.truevision.tga-image";
+  case "8BPS":
+    return "com.adobe.photoshop-image";
   default:
     return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
   }
+}
+
+
+struct QuickTimeOpcode : OpCode {
+  mutating func load(reader: QuickDrawDataReader) throws {
+    dataSize = Int(try reader.readInt32());
+    let subReader = try reader.subReader(bytes: dataSize);
+    opcodeVersion = try subReader.readInt16();
+    for _ in 0..<3 {
+      var line : [FixedPoint] = [];
+      for _ in 0..<3 {
+        line.append(try subReader.readFixed());
+      }
+      quicktimePayload.transform.append(line);
+    }
+    matteSize = Int(try subReader.readInt32());
+    quicktimePayload.matte = try subReader.readRect();
+    quicktimePayload.mode = QuickDrawMode(rawValue: try subReader.readUInt16());
+    let srcRect = try subReader.readRect();
+    quicktimePayload.accuracy = Int(try subReader.readUInt32());
+    maskSize = Int(try subReader.readUInt32());
+    // variable length parts
+    reader.skip(bytes: matteSize);
+    let maskData = try subReader.readUInt16(bytes: maskSize);
+    let (rects, bitlines) = try DecodeRegionData(boundingBox: srcRect, data: maskData);
+    quicktimePayload.srcMask = QDRegion(boundingBox: srcRect, rects: rects, bitlines: bitlines);
+    quicktimePayload.idsc = try subReader.readQuickTimeIdsc();
+    subReader.skip(bytes: quicktimePayload.idsc.idscSize - 86);
+    quicktimePayload.idsc.data = try subReader.readData(bytes: subReader.remaining);
+    try patchQuickTimeImage(quicktimeImage: &quicktimePayload.idsc);
+  }
+  
+  var opcodeVersion : Int16 = 0;
+  var dataSize : Int = 0;
+  var matteSize : Int = 0;
+  var maskSize : Int = 0;
+  var quicktimePayload : QuickTimePayload = QuickTimePayload();
+  
 }

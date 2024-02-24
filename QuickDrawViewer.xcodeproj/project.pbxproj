@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E508C4F42B764CB2007686AE /* Planar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F32B764CB2007686AE /* Planar.swift */; };
+		E508C4F52B764CB2007686AE /* Planar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F32B764CB2007686AE /* Planar.swift */; };
 		E50ADB942B599BDE009EA7AF /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
 		E50ADB952B599BDE009EA7AF /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
 		E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6F2B42C0E500D7BB7B /* ContentView.swift */; };
@@ -56,6 +58,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		E508C4F32B764CB2007686AE /* Planar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planar.swift; sourceTree = "<group>"; };
 		E50ADB932B599BDE009EA7AF /* FixedPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedPoint.swift; sourceTree = "<group>"; };
 		E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Yuv2.swift; sourceTree = "<group>"; };
 		E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTime.swift; sourceTree = "<group>"; };
@@ -147,6 +150,7 @@
 				E59CDFA92B42EE0A00D7BB7B /* QuickDrawReader.swift */,
 				E59CDFAB2B42EE0A00D7BB7B /* QuickDrawRender.swift */,
 				E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */,
+				E508C4F32B764CB2007686AE /* Planar.swift */,
 				E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */,
 				E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */,
 				E59CDF712B42C0E600D7BB7B /* Assets.xcassets */,
@@ -285,6 +289,7 @@
 				E59CDFB32B42EE0A00D7BB7B /* QuickDrawTypes.swift in Sources */,
 				E50ADB942B599BDE009EA7AF /* FixedPoint.swift in Sources */,
 				E59CDFB52B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */,
+				E508C4F42B764CB2007686AE /* Planar.swift in Sources */,
 				E59CDFB12B42EE0A00D7BB7B /* QuickDrawReader.swift in Sources */,
 				E5CDA0242B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
 				E553E4DF2B6FD9F5009B1EC2 /* QuickTime.swift in Sources */,
@@ -299,6 +304,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E5CDA0252B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
+				E508C4F52B764CB2007686AE /* Planar.swift in Sources */,
 				E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */,
 				E59CDF812B42C0E600D7BB7B /* QuickDrawViewerTests.swift in Sources */,
 				E59CDFB02B42EE0A00D7BB7B /* PackBit.swift in Sources */,

@@ -139,15 +139,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     rgbSpace = CGColorSpaceCreateDeviceRGB();
   }
   
-  /// Get a color-space (aka palette) for a bit-rec operation
-  /// - Parameter bit_opcode: the opcode
-  /// - Returns: a color-space appropriate for the operation
-  func GetColorSpace(bit_opcode: BitRectOpcode) throws -> CGColorSpace {
-    let clut = bit_opcode.bitmapInfo.clut;
-    return try ToColorSpace(clut: clut);
-  }
-  
-  
+
   /// Convert a QuickDraw CLUT (color-table) to a Core-Graphic Color-Space
   /// - Parameter clut: A Quickdraw color-table with a most 256 entries.
   /// - Returns: A Core Graphics color-space
@@ -461,21 +453,24 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     }
   }
   
-  /// Execute palette bitmap operations
-  /// - Parameter bitRectOp: the opcode to execute
-  func executeBitRect(bitRectOp: BitRectOpcode) throws {
-    let colorSpace = try GetColorSpace(bit_opcode: bitRectOp);
+  /// Draw an indirect (palette) color image.
+  /// - Parameters:
+  ///   - metadata: description of the image
+  ///   - destination: destination rectangle
+  ///   - mode: quickdraw mode for painting
+  ///   - data: pixel data
+  ///   - clut: color table to use for lookups
+  func executePaletteImage(metadata: PixMapMetadata, destination: QDRect, mode: QuickDrawTransferMode, data: [UInt8], clut: QDColorTable) throws {
+    let colorSpace = try ToColorSpace(clut: clut);
     let bitmapInfo = CGBitmapInfo();
-    let data = bitRectOp.bitmapInfo.data;
-    let bounds = bitRectOp.bitmapInfo.bounds;
     let cfData = CFDataCreate(nil, data, data.count)!;
     let provider = CGDataProvider(data: cfData)!;
     guard let image = CGImage(
-      width: bounds.dimensions.dh.rounded,
-      height: bounds.dimensions.dv.rounded,
-      bitsPerComponent: bitRectOp.bitmapInfo.cmpSize,
-      bitsPerPixel: bitRectOp.bitmapInfo.pixelSize,
-      bytesPerRow: bitRectOp.bitmapInfo.rowBytes,
+      width: metadata.dimensions.dh.rounded,
+      height: metadata.dimensions.dv.rounded,
+      bitsPerComponent: metadata.cmpSize,
+      bitsPerPixel: metadata.pixelSize,
+      bytesPerRow: metadata.rowBytes,
       space: colorSpace, bitmapInfo: bitmapInfo,
       provider: provider,
       decode: nil,
@@ -483,12 +478,23 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(message: "Could not create palette image");
     }
-    try applyMode(mode: bitRectOp.bitmapInfo.mode.mode);
+    try applyMode(mode: mode);
     context!.drawFlipped(
       image,
-      in: CGRect(qdrect: bitRectOp.bitmapInfo.dstRect!));
+      in: CGRect(qdrect: destination));
   }
   
+  /// Execute palette bitmap operations
+  /// - Parameter bitRectOp: the opcode to execute
+  func executeBitRect(bitRectOp: BitRectOpcode) throws {
+    return try executePaletteImage(
+      metadata: bitRectOp.bitmapInfo,
+      destination: bitRectOp.bitmapInfo.destinationRect,
+      mode: bitRectOp.bitmapInfo.mode.mode,
+      data: bitRectOp.bitmapInfo.data,
+      clut: bitRectOp.bitmapInfo.clut);
+  }
+
   func GetBitmapInfo(metadata: PixMapMetadata) -> CGBitmapInfo {
     switch metadata.pixelSize {
     case 16:
@@ -546,18 +552,23 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
     let mode = quicktimeOp.quicktimePayload.mode.mode;
     // TODO: use QuickTime transform.
-    guard let payload = quicktimeOp.quicktimePayload.quicktimeImage.data else {
+    guard let payload = quicktimeOp.quicktimePayload.idsc.data else {
       throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
     }
     guard let destRec = quicktimeOp.quicktimePayload.srcMask?.boundingBox else {
       throw QuickDrawError.missingDestinationRect(message: "No destination for \(quicktimeOp)")
     }
     
-    let qtImage = quicktimeOp.quicktimePayload.quicktimeImage;
+    let qtImage = quicktimeOp.quicktimePayload.idsc;
     switch qtImage.dataStatus {
     case let  .decoded(metadata):
-      try executeRGBImage(
-        metadata: metadata, destination: destRec, mode: mode, data: Array(payload))
+      if let clut = metadata.colorTable {
+        try executePaletteImage(metadata: metadata, destination: destRec, mode: mode, data: Array(payload), clut: clut);
+      } else {
+        try executeRGBImage(
+          metadata: metadata, destination: destRec, mode: mode, data: Array(payload));
+      }
+      
       preventQuickTimeMessage();
     default:
       break;
