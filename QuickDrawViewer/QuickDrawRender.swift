@@ -553,7 +553,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let mode = quicktimeOp.quicktimePayload.mode.mode;
     // TODO: use QuickTime transform.
     guard let payload = quicktimeOp.quicktimePayload.idsc.data else {
-      throw QuickDrawError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
+      throw QuickTimeError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
     }
     guard let destRec = quicktimeOp.quicktimePayload.srcMask?.boundingBox else {
       throw QuickDrawError.missingDestinationRect(message: "No destination for \(quicktimeOp)")
@@ -568,8 +568,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
         try executeRGBImage(
           metadata: metadata, destination: destRec, mode: mode, data: Array(payload));
       }
-      
       preventQuickTimeMessage();
+      return;
     default:
       break;
     }

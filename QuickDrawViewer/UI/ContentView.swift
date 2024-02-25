@@ -25,7 +25,7 @@ struct ContentView: View {
       let renderer = QuickdrawCGRenderer(context: context);
       try renderer.execute(picture: picture, zoom: renderZoom);
       let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime;
-      let filename = picture.filename!;
+      let filename = picture.filename ?? "";
       let frame = picture.frame;
       for (pos, opcode) in picture.opcodes.enumerated() {
         let entry = "\(pos): \(opcode)";

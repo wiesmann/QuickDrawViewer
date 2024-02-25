@@ -7,12 +7,22 @@
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>CFBundleTypeName</key>
+			<string>Apple QuickTime picture</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.apple.quicktime-image</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.apple.pict</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>Apple Quickdraw pictures</string>
+			<string>Apple QuicDraw pictures</string>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
@@ -27,6 +37,23 @@
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string></string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>QuickTime Picture</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.apple.quicktime-image</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>qtif</string>
+				</array>
+			</dict>
+		</dict>
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>

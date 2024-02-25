@@ -10,7 +10,16 @@
 /// https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.8.sdk/System/Library/Frameworks/QuickTime.framework/Versions/A/Headers/ImageCompression.h
 /// https://github.com/TheDiamondProject/Graphite/blob/aa6636a1fe09eb2439e4972c4501724b3282ac7c/libGraphite/quicktime/planar.cpp
 
+import os
 import Foundation
+
+enum QuickTimeError: Error {
+  case missingQuickTimePayload(quicktimeOpcode: QuickTimeOpcode);
+  case missingQuickTimeData(quicktimeImage: QuickTimeIdsc);
+  case corruptQuickTimeAtomLength(length: Int);
+  case missingQuickTimePart(code: MacTypeCode);
+}
+
 
 struct ConvertedImageMeta : PixMapMetadata {
   let rowBytes: Int;
@@ -107,13 +116,12 @@ class QuickTimePayload : CustomStringConvertible {
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
   var srcMask : QDRegion?;
   var accuracy : Int = 0;
-  
   var idsc : QuickTimeIdsc = QuickTimeIdsc();
 }
 
 func patchQuickTimeBMP(quicktimeImage : inout QuickTimeIdsc) throws {
   guard let data = quicktimeImage.data else {
-    throw QuickDrawError.missingQuickTimeData(quicktimeImage: quicktimeImage);
+    throw QuickTimeError.missingQuickTimeData(quicktimeImage: quicktimeImage);
   }
   var patched = Data();
   patched.append(contentsOf: [0x42, 0x4D]);
@@ -153,7 +161,7 @@ func patchQuickTimeBMP(quicktimeImage : inout QuickTimeIdsc) throws {
 /// - Throws: <#description#>
 func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
   guard let data = quicktimeImage.data else {
-    throw QuickDrawError.missingQuickTimeData(quicktimeImage: quicktimeImage);
+    throw QuickTimeError.missingQuickTimeData(quicktimeImage: quicktimeImage);
   }
   switch quicktimeImage.codecType.description {
   case "WRLE": 
@@ -171,8 +179,8 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
     try rpza.load(data: data);
     let metadata = ConvertedImageMeta(
       rowBytes: rpza.rowBytes,
-      cmpSize: 5,
-      pixelSize: 16,
+      cmpSize: rpza.cmpSize,
+      pixelSize: rpza.pixelSize,
       dimensions: quicktimeImage.dimensions,
       colorTable: nil);
     quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
@@ -214,11 +222,12 @@ func codecToContentType(qtImage : QuickTimeIdsc) -> String {
   switch qtImage.codecType.description {
   case "tga ":
     return "com.truevision.tga-image";
+  case "mjp2":
+    return "public.jpeg-2000";
   default:
     return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }
-
 
 struct QuickTimeOpcode : OpCode {
   mutating func load(reader: QuickDrawDataReader) throws {
@@ -254,5 +263,66 @@ struct QuickTimeOpcode : OpCode {
   var matteSize : Int = 0;
   var maskSize : Int = 0;
   var quicktimePayload : QuickTimePayload = QuickTimePayload();
+}
+
+func parseQuickTimeStream(reader: QuickDrawDataReader) throws -> QuickTimePayload {
+  var quickTimeIdsc : QuickTimeIdsc?;
+  var quickTimeIdat : Data?;
   
+  while reader.remaining > 0 {
+    let length = Int(try reader.readInt32()) - 8;
+    guard length >= 0 else {
+      throw QuickTimeError.corruptQuickTimeAtomLength(length: length);
+    }
+    let type = try reader.readType();
+    let data = try reader.readData(bytes: length);
+    switch type.description {
+    case "idsc":
+      let subReader = try QuickDrawDataReader(data: data, position: 0);
+      quickTimeIdsc = try subReader.readQuickTimeIdsc();
+    case "idat":
+      quickTimeIdat = data
+    default:
+      print("Ignoring QuickTime atom \(type)");
+      break;
+    }
+  }
+  let quicktimePayload = QuickTimePayload();
+  guard let idsc = quickTimeIdsc else {
+    // 0x69647363 = idsc
+    throw QuickTimeError.missingQuickTimePart(code: MacTypeCode(rawValue: 0x69647363));
+  }
+  quicktimePayload.idsc = idsc;
+  // 0x69646174 = idat
+  guard let idat = quickTimeIdat else {
+    throw QuickTimeError.missingQuickTimePart(code: MacTypeCode(rawValue: 0x69646174));
+  }
+  quicktimePayload.idsc.data = idat;
+  try patchQuickTimeImage(quicktimeImage: &quicktimePayload.idsc);
+  return quicktimePayload;
+}
+
+/// Parse a QuickTime image into a QuickDraw picture.
+/// This will fail if the QuickTime image does not have an `idsc` (image description) atom.
+/// - Parameter reader: reader pointing to the data.
+/// - Throws: if data is corrupt / unreadable
+/// - Returns: a _fake_ QuickDraw image with a single QuickTime opcode.
+func parseQuickTimeImage(reader: QuickDrawDataReader) throws -> QDPicture {
+  let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "quicktime");
+  let fileSize = reader.remaining;
+  do {
+    let payload = try parseQuickTimeStream(reader: reader);
+    let frame = QDRect(topLeft: QDPoint.zero, dimension: payload.idsc.dimensions);
+    let destination = QDRegion.forRect(rect: frame);
+    payload.srcMask = destination;
+    let picture = QDPicture(size: fileSize, frame: frame, filename: reader.filename);
+    picture.version = 0xff;
+    var opcode = QuickTimeOpcode();
+    opcode.quicktimePayload = payload;
+    picture.opcodes.append(opcode);
+    return picture;
+  } catch {
+    logger.log(level: .error, "Failed rendering: \(error)");
+    throw error;
+  }
 }

@@ -7,9 +7,6 @@
 
 import Foundation
 
-/// See https://wiki.multimedia.cx/index.php/8BPS
-/// See https://github.com/TheDiamondProject/Graphite/blob/aa6636a1fe09eb2439e4972c4501724b3282ac7c/libGraphite/quicktime/planar.cpp
-
 enum PlanarImageError : Error {
   case badDepth(depth: Int);
   case packbitError(line: Int, packbitError: PackbitError);

@@ -22,8 +22,6 @@ enum QuickDrawError: Error {
   case unsupportedColor(colorCode: UInt32);
   case corruptPayload(message: String);
   case invalidFract(message: String);
-  case missingQuickTimePayload(quicktimeOpcode: QuickTimeOpcode);
-  case missingQuickTimeData(quicktimeImage: QuickTimeIdsc);
   case invalidPhotoShopDepth(depth: Int);
   case invalidCommentPayload(payload: CommentPayload);
   case invalidReservedSize(reservedType: ReservedOpType);

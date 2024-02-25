@@ -290,6 +290,10 @@ struct QDRegion : CustomStringConvertible {
     return rects.isEmpty;
   }
   
+  static func forRect(rect: QDRect) -> QDRegion {
+    return QDRegion(boundingBox: rect, rects:[], bitlines:[[]]);
+  }
+  
   let rects : [QDRect];
   let bitlines: [[UInt8]];
 }
@@ -786,13 +790,13 @@ class QDColorTable : CustomStringConvertible {
 
 
 public class QDPicture : CustomStringConvertible {
-  init(size: UInt16, frame:QDRect, filename: String?) {
+  init(size: Int, frame:QDRect, filename: String?) {
     self.size = size;
     self.frame = frame;
     self.filename = filename;
   }
   
-  let size: UInt16;
+  let size: Int;
   var frame: QDRect;
   var resolution : QDResolution = QDResolution.defaultResolution;
   var version: Int = 1;

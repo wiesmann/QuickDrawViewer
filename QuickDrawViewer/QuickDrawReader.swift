@@ -23,7 +23,10 @@ class QuickDrawDataReader {
   ///   - position: offset in the data object where reading should start, typically 512 as this is the standart offset.
   init(data: Data, position: Data.Index=512) throws {
     guard position <= data.count else {
-      throw QuickDrawError.quickDrawIoError(message:"Initial \(position) beyond \(data.count)");
+      throw QuickDrawError.quickDrawIoError(message: "Initial position \(position) beyond \(data.count)");
+    }
+    guard position >= 0 else {
+      throw QuickDrawError.quickDrawIoError(message:"Initial positon \(position)  is negative");
     }
     self.data = data;
     self.position = position;
@@ -53,6 +56,9 @@ class QuickDrawDataReader {
   }
   
   func readData(bytes: Data.Index) throws -> Data {
+    guard bytes >= 0 else {
+      throw QuickDrawError.quickDrawIoError(message: "Negative amount of bytes \(bytes)");
+    }
     let end = position + bytes;
     guard end <= data.count else {
       throw QuickDrawError.quickDrawIoError(message:"Read \(bytes):\(end) beyond \(data.count)");
@@ -64,7 +70,9 @@ class QuickDrawDataReader {
   
   func subReader(bytes: Data.Index) throws -> QuickDrawDataReader {
     let data = try readData(bytes : bytes);
-    return try QuickDrawDataReader(data: data, position: 0);
+    let sub = try QuickDrawDataReader(data: data, position: 0);
+    sub.filename = self.filename;
+    return sub;
   }
   
   func readString(bytes: Data.Index) throws -> String {
@@ -227,4 +235,5 @@ class QuickDrawDataReader {
   
   var position: Data.Index;
   var data: Data;
+  var filename : String?;
 }

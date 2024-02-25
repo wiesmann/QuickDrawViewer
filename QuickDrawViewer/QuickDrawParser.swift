@@ -151,14 +151,14 @@ class QDParser {
   
   /// Parse the actual QuickDraw picture
   /// - Returns: a picture object that can be rendered.
-  public func parse(filename : String?) throws -> QDPicture  {
+  public func parse() throws -> QDPicture  {
     let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "parser");
     let startTime = CFAbsoluteTimeGetCurrent();
     // Parse v1 header.
-    let size = try dataReader.readUInt16();
+    let size = Int(try dataReader.readUInt16());
     let frame = try dataReader.readRect();
     // Create picture object
-    var picture = QDPicture(size: size, frame:frame, filename: filename);
+    var picture = QDPicture(size: size, frame:frame, filename: dataReader.filename);
     do {
       while (try parseOne(picture: &picture)) {}
     } catch {
@@ -171,5 +171,14 @@ class QDParser {
   }
   
   var dataReader: QuickDrawDataReader;
+  
+  var filename : String? {
+    set (name) {
+      dataReader.filename = name;
+    }
+    get {
+      return dataReader.filename
+    }
+  }
   
 }

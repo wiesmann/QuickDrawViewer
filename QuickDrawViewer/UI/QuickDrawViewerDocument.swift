@@ -10,9 +10,12 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 extension UTType {
-    static var quickDrawImage: UTType {
-        UTType(importedAs: "com.apple.pict")
-    }
+  static var quickDrawImage: UTType {
+    UTType(importedAs: "com.apple.pict")
+  }
+  static var quickTimeImage: UTType {
+    UTType(importedAs: "com.apple.quicktime-image")
+  }
 }
 
 struct QuickDrawViewerDocument: FileDocument {
@@ -29,7 +32,7 @@ struct QuickDrawViewerDocument: FileDocument {
     do {
       let input_url = URL(string: path);
       let parser = try QDParser(contentsOf: input_url!);
-      picture = try parser.parse(filename: path);
+      picture = try parser.parse();
     }
     catch {
       logger.log(level: .error, "Failed rendering \(error)");
@@ -41,13 +44,22 @@ struct QuickDrawViewerDocument: FileDocument {
     guard let data = configuration.file.regularFileContents else {
       throw CocoaError(.fileReadCorruptFile)
     }
-    let parser = try QDParser(data:data);
-    picture = try parser.parse(filename: configuration.file.filename);
+    switch configuration.contentType {
+    case .quickDrawImage:
+      let parser = try QDParser(data: data);
+      parser.filename = configuration.file.filename;
+      picture = try parser.parse();
+    case .quickTimeImage:
+      let reader = try QuickDrawDataReader(data: data, position: 0);
+      picture = try parseQuickTimeImage(reader: reader);
+    default:
+      throw CocoaError(.fileReadUnknown);
+    }
   }
-
-  static var readableContentTypes: [UTType] { [.quickDrawImage] };
+  
+  static var readableContentTypes: [UTType] { [.quickDrawImage, .quickTimeImage ] };
   // static var writableContentTypes: [UTType] { [.pdf] };
-
+  
   func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
     throw CocoaError(.fileWriteUnsupportedScheme);
   }

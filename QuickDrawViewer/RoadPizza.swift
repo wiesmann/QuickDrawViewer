@@ -190,6 +190,8 @@ class RoadPizzaImage {
   let dimensions : QDDelta;
   let blocksPerLine : Int;
   let totalBlocks : Int;
+  let cmpSize : Int = 5;
+  let pixelSize: Int = 16;
   var pixmap : [UInt8];
   
   static let blockSize = 4;
