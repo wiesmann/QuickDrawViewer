@@ -18,7 +18,8 @@ This means the code could be used in other applications that want to handle Quic
 
 ## Features
 
-The library basically parses QuickDraw version 1 and version 2 files, and supports the following features.
+The library basically parses QuickDraw version 1 and version 2 files, as well as QuickTime pictures (`QTIF`) files.
+It supports the following features.
 
 * Lines
 * Basic Shapes (Rectangles, Ovals, Round-Rectangles and Arcs)
@@ -33,6 +34,7 @@ The library basically parses QuickDraw version 1 and version 2 files, and suppor
   * RAW (`raw `).
   * Apple Video (`RPZA`), Apple Component Video (`YUV2`).
   * Planar Video (`8BPS`). 
+* QuickTime images which use a supported codec (see above).
 
 Some basic comment parsing is used to improve images, in particular:
 
