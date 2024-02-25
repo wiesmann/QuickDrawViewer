@@ -214,8 +214,6 @@ func codecToContentType(qtImage : QuickTimeIdsc) -> String {
   switch qtImage.codecType.description {
   case "tga ":
     return "com.truevision.tga-image";
-  case "8BPS":
-    return "com.adobe.photoshop-image";
   default:
     return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
   }
