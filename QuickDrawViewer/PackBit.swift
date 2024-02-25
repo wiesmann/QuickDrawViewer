@@ -7,6 +7,8 @@
 
 enum PackbitError: Error  {
   case mismatchedLength(expectedLength: Int, actualLength: Int);
+  case outOfBoundRunStart(start: Int, dataSize: Int);
+  case outOfBoundRunEnd(end: Int, dataSize: Int);
 }
 
 import Foundation
@@ -24,8 +26,14 @@ func DecompressPackBit(data : [UInt8], unpackedSize: Int, byteNum : Int = 1) thr
   while index < data.count - 1 {
     let tag = Int8(bitPattern: data[index]);
     index += 1;
+    guard index < data.count else {
+      throw PackbitError.outOfBoundRunStart(start: index, dataSize: data.count);
+    }
     if (tag < 0) {
       let run_len = (Int(tag) * -1) + 1;
+      guard index + byteNum <= data.count else {
+        throw PackbitError.outOfBoundRunEnd(end: index + byteNum, dataSize: data.count)
+      }
       let element = data[index..<index + byteNum];
       let repeated = repeatElement(element, count: run_len);
       decompressed.append(contentsOf: repeated.joined());
@@ -33,6 +41,9 @@ func DecompressPackBit(data : [UInt8], unpackedSize: Int, byteNum : Int = 1) thr
     } else {
       let discrete_len = Int(tag) + 1;
       let offset = discrete_len * byteNum;
+      guard index + offset <= data.count else {
+        throw PackbitError.outOfBoundRunEnd(end: index + offset, dataSize: data.count)
+      }
       let slice = data[index..<index + offset];
       decompressed.append(contentsOf: slice);
       index += offset;

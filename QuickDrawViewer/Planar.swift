@@ -31,7 +31,7 @@ class PlanarImage {
   
   func load(data : Data) throws {
     let reader = try QuickDrawDataReader(data: data, position:0);
-    let lines = (dimensions.dh.rounded * channels);
+    let lines = (dimensions.dv.rounded * channels);
     var lineLengths : [Int] = [];
     for _ in 0..<lines {
       lineLengths.append(Int(try reader.readUInt16()));
