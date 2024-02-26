@@ -671,9 +671,12 @@ protocol PixMapMetadata {
   var cmpSize : Int {get};
   var pixelSize : Int {get};
   var dimensions : QDDelta {get};
+  var clut: QDColorTable? {get};
 }
 
 class QDBitMapInfo : CustomStringConvertible, PixMapMetadata {
+  
+  
   
   init(isPacked: Bool) {
     self.isPacked = isPacked;
@@ -718,7 +721,7 @@ class QDBitMapInfo : CustomStringConvertible, PixMapMetadata {
     return 1;
   }
   
-  var clut : QDColorTable {
+  var clut : QDColorTable? {
     if let pix_info = pixMapInfo {
       return pix_info.clut!;
     }

@@ -12,10 +12,12 @@ enum PlanarImageError : Error {
   case packbitError(line: Int, packbitError: PackbitError);
 }
 
-class PlanarImage {
-  init(dimensions: QDDelta, depth: Int) throws {
+class PlanarImage : PixMapMetadata {
+
+  init(dimensions: QDDelta, depth: Int, clut: QDColorTable?) throws {
     self.dimensions = dimensions;
     self.depth = depth;
+    self.clut = clut;
     switch depth {
       case 8: self.channels = 1;
       case 24: self.channels = 3;
@@ -72,5 +74,7 @@ class PlanarImage {
   let depth: Int;
   var channels : Int;
   var pixmap : [UInt8];
+  
+  var clut: QDColorTable?;
 }
 

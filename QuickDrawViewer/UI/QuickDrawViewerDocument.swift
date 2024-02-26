@@ -50,8 +50,14 @@ struct QuickDrawViewerDocument: FileDocument {
       parser.filename = configuration.file.filename;
       picture = try parser.parse();
     case .quickTimeImage:
-      let reader = try QuickDrawDataReader(data: data, position: 0);
-      picture = try parseQuickTimeImage(reader: reader);
+      do {
+        let reader = try QuickDrawDataReader(data: data, position: 0);
+        reader.filename = configuration.file.filename;
+        picture = try parseQuickTimeImage(reader: reader);
+      } catch {
+        logger.log(level: .error, "Failed parsing quicktime: \(error)");
+        throw error;
+      }
     default:
       throw CocoaError(.fileReadUnknown);
     }

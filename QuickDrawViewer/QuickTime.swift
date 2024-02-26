@@ -5,7 +5,10 @@
 //  Created by Matthias Wiesmann on 04.02.2024.
 //
 
-/// Utility code to handle QuickTime images embedded inside QuickDraw pictures.
+/// Utility code to handle QuickTime related data.
+/// This basically implements two basic functionalities:
+/// * Handling of QuickTime opcodes in QuickDraw images.
+/// * Handling of QuickTime image files `QTIF`
 
 /// https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.8.sdk/System/Library/Frameworks/QuickTime.framework/Versions/A/Headers/ImageCompression.h
 /// https://github.com/TheDiamondProject/Graphite/blob/aa6636a1fe09eb2439e4972c4501724b3282ac7c/libGraphite/quicktime/planar.cpp
@@ -13,26 +16,26 @@
 import os
 import Foundation
 
-enum QuickTimeError: Error {
+enum QuickTimeError: LocalizedError {
   case missingQuickTimePayload(quicktimeOpcode: QuickTimeOpcode);
   case missingQuickTimeData(quicktimeImage: QuickTimeIdsc);
   case corruptQuickTimeAtomLength(length: Int);
   case missingQuickTimePart(code: MacTypeCode);
 }
 
-
+// Representation of a converted image
 struct ConvertedImageMeta : PixMapMetadata {
   let rowBytes: Int;
   let cmpSize: Int;
   let pixelSize: Int;
   let dimensions: QDDelta;
-  let colorTable: QDColorTable?;
+  let clut: QDColorTable?;
 }
 
 enum QuickTimePictureDataStatus {
   case unchanged;
   case patched;
-  case decoded(decodedMetaData: ConvertedImageMeta);
+  case decoded(decodedMetaData: PixMapMetadata);
 }
 
 class QuickTimeIdsc : CustomStringConvertible {
@@ -172,18 +175,12 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       cmpSize: 8,
       pixelSize: 32,
       dimensions: quicktimeImage.dimensions,
-      colorTable: nil);
+      clut: nil);
     quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata)
   case "rpza":
     let rpza = RoadPizzaImage(dimensions: quicktimeImage.dimensions);
     try rpza.load(data: data);
-    let metadata = ConvertedImageMeta(
-      rowBytes: rpza.rowBytes,
-      cmpSize: rpza.cmpSize,
-      pixelSize: rpza.pixelSize,
-      dimensions: quicktimeImage.dimensions,
-      colorTable: nil);
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
+    quicktimeImage.dataStatus = .decoded(decodedMetaData: rpza);
     quicktimeImage.data = Data(rpza.pixmap);
   case "yuv2":
     let rgb = convertYuv2Data(data: data);
@@ -192,22 +189,21 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       cmpSize: 8,
       pixelSize: 24,
       dimensions: quicktimeImage.dimensions,
-      colorTable: nil);
+      clut: nil);
     quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
     quicktimeImage.data = Data(rgb);
   case "8BPS":
-    let planar = try PlanarImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth);
+    let planar = try PlanarImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth, clut: quicktimeImage.clut);
     try planar.load(data: data);
     let rgb = planar.pixmap;
-    let metadata = ConvertedImageMeta(
-      rowBytes: planar.rowBytes,
-      cmpSize: planar.cmpSize,
-      pixelSize: planar.pixelSize,
-      dimensions: planar.dimensions,
-      colorTable: quicktimeImage.clut);
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
+    quicktimeImage.dataStatus = .decoded(decodedMetaData: planar);
     quicktimeImage.data = Data(rgb);
     break;
+  case "mjp2":
+    // JPEG-2000 is a QuickTime node so we skip size + type.
+    let skipped = data.subdata(in: 8..<data.count);
+    quicktimeImage.dataStatus = .patched;
+    quicktimeImage.data = skipped;
   default:
     break;
   }
@@ -308,21 +304,15 @@ func parseQuickTimeStream(reader: QuickDrawDataReader) throws -> QuickTimePayloa
 /// - Throws: if data is corrupt / unreadable
 /// - Returns: a _fake_ QuickDraw image with a single QuickTime opcode.
 func parseQuickTimeImage(reader: QuickDrawDataReader) throws -> QDPicture {
-  let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "quicktime");
   let fileSize = reader.remaining;
-  do {
-    let payload = try parseQuickTimeStream(reader: reader);
-    let frame = QDRect(topLeft: QDPoint.zero, dimension: payload.idsc.dimensions);
-    let destination = QDRegion.forRect(rect: frame);
-    payload.srcMask = destination;
-    let picture = QDPicture(size: fileSize, frame: frame, filename: reader.filename);
-    picture.version = 0xff;
-    var opcode = QuickTimeOpcode();
-    opcode.quicktimePayload = payload;
-    picture.opcodes.append(opcode);
-    return picture;
-  } catch {
-    logger.log(level: .error, "Failed rendering: \(error)");
-    throw error;
-  }
+  let payload = try parseQuickTimeStream(reader: reader);
+  let frame = QDRect(topLeft: QDPoint.zero, dimension: payload.idsc.dimensions);
+  let destination = QDRegion.forRect(rect: frame);
+  payload.srcMask = destination;
+  let picture = QDPicture(size: fileSize, frame: frame, filename: reader.filename);
+  picture.version = 0xff;
+  var opcode = QuickTimeOpcode();
+  opcode.quicktimePayload = payload;
+  picture.opcodes.append(opcode);
+  return picture;
 }

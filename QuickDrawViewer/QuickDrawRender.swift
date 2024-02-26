@@ -11,7 +11,7 @@ import CoreText
 import ImageIO
 import os
 
-enum CoreGraphicRenderError : Error {
+enum CoreGraphicRenderError : LocalizedError {
   case noContext(message: String);
   case noPdfContext(rect: CGRect);
   case notRgbColor(color: CGColor);
@@ -26,6 +26,23 @@ enum CoreGraphicRenderError : Error {
 protocol QuickDrawRenderer {
   func execute(opcode: OpCode) throws -> Void;
   func execute(picture: QDPicture, zoom: Double) throws -> Void;
+}
+
+extension CGImageSourceStatus : CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case .statusUnexpectedEOF: return "Unexpected end-of-file";
+    case .statusInvalidData: return "Invalid Data";
+    case .statusUnknownType: return "Unknown image type";
+    case .statusIncomplete: return  "Incomplete";
+    case .statusReadingHeader: return "Reading header";
+    case .statusComplete: return "Complete";
+    default:
+      return "Unknown";
+    }
+  }
+  
+  
 }
 
 extension CGPoint {
@@ -139,7 +156,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     rgbSpace = CGColorSpaceCreateDeviceRGB();
   }
   
-
   /// Convert a QuickDraw CLUT (color-table) to a Core-Graphic Color-Space
   /// - Parameter clut: A Quickdraw color-table with a most 256 entries.
   /// - Returns: A Core Graphics color-space
@@ -166,7 +182,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     data.append(contentsOf: penState.fgColor.rgb);
     return CGColorSpace(indexedBaseSpace: rgbSpace, last: 1, colorTable: &data)!;
   }
-  
   
   /// Paint the current path using the current pattern.
   func paintPath() throws {
@@ -487,12 +502,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   /// Execute palette bitmap operations
   /// - Parameter bitRectOp: the opcode to execute
   func executeBitRect(bitRectOp: BitRectOpcode) throws {
+    guard let clut = bitRectOp.bitmapInfo.clut else {
+      throw QuickDrawError.missingColorTableError;
+    }
     return try executePaletteImage(
       metadata: bitRectOp.bitmapInfo,
       destination: bitRectOp.bitmapInfo.destinationRect,
       mode: bitRectOp.bitmapInfo.mode.mode,
       data: bitRectOp.bitmapInfo.data,
-      clut: bitRectOp.bitmapInfo.clut);
+      clut: clut);
   }
 
   func GetBitmapInfo(metadata: PixMapMetadata) -> CGBitmapInfo {
@@ -562,7 +580,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let qtImage = quicktimeOp.quicktimePayload.idsc;
     switch qtImage.dataStatus {
     case let  .decoded(metadata):
-      if let clut = metadata.colorTable {
+      if let clut = metadata.clut {
         try executePaletteImage(metadata: metadata, destination: destRec, mode: mode, data: Array(payload), clut: clut);
       } else {
         try executeRGBImage(

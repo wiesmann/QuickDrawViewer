@@ -12,6 +12,7 @@ enum QuickDrawError: Error {
   case unknownOpcodeError (opcode: UInt16);
   case unknownQuickDrawVersionError (version: Int);
   case corruptColorTableError (message: String);
+  case missingColorTableError;
   case invalidStr32(length: Int);
   case invalidClutError(clut: QDColorTable);
   case corruptPackbitLine(row: Int, expectedLength : Data.Index, actualLength: Data.Index);
