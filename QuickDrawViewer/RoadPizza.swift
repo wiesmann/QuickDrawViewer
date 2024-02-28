@@ -7,34 +7,7 @@
 
 import Foundation
 
-/// Pixel in ARGB555 format with the alpha in the first bit.
-struct ARGB555: RawRepresentable {
-  
-  init(rawValue: UInt16) {
-    self.rawValue = rawValue
-  }
-  
-  init(red: UInt16, green: UInt16, blue: UInt16) {
-    rawValue = UInt16(blue & 0x1F) | UInt16(green & 0x1F) << 5 | UInt16(red & 0x1F) << 15 | 0x8000;
-  }
-  
-  var red : UInt16 {
-    return UInt16(rawValue >> 10) & 0x1F;
-  }
-  
-  var green : UInt16 {
-    return UInt16(rawValue >> 5) & 0x1F;
-  }
-  
-  var blue : UInt16 {
-    return UInt16(rawValue) & 0x1F;
-  }
-  
-  let rawValue : UInt16;
-  
-  static let zero = ARGB555(rawValue: 0);
-  static let pixelBytes = 2;
-}
+
 
 /// Creates a ARGB555 color that is ⅔ color a and ⅓ color b.
 /// - Parameters:
@@ -65,8 +38,6 @@ enum RoadPizzaError : Error {
 /// Decode the sequence of opcodes into a ARGB555 buffer.
 /// Skipped blocks will have transparent pixels.
 class RoadPizzaImage : PixMapMetadata {
-  
-  
   
   init(dimensions: QDDelta) {
     self.dimensions = dimensions;

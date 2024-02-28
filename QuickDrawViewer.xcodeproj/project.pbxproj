@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		E508C4F42B764CB2007686AE /* Planar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F32B764CB2007686AE /* Planar.swift */; };
 		E508C4F52B764CB2007686AE /* Planar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F32B764CB2007686AE /* Planar.swift */; };
+		E508C4F72B8E9575007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
+		E508C4F82B8E9575007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
 		E50ADB942B599BDE009EA7AF /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
 		E50ADB952B599BDE009EA7AF /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
 		E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6F2B42C0E500D7BB7B /* ContentView.swift */; };
@@ -59,6 +61,7 @@
 
 /* Begin PBXFileReference section */
 		E508C4F32B764CB2007686AE /* Planar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planar.swift; sourceTree = "<group>"; };
+		E508C4F62B8E9575007686AE /* QuickDrawColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawColor.swift; sourceTree = "<group>"; };
 		E50ADB932B599BDE009EA7AF /* FixedPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedPoint.swift; sourceTree = "<group>"; };
 		E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Yuv2.swift; sourceTree = "<group>"; };
 		E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTime.swift; sourceTree = "<group>"; };
@@ -144,6 +147,7 @@
 				E553E4E12B6FFA53009B1EC2 /* TypeCode.swift */,
 				E59CDFA82B42EE0A00D7BB7B /* PackBit.swift */,
 				E59CDFAA2B42EE0A00D7BB7B /* QuickDrawTypes.swift */,
+				E508C4F62B8E9575007686AE /* QuickDrawColor.swift */,
 				E5CDA0262B44155E008DC6D6 /* QuickDrawParser.swift */,
 				E5CDA0232B441536008DC6D6 /* QuickDrawErrors.swift */,
 				E59CDFA72B42EE0A00D7BB7B /* QuickDrawOpcodes.swift */,
@@ -294,6 +298,7 @@
 				E5CDA0242B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
 				E553E4DF2B6FD9F5009B1EC2 /* QuickTime.swift in Sources */,
 				E59CDFAD2B42EE0A00D7BB7B /* QuickDrawOpcodes.swift in Sources */,
+				E508C4F72B8E9575007686AE /* QuickDrawColor.swift in Sources */,
 				E59CDF6C2B42C0E500D7BB7B /* QuickDrawViewerApp.swift in Sources */,
 				E59CDF702B42C0E500D7BB7B /* ContentView.swift in Sources */,
 			);
@@ -303,6 +308,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E508C4F82B8E9575007686AE /* QuickDrawColor.swift in Sources */,
 				E5CDA0252B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
 				E508C4F52B764CB2007686AE /* Planar.swift in Sources */,
 				E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */,

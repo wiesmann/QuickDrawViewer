@@ -13,6 +13,91 @@
 /// https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.8.sdk/System/Library/Frameworks/QuickTime.framework/Versions/A/Headers/ImageCompression.h
 /// https://github.com/TheDiamondProject/Graphite/blob/aa6636a1fe09eb2439e4972c4501724b3282ac7c/libGraphite/quicktime/planar.cpp
 
+/*
+ (
+     "public.jpeg",
+     "public.png",
+     "com.compuserve.gif",
+     "com.canon.tif-raw-image",
+     "com.adobe.raw-image",
+     "com.dxo.raw-image",
+     "com.canon.cr2-raw-image",
+     "com.canon.cr3-raw-image",
+     "com.leafamerica.raw-image",
+     "com.hasselblad.fff-raw-image",
+     "com.hasselblad.3fr-raw-image",
+     "com.nikon.raw-image",
+     "com.nikon.nrw-raw-image",
+     "com.pentax.raw-image",
+     "com.samsung.raw-image",
+     "com.sony.raw-image",
+     "com.sony.sr2-raw-image",
+     "com.sony.arw-raw-image",
+     "com.epson.raw-image",
+     "com.kodak.raw-image",
+     "public.tiff",
+     "public.jpeg-2000",
+     "com.apple.atx",
+     "org.khronos.astc",
+     "org.khronos.ktx",
+     "public.avci",
+     "public.heic",
+     "public.heics",
+     "public.heif",
+     "com.canon.crw-raw-image",
+     "com.fuji.raw-image",
+     "com.panasonic.raw-image",
+     "com.panasonic.rw2-raw-image",
+     "com.leica.raw-image",
+     "com.leica.rwl-raw-image",
+     "com.konicaminolta.raw-image",
+     "com.olympus.sr-raw-image",
+     "com.olympus.or-raw-image",
+     "com.olympus.raw-image",
+     "com.phaseone.raw-image",
+     "com.microsoft.ico",
+     "com.microsoft.bmp",
+     "com.apple.icns",
+     "com.adobe.photoshop-image",
+     "com.microsoft.cur",
+     "com.truevision.tga-image",
+     "com.ilm.openexr-image",
+     "org.webmproject.webp",
+     "com.sgi.sgi-image",
+     "public.radiance",
+     "public.pbm",
+     "public.mpo-image",
+     "public.pvr",
+     "com.microsoft.dds",
+     "com.apple.pict"
+ )
+ (
+     "public.jpeg",
+     "public.png",
+     "com.compuserve.gif",
+     "public.tiff",
+     "public.jpeg-2000",
+     "com.apple.atx",
+     "org.khronos.ktx",
+     "org.khronos.astc",
+     "com.microsoft.dds",
+     "public.heic",
+     "public.heics",
+     "com.microsoft.ico",
+     "com.microsoft.bmp",
+     "com.apple.icns",
+     "com.adobe.photoshop-image",
+     "com.adobe.pdf",
+     "com.truevision.tga-image",
+     "com.ilm.openexr-image",
+     "public.pbm",
+     "public.pvr"
+ )
+
+ 
+ */
+
+
 import os
 import Foundation
 
@@ -115,11 +200,17 @@ class QuickTimePayload : CustomStringConvertible {
   }
   
   var transform : [[FixedPoint]] = [];
+  
   var matte : QDRect = QDRect.empty;
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
   var srcMask : QDRegion?;
   var accuracy : Int = 0;
   var idsc : QuickTimeIdsc = QuickTimeIdsc();
+  
+  static let identityTransform = [
+    [FixedPoint.one, FixedPoint.zero, FixedPoint.zero],
+    [FixedPoint.zero, FixedPoint.one, FixedPoint.zero],
+    [FixedPoint.zero, FixedPoint.zero, FixedPoint(16384)]];
 }
 
 func patchQuickTimeBMP(quicktimeImage : inout QuickTimeIdsc) throws {
@@ -249,7 +340,13 @@ struct QuickTimeOpcode : OpCode {
     let (rects, bitlines) = try DecodeRegionData(boundingBox: srcRect, data: maskData);
     quicktimePayload.srcMask = QDRegion(boundingBox: srcRect, rects: rects, bitlines: bitlines);
     quicktimePayload.idsc = try subReader.readQuickTimeIdsc();
-    subReader.skip(bytes: quicktimePayload.idsc.idscSize - 86);
+    do {
+      let atomReader = try subReader.subReader(bytes: quicktimePayload.idsc.idscSize - 86);
+      try parseQuickTimeStream(reader: atomReader, quicktimePayload: &quicktimePayload);
+    } catch {
+      print("Failed atom parsing: \(error)");
+    }
+   
     quicktimePayload.idsc.data = try subReader.readData(bytes: subReader.remaining);
     try patchQuickTimeImage(quicktimeImage: &quicktimePayload.idsc);
   }
@@ -261,11 +358,11 @@ struct QuickTimeOpcode : OpCode {
   var quicktimePayload : QuickTimePayload = QuickTimePayload();
 }
 
-func parseQuickTimeStream(reader: QuickDrawDataReader) throws -> QuickTimePayload {
+func parseQuickTimeStream(reader: QuickDrawDataReader, quicktimePayload: inout QuickTimePayload ) throws  {
   var quickTimeIdsc : QuickTimeIdsc?;
   var quickTimeIdat : Data?;
   
-  while reader.remaining > 0 {
+  while reader.remaining > 8 {
     let length = Int(try reader.readInt32()) - 8;
     guard length >= 0 else {
       throw QuickTimeError.corruptQuickTimeAtomLength(length: length);
@@ -279,23 +376,16 @@ func parseQuickTimeStream(reader: QuickDrawDataReader) throws -> QuickTimePayloa
     case "idat":
       quickTimeIdat = data
     default:
-      print("Ignoring QuickTime atom \(type)");
+      print("Ignoring QuickTime atom \(type): \(length) bytes");
       break;
     }
   }
-  let quicktimePayload = QuickTimePayload();
-  guard let idsc = quickTimeIdsc else {
-    // 0x69647363 = idsc
-    throw QuickTimeError.missingQuickTimePart(code: MacTypeCode(rawValue: 0x69647363));
+  if let idsc = quickTimeIdsc {
+    quicktimePayload.idsc = idsc;
   }
-  quicktimePayload.idsc = idsc;
-  // 0x69646174 = idat
-  guard let idat = quickTimeIdat else {
-    throw QuickTimeError.missingQuickTimePart(code: MacTypeCode(rawValue: 0x69646174));
+  if let idat = quickTimeIdat {
+    quicktimePayload.idsc.data = idat;
   }
-  quicktimePayload.idsc.data = idat;
-  try patchQuickTimeImage(quicktimeImage: &quicktimePayload.idsc);
-  return quicktimePayload;
 }
 
 /// Parse a QuickTime image into a QuickDraw picture.
@@ -305,7 +395,10 @@ func parseQuickTimeStream(reader: QuickDrawDataReader) throws -> QuickTimePayloa
 /// - Returns: a _fake_ QuickDraw image with a single QuickTime opcode.
 func parseQuickTimeImage(reader: QuickDrawDataReader) throws -> QDPicture {
   let fileSize = reader.remaining;
-  let payload = try parseQuickTimeStream(reader: reader);
+  var payload = QuickTimePayload();
+  payload.transform = QuickTimePayload.identityTransform;
+  try parseQuickTimeStream(reader: reader, quicktimePayload: &payload);
+  try patchQuickTimeImage(quicktimeImage: &payload.idsc);
   let frame = QDRect(topLeft: QDPoint.zero, dimension: payload.idsc.dimensions);
   let destination = QDRegion.forRect(rect: frame);
   payload.srcMask = destination;

@@ -30,7 +30,7 @@ It supports the following features.
 * Palette images
 * Direct (RGB) images
 * QuickTime embedded images with the following codecs:
-  * External image formats `JPEG`, `TIFF`, `PNG `, `BMP ` (`WRLE`).
+  * External image formats: JPEG, TIFF, PNG, BMP, JPEG-2000.
   * RAW (`raw `).
   * Apple Video (`RPZA`), Apple Component Video (`YUV2`).
   * Planar Video (`8BPS`). 
@@ -49,7 +49,7 @@ Currently, the following QuickDraw features don't work:
 * Text rotation, alignement
 * Polygon smoothing
 * Color patterns
-* Exotic QuickTime codes, like for instance Photo-CD
+* Exotic QuickTime codecs, like for instance Photo-CD
 
 ## User Interface Application
 
