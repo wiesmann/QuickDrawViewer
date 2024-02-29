@@ -106,6 +106,7 @@ class QDColorTable : CustomStringConvertible {
   var id : Int = 0;
   
   static let blackWhite : QDColorTable = QDColorTable(clut:[QDColor.black, QDColor.white]);
+  static let whiteBlack : QDColorTable = QDColorTable(clut:[QDColor.white, QDColor.black]);
   
   static func forClutId(clutId: Int) -> QDColorTable? {
     if (clutId == 8) {

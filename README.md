@@ -30,8 +30,10 @@ It supports the following features.
 * Palette images
 * Direct (RGB) images
 * QuickTime embedded images with the following codecs:
-  * External image formats: JPEG, TIFF, PNG, BMP, JPEG-2000.
+  * External image formats: JPEG, TIFF, PNG, BMP, JPEG-2000, GIF 
+    (these are handled natively by the renderer).
   * RAW (`raw `).
+  * MacPaint
   * Apple Video (`RPZA`), Apple Component Video (`YUV2`).
   * Planar Video (`8BPS`). 
 * QuickTime images which use a supported codec (see above).

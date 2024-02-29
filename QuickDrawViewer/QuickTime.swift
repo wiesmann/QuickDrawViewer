@@ -295,6 +295,11 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
     let skipped = data.subdata(in: 8..<data.count);
     quicktimeImage.dataStatus = .patched;
     quicktimeImage.data = skipped;
+  case "PNTG":
+    let macPaintImage = MacPaintImage();
+    try macPaintImage.load(data:data);
+    quicktimeImage.dataStatus = .decoded(decodedMetaData: macPaintImage);
+    quicktimeImage.data = Data(macPaintImage.bitmap);
   default:
     break;
   }
@@ -311,6 +316,10 @@ func codecToContentType(qtImage : QuickTimeIdsc) -> String {
     return "com.truevision.tga-image";
   case "mjp2":
     return "public.jpeg-2000";
+  case "WRLE":
+    return "com.microsoft.bmp";
+  case "PNTG":
+    return "com.apple.macpaint-image";
   default:
     return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
   }

@@ -11,6 +11,8 @@
 		E508C4F52B764CB2007686AE /* Planar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F32B764CB2007686AE /* Planar.swift */; };
 		E508C4F72B8E9575007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
 		E508C4F82B8E9575007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
+		E508C4FA2B911FD5007686AE /* MacPaint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F92B911FD5007686AE /* MacPaint.swift */; };
+		E508C4FB2B911FD5007686AE /* MacPaint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F92B911FD5007686AE /* MacPaint.swift */; };
 		E50ADB942B599BDE009EA7AF /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
 		E50ADB952B599BDE009EA7AF /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
 		E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6F2B42C0E500D7BB7B /* ContentView.swift */; };
@@ -62,6 +64,7 @@
 /* Begin PBXFileReference section */
 		E508C4F32B764CB2007686AE /* Planar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planar.swift; sourceTree = "<group>"; };
 		E508C4F62B8E9575007686AE /* QuickDrawColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawColor.swift; sourceTree = "<group>"; };
+		E508C4F92B911FD5007686AE /* MacPaint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPaint.swift; sourceTree = "<group>"; };
 		E50ADB932B599BDE009EA7AF /* FixedPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedPoint.swift; sourceTree = "<group>"; };
 		E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Yuv2.swift; sourceTree = "<group>"; };
 		E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTime.swift; sourceTree = "<group>"; };
@@ -157,6 +160,7 @@
 				E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */,
 				E508C4F32B764CB2007686AE /* Planar.swift */,
 				E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */,
+				E508C4F92B911FD5007686AE /* MacPaint.swift */,
 				E59CDF712B42C0E600D7BB7B /* Assets.xcassets */,
 				E59CDF762B42C0E600D7BB7B /* Info.plist */,
 				E59CDF772B42C0E600D7BB7B /* QuickDrawViewer.entitlements */,
@@ -290,6 +294,7 @@
 				E5CDA02D2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */,
 				E59CDF6E2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift in Sources */,
 				E553E4E22B6FFA53009B1EC2 /* TypeCode.swift in Sources */,
+				E508C4FA2B911FD5007686AE /* MacPaint.swift in Sources */,
 				E59CDFB32B42EE0A00D7BB7B /* QuickDrawTypes.swift in Sources */,
 				E50ADB942B599BDE009EA7AF /* FixedPoint.swift in Sources */,
 				E59CDFB52B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */,
@@ -322,6 +327,7 @@
 				E5CDA02E2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */,
 				E59CDFB62B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */,
 				E59CDFB22B42EE0A00D7BB7B /* QuickDrawReader.swift in Sources */,
+				E508C4FB2B911FD5007686AE /* MacPaint.swift in Sources */,
 				E5CDA0282B44155E008DC6D6 /* QuickDrawParser.swift in Sources */,
 				E59CDFAE2B42EE0A00D7BB7B /* QuickDrawOpcodes.swift in Sources */,
 				E55E05F82B61A74A00EA1AD8 /* RoadPizza.swift in Sources */,
