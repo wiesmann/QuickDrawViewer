@@ -11,7 +11,7 @@ import SwiftUI
 struct HelpMenu: View {
   var body: some View {
     Group {
-      Link("QuickDraw Viewer Project", destination: URL(
+      Link(String(localized: "QuickDraw Viewer Project"), destination: URL(
         string: "https://github.com/wiesmann/QuickDrawViewer")!)
     }
   }

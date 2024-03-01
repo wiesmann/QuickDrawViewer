@@ -320,6 +320,8 @@ func codecToContentType(qtImage : QuickTimeIdsc) -> String {
     return "com.microsoft.bmp";
   case "PNTG":
     return "com.apple.macpaint-image";
+  case "gif ":
+    return "com.compuserve.gif";
   default:
     return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
   }

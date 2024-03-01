@@ -5,35 +5,37 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
 			<key>CFBundleTypeName</key>
 			<string>Apple QuickTime picture</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.apple.quicktime-image</string>
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Apple QuickDraw pictures</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
-      <key>CFBundleTypeName</key>
-      <string>Apple QuicDraw pictures</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.apple.pict</string>
 			</array>
 		</dict>
-    <dict>
-      <key>CFBundleTypeRole</key>
-      <string>Viewer</string>
-      <key>CFBundleTypeName</key>
-      <string>Apple MacPaint pictures</string>
-      <key>LSItemContentTypes</key>
-      <array>
-        <string>com.apple.macpaint-image</string>
-      </array>
-    </dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Apple MacPaint pictures</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.apple.macpaint-image</string>
+			</array>
+		</dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
@@ -71,23 +73,23 @@
 				</array>
 			</dict>
 		</dict>
-    <dict>
-      <key>UTTypeConformsTo</key>
-      <array>
-        <string>public.image</string>
-      </array>
-      <key>UTTypeDescription</key>
-      <string>MacPaint Picture</string>
-      <key>UTTypeIdentifier</key>
-      <string>com.apple.macpaint-image</string>
-      <key>UTTypeTagSpecification</key>
-      <dict>
-        <key>public.filename-extension</key>
-        <array>
-          <string>pntg</string>
-        </array>
-      </dict>
-    </dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.image</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>MacPaint Picture</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.apple.macpaint-image</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>pntg</string>
+				</array>
+			</dict>
+		</dict>
 	</array>
 </dict>
 </plist>

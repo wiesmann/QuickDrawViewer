@@ -55,7 +55,7 @@ struct ContentView: View {
         Button {
           isExporting = true
         } label: {
-          Label("Export file", systemImage: "square.and.arrow.up")
+          Label(String(localized: "Export file"), systemImage: "square.and.arrow.up")
         }
       }
     }
