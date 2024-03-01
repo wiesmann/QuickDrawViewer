@@ -675,7 +675,7 @@ func readPixMapInfo(reader: QuickDrawDataReader) throws -> QDPixMapInfo {
   pixMapInfo.cmpCount = Int(try reader.readUInt16());
   pixMapInfo.cmpSize = Int(try reader.readUInt16());
   pixMapInfo.planeByte = Int64(try reader.readUInt32());
-  pixMapInfo.clutId = try reader.readType();
+  pixMapInfo.clutId = try reader.readInt32();
   pixMapInfo.clutSeed = try reader.readType();
   return pixMapInfo;
 }
@@ -695,20 +695,7 @@ struct BitRectOpcode : OpCode {
     bitmapInfo.bounds = try reader.readRect();
     if isPixMap {
       let pixMapInfo = try readPixMapInfo(reader:reader);
-      reader.skip(bytes: 4);
-      let clutFlags = try reader.readUInt16();
-      let colorTable = QDColorTable(clutFlags: clutFlags);
-      let clutSize = try reader.readUInt16();
-      for index in 0...clutSize {
-        let r_index = try reader.readUInt16();
-        // DeskDraw produces index with value 0x8000
-        if r_index != index && r_index != 0x8000 {
-          print("Inconsistent index: \(r_index)≠\(index)");
-        }
-        let color = try reader.readColor();
-        colorTable.clut.append(color)
-      }
-      pixMapInfo.clut = colorTable;
+      pixMapInfo.clut = try reader.readClut();
       bitmapInfo.pixMapInfo = pixMapInfo;
     }
     

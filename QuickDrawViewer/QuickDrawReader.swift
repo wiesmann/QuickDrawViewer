@@ -187,13 +187,6 @@ class QuickDrawDataReader {
     return QDPolygon(boundingBox: boundingBox, points: points);
   }
   
-  func readColor() throws -> QDColor {
-    let red = try readUInt16();
-    let green = try readUInt16();
-    let blue = try readUInt16();
-    return QDColor(red: red, green: green, blue: blue);
-  }
-  
   func readRegion() throws -> QDRegion {
     var len = UInt16(try readUInt16());
     if len < 10 {

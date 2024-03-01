@@ -12,10 +12,6 @@ class MacPaintImage : PixMapMetadata {
   
   func load(data : Data) throws {
     self.bitmap = try DecompressPackBit(data: Array(data), unpackedSize: 720 * 72);
-    // For some reason, MacPaint pictures have black and white inverted.
-    for i in 0..<self.bitmap.count {
-      self.bitmap[i] = self.bitmap[i] ^ 0xff;
-    }
   }
   
   /// Convert the MacPaint images into an opcode.

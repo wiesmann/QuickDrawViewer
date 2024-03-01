@@ -9,11 +9,12 @@
 /* Begin PBXBuildFile section */
 		E508C4F42B764CB2007686AE /* Planar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F32B764CB2007686AE /* Planar.swift */; };
 		E508C4F52B764CB2007686AE /* Planar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F32B764CB2007686AE /* Planar.swift */; };
-		E508C4F72B8E9575007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
 		E508C4F82B8E9575007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
 		E508C4FA2B911FD5007686AE /* MacPaint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F92B911FD5007686AE /* MacPaint.swift */; };
 		E508C4FB2B911FD5007686AE /* MacPaint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F92B911FD5007686AE /* MacPaint.swift */; };
 		E508C4FC2B920F25007686AE /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E59CDF762B42C0E600D7BB7B /* Info.plist */; };
+		E508C4FD2B92199D007686AE /* License.txt in Resources */ = {isa = PBXBuildFile; fileRef = E55E05F52B61943300EA1AD8 /* License.txt */; };
+		E508C4FE2B927073007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
 		E50ADB942B599BDE009EA7AF /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
 		E50ADB952B599BDE009EA7AF /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
 		E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6F2B42C0E500D7BB7B /* ContentView.swift */; };
@@ -269,6 +270,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E508C4FC2B920F25007686AE /* Info.plist in Resources */,
+				E508C4FD2B92199D007686AE /* License.txt in Resources */,
 				E59CDF752B42C0E600D7BB7B /* Preview Assets.xcassets in Resources */,
 				E55E05FA2B63D6A600EA1AD8 /* Credits.rtf in Resources */,
 				E59CDF722B42C0E600D7BB7B /* Assets.xcassets in Resources */,
@@ -289,6 +291,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E508C4FE2B927073007686AE /* QuickDrawColor.swift in Sources */,
 				E5CDA0272B44155E008DC6D6 /* QuickDrawParser.swift in Sources */,
 				E59CDFAF2B42EE0A00D7BB7B /* PackBit.swift in Sources */,
 				E55E05F72B61A74A00EA1AD8 /* RoadPizza.swift in Sources */,
@@ -305,7 +308,6 @@
 				E5CDA0242B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
 				E553E4DF2B6FD9F5009B1EC2 /* QuickTime.swift in Sources */,
 				E59CDFAD2B42EE0A00D7BB7B /* QuickDrawOpcodes.swift in Sources */,
-				E508C4F72B8E9575007686AE /* QuickDrawColor.swift in Sources */,
 				E59CDF6C2B42C0E500D7BB7B /* QuickDrawViewerApp.swift in Sources */,
 				E59CDF702B42C0E500D7BB7B /* ContentView.swift in Sources */,
 			);
@@ -503,10 +505,12 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"QuickDrawViewer/Preview Content\"";
 				DEVELOPMENT_TEAM = 3ZZ49ZPVNF;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickDrawViewer/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "QuickDraw Viewer";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© Matthias Wiesmann – Apache 2.0 License.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -537,10 +541,12 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"QuickDrawViewer/Preview Content\"";
 				DEVELOPMENT_TEAM = 3ZZ49ZPVNF;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickDrawViewer/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "QuickDraw Viewer";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© Matthias Wiesmann – Apache 2.0 License.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

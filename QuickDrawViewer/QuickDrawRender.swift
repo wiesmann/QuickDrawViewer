@@ -669,7 +669,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     self.picture = picture;
     let origin = CGPoint(qd_point: picture.frame.topLeft);
     context!.translateBy(x: -origin.x, y: -origin.y);
+
+    let vScale = QDResolution.defaultResolution.vRes.value / picture.resolution.vRes.value;
+    let hScale = QDResolution.defaultResolution.hRes.value / picture.resolution.hRes.value;
+    context!.scaleBy(x: hScale, y: vScale);
     context!.scaleBy(x: zoom, y: zoom);
+    
     for opcode in picture.opcodes {
       do {
         try execute(opcode:opcode);

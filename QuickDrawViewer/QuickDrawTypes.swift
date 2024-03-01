@@ -584,6 +584,7 @@ class QDPixMapInfo : CustomStringConvertible {
     result += "composant count: \(cmpCount) ";
     result += "composant size: \(cmpSize) ";
     result += "plane byte: \(planeByte) ";
+    result += "clut Id: \(clutId) ";
     if clut != nil {
       result += "clut: \(clut!)";
     }
@@ -599,7 +600,7 @@ class QDPixMapInfo : CustomStringConvertible {
   var cmpCount : Int = 0;
   var cmpSize : Int = 0;
   var planeByte : Int64 = 0;
-  var clutId : MacTypeCode = MacTypeCode.zero;
+  var clutId : Int32 = 0;
   var clutSeed : MacTypeCode = MacTypeCode.zero;
   var clut : QDColorTable?;
 }
