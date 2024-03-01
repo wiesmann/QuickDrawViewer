@@ -6,6 +6,17 @@ I wanted to teach myself Swift programming, and needed something a bit more invo
 
 This program is far from finished, but I decided to release it for the 40th anniversary of the original Macintosh computer: QuickDraw was the graphical language of the original Macintosh, and the format used to store and exchange images on the computer. Support for these files has been slowly decaying with newer versions of Mac OS X, and on my M1 PowerBook, Preview can only open a small subset of the files I have.
 
+## Supported File types
+
+This application basically handles QuickDraw image files, but also two related (but distinct) image formats:
+
+* QuickTime images (`QTIF`) 
+* MacPaint images (`PNTG`)
+
+These two formats are handled by converting them into QuickDraw at load time.
+QuickTime images are supported so far as the underlying codec is supported.
+MacPaint images are supported by virtue of being one of codecs that can be embedded inside QuickTime.
+
 ## Structure
 
 This program has basically three parts:
@@ -36,7 +47,6 @@ It supports the following features.
   * MacPaint
   * Apple Video (`RPZA`), Apple Component Video (`YUV2`).
   * Planar Video (`8BPS`). 
-* QuickTime images which use a supported codec (see above).
 
 Some basic comment parsing is used to improve images, in particular:
 

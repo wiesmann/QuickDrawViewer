@@ -16,6 +16,9 @@ extension UTType {
   static var quickTimeImage: UTType {
     UTType(importedAs: "com.apple.quicktime-image")
   }
+  static var macPaintImage : UTType {
+    UTType(importedAs: "com.apple.macpaint-image")
+  }
 }
 
 struct QuickDrawViewerDocument: FileDocument {
@@ -58,12 +61,17 @@ struct QuickDrawViewerDocument: FileDocument {
         logger.log(level: .error, "Failed parsing quicktime: \(error)");
         throw error;
       }
+    case .macPaintImage:
+      let macPaint = MacPaintImage();
+      try macPaint.load(data: data.subdata(in: 512..<data.count));
+      picture = macPaint.macPicture(filename: configuration.file.filename);
     default:
       throw CocoaError(.fileReadUnknown);
     }
   }
   
-  static var readableContentTypes: [UTType] { [.quickDrawImage, .quickTimeImage ] };
+  static var readableContentTypes: [UTType] {
+      [.quickDrawImage, .quickTimeImage, .macPaintImage] };
   // static var writableContentTypes: [UTType] { [.pdf] };
   
   func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {

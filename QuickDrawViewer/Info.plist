@@ -17,30 +17,30 @@
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+      <key>CFBundleTypeName</key>
+      <string>Apple QuicDraw pictures</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.apple.pict</string>
 			</array>
-			<key>CFBundleTypeName</key>
-			<string>Apple QuicDraw pictures</string>
 		</dict>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>None</string>
-			<key>CFBundleTypeName</key>
-			<string>PDF</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.adobe.pdf</string>
-			</array>
-		</dict>
+    <dict>
+      <key>CFBundleTypeRole</key>
+      <string>Viewer</string>
+      <key>CFBundleTypeName</key>
+      <string>Apple MacPaint pictures</string>
+      <key>LSItemContentTypes</key>
+      <array>
+        <string>com.apple.macpaint-image</string>
+      </array>
+    </dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>
-				<string></string>
+				<string>public.image</string>
 			</array>
 			<key>UTTypeDescription</key>
 			<string>QuickTime Picture</string>
@@ -57,7 +57,7 @@
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>
-				<string>public.plain-text</string>
+				<string>public.image</string>
 			</array>
 			<key>UTTypeDescription</key>
 			<string>Quickdraw Picture</string>
@@ -71,6 +71,23 @@
 				</array>
 			</dict>
 		</dict>
+    <dict>
+      <key>UTTypeConformsTo</key>
+      <array>
+        <string>public.image</string>
+      </array>
+      <key>UTTypeDescription</key>
+      <string>MacPaint Picture</string>
+      <key>UTTypeIdentifier</key>
+      <string>com.apple.macpaint-image</string>
+      <key>UTTypeTagSpecification</key>
+      <dict>
+        <key>public.filename-extension</key>
+        <array>
+          <string>pntg</string>
+        </array>
+      </dict>
+    </dict>
 	</array>
 </dict>
 </plist>

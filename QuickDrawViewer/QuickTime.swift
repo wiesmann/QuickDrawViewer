@@ -399,6 +399,8 @@ func parseQuickTimeStream(reader: QuickDrawDataReader, quicktimePayload: inout Q
 
 /// Parse a QuickTime image into a QuickDraw picture.
 /// This will fail if the QuickTime image does not have an `idsc` (image description) atom.
+/// Note that the resulting file is enough for this program, a valid QuickDraw file would require some
+/// header operations.
 /// - Parameter reader: reader pointing to the data.
 /// - Throws: if data is corrupt / unreadable
 /// - Returns: a _fake_ QuickDraw image with a single QuickTime opcode.
