@@ -44,4 +44,3 @@ class MacPaintImage : PixMapMetadata {
   var clut: QDColorTable? = QDColorTable.blackWhite;
   var bitmap: [UInt8] = [];
 }
-

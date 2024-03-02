@@ -187,20 +187,7 @@ class QuickDrawDataReader {
     return QDPolygon(boundingBox: boundingBox, points: points);
   }
   
-  func readRegion() throws -> QDRegion {
-    var len = UInt16(try readUInt16());
-    if len < 10 {
-      len += 10;
-    }
-    let rgnDataSize = Data.Index(len - 10);
-    let box = try readRect();
-    if rgnDataSize > 0 {
-      let data = try readUInt16(bytes: rgnDataSize);
-      let (rects, bitlines) = try DecodeRegionData(boundingBox: box, data: data);
-      return QDRegion(boundingBox:box, rects:rects, bitlines: bitlines);
-    }
-    return QDRegion(boundingBox:box, rects: [], bitlines:[[]]);
-  }
+  
   
   func readOpcode(version: Int) throws -> UInt16 {
     switch version {
