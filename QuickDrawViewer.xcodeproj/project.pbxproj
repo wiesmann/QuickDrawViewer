@@ -12,7 +12,6 @@
 		E508C4F82B8E9575007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
 		E508C4FA2B911FD5007686AE /* MacPaint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F92B911FD5007686AE /* MacPaint.swift */; };
 		E508C4FB2B911FD5007686AE /* MacPaint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F92B911FD5007686AE /* MacPaint.swift */; };
-		E508C4FC2B920F25007686AE /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E59CDF762B42C0E600D7BB7B /* Info.plist */; };
 		E508C4FD2B92199D007686AE /* License.txt in Resources */ = {isa = PBXBuildFile; fileRef = E55E05F52B61943300EA1AD8 /* License.txt */; };
 		E508C4FE2B927073007686AE /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
 		E508C5002B936919007686AE /* QuickDrawRegions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4FF2B936919007686AE /* QuickDrawRegions.swift */; };
@@ -70,6 +69,7 @@
 		E508C4F62B8E9575007686AE /* QuickDrawColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawColor.swift; sourceTree = "<group>"; };
 		E508C4F92B911FD5007686AE /* MacPaint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPaint.swift; sourceTree = "<group>"; };
 		E508C4FF2B936919007686AE /* QuickDrawRegions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawRegions.swift; sourceTree = "<group>"; };
+		E508C5022B94F457007686AE /* QuickDrawViewerRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickDrawViewerRelease.entitlements; sourceTree = "<group>"; };
 		E50ADB932B599BDE009EA7AF /* FixedPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedPoint.swift; sourceTree = "<group>"; };
 		E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Yuv2.swift; sourceTree = "<group>"; };
 		E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTime.swift; sourceTree = "<group>"; };
@@ -150,6 +150,7 @@
 		E59CDF6A2B42C0E500D7BB7B /* QuickDrawViewer */ = {
 			isa = PBXGroup;
 			children = (
+				E508C5022B94F457007686AE /* QuickDrawViewerRelease.entitlements */,
 				E50ADB962B599CCE009EA7AF /* UI */,
 				E50ADB932B599BDE009EA7AF /* FixedPoint.swift */,
 				E553E4E12B6FFA53009B1EC2 /* TypeCode.swift */,
@@ -273,7 +274,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E508C4FC2B920F25007686AE /* Info.plist in Resources */,
 				E508C4FD2B92199D007686AE /* License.txt in Resources */,
 				E59CDF752B42C0E600D7BB7B /* Preview Assets.xcassets in Resources */,
 				E55E05FA2B63D6A600EA1AD8 /* Credits.rtf in Resources */,
@@ -538,7 +538,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_USE_OPTIMIZATION_PROFILE = YES;
-				CODE_SIGN_ENTITLEMENTS = QuickDrawViewer/QuickDrawViewer.entitlements;
+				CODE_SIGN_ENTITLEMENTS = QuickDrawViewer/QuickDrawViewerRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;

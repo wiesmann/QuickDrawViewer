@@ -41,8 +41,6 @@ extension CGImageSourceStatus : CustomStringConvertible {
       return "Unknown";
     }
   }
-  
-  
 }
 
 extension CGPoint {

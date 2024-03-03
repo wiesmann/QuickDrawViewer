@@ -72,7 +72,8 @@ struct QuickDrawViewerDocument: FileDocument {
   
   static var readableContentTypes: [UTType] {
       [.quickDrawImage, .quickTimeImage, .macPaintImage] };
-  // static var writableContentTypes: [UTType] { [.pdf] };
+  
+  static var writableContentTypes: [UTType] {[.pdf]};
   
   func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
     throw CocoaError(.fileWriteUnsupportedScheme);

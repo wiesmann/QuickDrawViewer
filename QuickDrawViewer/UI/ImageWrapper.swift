@@ -43,3 +43,17 @@ func MakePdfFilename(picture: QDPicture) -> String {
   let filename = picture.filename ?? "picture.pict";
   return filename.replacingOccurrences(of: "pict", with: "pdf");
 }
+
+func renderPicture(picture: QDPicture, context : CGContext, zoom: Double, logger: Logger) throws -> Void {
+  let startTime = CFAbsoluteTimeGetCurrent();
+    let renderer = QuickdrawCGRenderer(context: context);
+    try renderer.execute(picture: picture, zoom: zoom);
+    let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime;
+    let filename = picture.filename ?? "";
+    let frame = picture.frame;
+    for (pos, opcode) in picture.opcodes.enumerated() {
+      let entry = "\(pos): \(opcode)";
+      logger.log(level: .debug, "\(entry)");
+    }
+    logger.log(level: .info, "\(filename) \(frame)\n rendered in : \(timeElapsed) seconds");
+}
