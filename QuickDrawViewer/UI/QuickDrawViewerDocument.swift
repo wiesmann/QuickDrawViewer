@@ -21,16 +21,12 @@ extension UTType {
   }
 }
 
+/// Document wrapper for QuickDraw file types (also QuickTime and MacPaint).
 class QuickDrawViewerDocument: ReferenceFileDocument {
   
   typealias Snapshot = Data
-  
   var picture: QDPicture;
   let logger  = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "document");
-  
-  init() {
-    picture = QDPicture(size:0, frame: QDRect.empty, filename: "empty");
-  }
   
   init(path: String) throws {
     do {

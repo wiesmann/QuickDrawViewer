@@ -18,8 +18,8 @@ struct QDColor : CustomStringConvertible, Hashable, RawRepresentable {
   
   init (red: UInt16, green: UInt16, blue: UInt16) {
     let r = UInt64(red);
-    let g = UInt64(blue);
-    let b = UInt64(green);
+    let g = UInt64(green);
+    let b = UInt64(blue);
     self.init(rawValue: r << 32 | g << 16 | b);
   }
   
@@ -123,7 +123,7 @@ class QDColorTable : CustomStringConvertible {
   public var description: String {
     let string_flag = String(format: "%0X ", clutFlags);
     var result = "flags: \(string_flag) "
-    result += "size \(clut.count)";
+    result += "clut \(clut)";
     return result;
   }
   

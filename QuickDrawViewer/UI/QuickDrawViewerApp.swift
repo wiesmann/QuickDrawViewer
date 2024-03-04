@@ -27,7 +27,6 @@ struct QuickDrawViewerApp: App {
       CommandGroup(replacing: .help) {
         HelpMenu()
       }
-      
     }
   }
 }

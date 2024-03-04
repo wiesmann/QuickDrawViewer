@@ -11,7 +11,9 @@ import Foundation
 import UniformTypeIdentifiers
 import SwiftUI
 
-extension QDPicture : ObservableObject {
+/// Add UI related features.
+extension QDPicture  {
+
   func pdfData() -> NSData {
     let data = NSMutableData();
     let renderer = PDFRenderer(data: data);
@@ -23,14 +25,18 @@ extension QDPicture : ObservableObject {
     }
     return data;
   }
-  
-  
 }
 
+func MakePdfFilename(picture: QDPicture) -> String {
+  let filename = picture.filename ?? "picture.pict";
+  return filename.replacingOccurrences(of: "pict", with: "pdf");
+}
+
+/// Make it possible to transfer pictures into the clipboard, drag-and-drop.
 extension QDPicture : Transferable {
   public static var transferRepresentation: some TransferRepresentation {
     DataRepresentation(exportedContentType: .pdf) {
-      picture in picture.pdfData() as Data }.suggestedFileName { $0.filename ?? "quickdraw" + ".pdf" }
+      picture in picture.pdfData() as Data }.suggestedFileName { MakePdfFilename(picture: $0) }
   }
 }
 
@@ -42,10 +48,7 @@ func ProvidePicture(picture: QDPicture) -> [NSItemProvider] {
   return [pdfProvider];
 }
 
-func MakePdfFilename(picture: QDPicture) -> String {
-  let filename = picture.filename ?? "picture.pict";
-  return filename.replacingOccurrences(of: "pict", with: "pdf");
-}
+
 
 func renderPicture(picture: QDPicture, context : CGContext, zoom: Double, logger: Logger) throws -> Void {
   let startTime = CFAbsoluteTimeGetCurrent();
