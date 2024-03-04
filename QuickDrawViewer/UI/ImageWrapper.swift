@@ -4,13 +4,14 @@
 //
 //  Created by Matthias Wiesmann on 02.01.2024.
 //
+// Various utility functions to glue the QuickDraw renderer with UI-Kit.
 
 import os
 import Foundation
 import UniformTypeIdentifiers
 import SwiftUI
 
-extension QDPicture {
+extension QDPicture : ObservableObject {
   func pdfData() -> NSData {
     let data = NSMutableData();
     let renderer = PDFRenderer(data: data);
@@ -22,6 +23,8 @@ extension QDPicture {
     }
     return data;
   }
+  
+  
 }
 
 extension QDPicture : Transferable {

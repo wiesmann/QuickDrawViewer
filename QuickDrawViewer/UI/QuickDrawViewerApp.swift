@@ -21,12 +21,13 @@ struct HelpMenu: View {
 @main
 struct QuickDrawViewerApp: App {
   var body: some Scene {
-    DocumentGroup(newDocument: QuickDrawViewerDocument()) { file in
-      ContentView(document: file.$document)
-    }.commands {
+    DocumentGroup(viewing: QuickDrawViewerDocument.self) { file in
+      ContentView(document: file.document)}
+    .commands {
       CommandGroup(replacing: .help) {
         HelpMenu()
       }
+      
     }
   }
 }

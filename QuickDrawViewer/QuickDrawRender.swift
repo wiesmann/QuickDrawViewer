@@ -300,7 +300,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     try executePoly(polygon: poly, verb: polyop.verb);
   }
   
-  func executeRect(rect : QDRect, verb: QDVerb) throws {
+  
+  /// Bottleneck function for rectangle rendering.
+  /// - Parameters:
+  ///   - rect: rectangle to draw
+  ///   - verb: QuickDraw verb to use for drawing.
+  func stdRect(rect : QDRect, verb: QDVerb) throws {
     context!.beginPath();
     context!.addRect(CGRect(qdrect: rect));
     context!.closePath();
@@ -309,7 +314,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   
   func executeRect(rectop : RectOp) throws {
     let rect = rectop.rect ?? lastRect;
-    try executeRect(rect : rect, verb: rectop.verb);
+    try stdRect(rect : rect, verb: rectop.verb);
     lastRect = rect;
   }
   
@@ -362,7 +367,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   func executeRegion(regionOp: RegionOp) throws {
     let region = regionOp.region ?? lastRegion!;
     if region.isRect {
-      try executeRect(rect: region.boundingBox, verb: regionOp.verb);
+      try stdRect(rect: region.boundingBox, verb: regionOp.verb);
     } else {
       let qdRects = region.rects.map({CGRect(qdrect: $0)});
       context!.beginPath();
@@ -448,12 +453,14 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       polyAccumulator = QDPolygon();
     case (.polyClose, _):
       guard let poly = polyAccumulator else {
-        throw CoreGraphicRenderError.inconsistentPoly(message: "Closing non existing poly");
+        throw CoreGraphicRenderError.inconsistentPoly(
+            message: String(localized: "Closing non existing polygon."));
       }
       poly.closed = true;
     case (.polyEnd, _):
       guard let poly = polyAccumulator else {
-        throw CoreGraphicRenderError.inconsistentPoly(message: "Ending non existing poly");
+        throw CoreGraphicRenderError.inconsistentPoly(
+          message: String(localized: "Ending non existing polygon."));
       }
       try executePoly(polygon: poly, verb: QDVerb.frame);
       polyAccumulator = nil;
@@ -489,7 +496,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       decode: nil,
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent) else {
-      throw CoreGraphicRenderError.imageFailure(message: "Could not create palette image");
+      throw CoreGraphicRenderError.imageFailure(
+          message: String(localized:"Could not create palette image."));
     }
     try applyMode(mode: mode);
     context!.drawFlipped(
@@ -543,7 +551,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       decode: nil,
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent) else {
-      throw CoreGraphicRenderError.imageFailure(message: "Could not create RGB bitmap");
+      throw CoreGraphicRenderError.imageFailure(
+        message: String(localized:"Could not create RGB bitmap."));
     }
     try applyMode(mode: mode);
     context!.drawFlipped(

@@ -21,17 +21,18 @@ extension UTType {
   }
 }
 
-struct QuickDrawViewerDocument: FileDocument {
+class QuickDrawViewerDocument: ReferenceFileDocument {
   
-  var picture : QDPicture?;
-  let logger : Logger;
+  typealias Snapshot = Data
+  
+  var picture: QDPicture;
+  let logger  = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "document");
   
   init() {
-    self.logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "document");
+    picture = QDPicture(size:0, frame: QDRect.empty, filename: "empty");
   }
   
-  init(path: String) {
-    self.init();
+  init(path: String) throws {
     do {
       let input_url = URL(string: path);
       let parser = try QDParser(contentsOf: input_url!);
@@ -39,11 +40,11 @@ struct QuickDrawViewerDocument: FileDocument {
     }
     catch {
       logger.log(level: .error, "Failed rendering \(error)");
+      throw CocoaError(.fileReadCorruptFile)
     }
   }
   
-  init(configuration: ReadConfiguration) throws {
-    self.init();
+  required init(configuration: ReadConfiguration) throws {
     guard let data = configuration.file.regularFileContents else {
       throw CocoaError(.fileReadCorruptFile)
     }
@@ -73,9 +74,13 @@ struct QuickDrawViewerDocument: FileDocument {
   static var readableContentTypes: [UTType] {
       [.quickDrawImage, .quickTimeImage, .macPaintImage] };
   
-  static var writableContentTypes: [UTType] {[.pdf]};
+  static var writableContentTypes: [UTType] {[]};
   
-  func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+  func snapshot(contentType: UTType) throws -> Data {
+    throw CocoaError(.fileWriteUnsupportedScheme);
+  }
+  
+  func fileWrapper(snapshot: Data, configuration: WriteConfiguration) throws -> FileWrapper {
     throw CocoaError(.fileWriteUnsupportedScheme);
   }
 }

@@ -9,7 +9,6 @@ import os
 import Foundation
 
 /// Class that decodes a stream of QuickDraw opcodes.
-///
 class QDParser {
   
   /// Setup the parser with the content of the file.

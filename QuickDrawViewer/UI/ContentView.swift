@@ -12,7 +12,7 @@ import PDFKit
 
 struct ContentView: View {
   
-  @Binding var document: QuickDrawViewerDocument;
+  @ObservedObject  var document: QuickDrawViewerDocument;
   
   @State private var renderZoom = 1.0;
   @State private var isExporting = false;
@@ -22,7 +22,7 @@ struct ContentView: View {
   let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "view");
   
   func renderCG(context : CGContext) -> Void {
-    let picture = $document.picture.wrappedValue!;
+    let picture = $document.picture.wrappedValue;
     do {
       try renderPicture(picture: picture, context: context, zoom: renderZoom, logger: self.logger);
     } catch {
@@ -62,9 +62,7 @@ struct ContentView: View {
   }
   
   func QDView() -> some View {
-    guard let picture = $document.picture.wrappedValue else {
-      return AnyView(Text("Empty picture"));
-    }
+    let picture = $document.picture.wrappedValue;
     let width = picture.frame.dimensions.dh.value * renderZoom;
     let height = picture.frame.dimensions.dv.value * renderZoom;
     let canvas = Canvas(opaque: true, colorMode: ColorRenderingMode.linear, rendersAsynchronously: true, renderer: self.render).frame(width: width, height: height);
@@ -89,6 +87,3 @@ struct ContentView: View {
   }
 }
   
-#Preview {
-  ContentView(document: .constant(QuickDrawViewerDocument(path: "file:///Users/wiesmann/Projects/personal/QuickDrawKit/test_files/7.pict")))
-}
