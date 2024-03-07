@@ -300,6 +300,13 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
     try macPaintImage.load(data:data);
     quicktimeImage.dataStatus = .decoded(decodedMetaData: macPaintImage);
     quicktimeImage.data = Data(macPaintImage.bitmap);
+  case "rle ":
+    let animation = AnimationImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth, clut: quicktimeImage.clut);
+    try animation.load(data: data);
+    let data = animation.pixmap;
+    quicktimeImage.dataStatus = .decoded(decodedMetaData: animation);
+    quicktimeImage.data = Data(data);
+    
   default:
     break;
   }

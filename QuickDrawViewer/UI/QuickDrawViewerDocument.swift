@@ -24,8 +24,8 @@ extension UTType {
 /// Document wrapper for QuickDraw file types (also QuickTime and MacPaint).
 class QuickDrawViewerDocument: ReferenceFileDocument {
   
-  typealias Snapshot = Data
-  var picture: QDPicture;
+  typealias Snapshot = Data;
+  @Published var picture: QDPicture;
   let logger  = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "document");
   
   init(path: String) throws {
@@ -71,12 +71,12 @@ class QuickDrawViewerDocument: ReferenceFileDocument {
       [.quickDrawImage, .quickTimeImage, .macPaintImage] };
   
   static var writableContentTypes: [UTType] {[]};
-  
+
   func snapshot(contentType: UTType) throws -> Data {
-    throw CocoaError(.fileWriteUnsupportedScheme);
+    throw CocoaError(.fileWriteUnknown);
   }
   
   func fileWrapper(snapshot: Data, configuration: WriteConfiguration) throws -> FileWrapper {
-    throw CocoaError(.fileWriteUnsupportedScheme);
+    throw CocoaError(.fileWriteNoPermission);
   }
 }

@@ -30,6 +30,8 @@
 		E55E05F72B61A74A00EA1AD8 /* RoadPizza.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */; };
 		E55E05F82B61A74A00EA1AD8 /* RoadPizza.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */; };
 		E55E05FA2B63D6A600EA1AD8 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = E55E05F92B63D6A600EA1AD8 /* Credits.rtf */; };
+		E574829B2B990DBC004A6409 /* Animation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E574829A2B990DBC004A6409 /* Animation.swift */; };
+		E574829C2B990DBC004A6409 /* Animation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E574829A2B990DBC004A6409 /* Animation.swift */; };
 		E59CDF6C2B42C0E500D7BB7B /* QuickDrawViewerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6B2B42C0E500D7BB7B /* QuickDrawViewerApp.swift */; };
 		E59CDF6E2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6D2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift */; };
 		E59CDF702B42C0E500D7BB7B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6F2B42C0E500D7BB7B /* ContentView.swift */; };
@@ -78,6 +80,7 @@
 		E55E05F52B61943300EA1AD8 /* License.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = License.txt; sourceTree = "<group>"; };
 		E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadPizza.swift; sourceTree = "<group>"; };
 		E55E05F92B63D6A600EA1AD8 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
+		E574829A2B990DBC004A6409 /* Animation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animation.swift; sourceTree = "<group>"; };
 		E59CDF682B42C0E500D7BB7B /* QuickDrawViewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickDrawViewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E59CDF6B2B42C0E500D7BB7B /* QuickDrawViewerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawViewerApp.swift; sourceTree = "<group>"; };
 		E59CDF6D2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawViewerDocument.swift; sourceTree = "<group>"; };
@@ -168,6 +171,7 @@
 				E508C4F32B764CB2007686AE /* Planar.swift */,
 				E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */,
 				E508C4F92B911FD5007686AE /* MacPaint.swift */,
+				E574829A2B990DBC004A6409 /* Animation.swift */,
 				E59CDF712B42C0E600D7BB7B /* Assets.xcassets */,
 				E59CDF762B42C0E600D7BB7B /* Info.plist */,
 				E59CDF772B42C0E600D7BB7B /* QuickDrawViewer.entitlements */,
@@ -314,6 +318,7 @@
 				E553E4DF2B6FD9F5009B1EC2 /* QuickTime.swift in Sources */,
 				E59CDFAD2B42EE0A00D7BB7B /* QuickDrawOpcodes.swift in Sources */,
 				E59CDF6C2B42C0E500D7BB7B /* QuickDrawViewerApp.swift in Sources */,
+				E574829B2B990DBC004A6409 /* Animation.swift in Sources */,
 				E59CDF702B42C0E500D7BB7B /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -322,6 +327,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E574829C2B990DBC004A6409 /* Animation.swift in Sources */,
 				E508C4F82B8E9575007686AE /* QuickDrawColor.swift in Sources */,
 				E5CDA0252B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
 				E508C4F52B764CB2007686AE /* Planar.swift in Sources */,

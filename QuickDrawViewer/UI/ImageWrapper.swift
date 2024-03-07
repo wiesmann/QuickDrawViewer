@@ -11,8 +11,9 @@ import Foundation
 import UniformTypeIdentifiers
 import SwiftUI
 
+
 /// Add UI related features.
-extension QDPicture  {
+extension QDPicture {
 
   func pdfData() -> NSData {
     let data = NSMutableData();

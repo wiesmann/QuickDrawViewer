@@ -1,0 +1,123 @@
+//
+//  Animation.swift
+//  QuickDrawViewer
+//
+//  Created by Matthias Wiesmann on 06.03.2024.
+//
+
+import Foundation
+
+enum AnimationCodecError : Error {
+  case unknownPackBitStride(depth: Int);
+  case unknownPackBitOpcode(code: Int8);
+  case outOfBoundWrite(x: Int, y: Int, length: Int);
+}
+
+// TODO: depth = 1 bits per pixels does not work.
+class AnimationImage : PixMapMetadata {
+  init(dimensions: QDDelta, depth: Int, clut: QDColorTable?) {
+    self.dimensions = dimensions;
+    self.depth = depth;
+    self.clut =  clut;
+    let s = dimensions.dh.rounded * depth / 8 * (dimensions.dv.rounded + 1);
+    self.pixmap = Array<UInt8>(repeating: UInt8.zero, count: s);
+  }
+  
+  var rowBytes: Int {
+    return dimensions.dh.rounded * depth / 8;
+  }
+  
+  var cmpSize: Int {
+    switch depth {
+    case 1: return 1;
+    case 2: return 2;
+    case 4: return 4;
+    case 8:return 8;
+    case 16: return 5;
+    case 24: return 8;
+    case 32: return 8;
+    default:
+      return -1;
+    }
+  }
+  
+  var pixelSize: Int {
+    return depth;
+  }
+  
+  func packBitStride() throws -> Int {
+    switch depth {
+    case 1: return 2;
+    case 2: return 4;
+    case 4: return 4;
+    case 8: return 4;
+    case 16: return 2;
+    case 24: return 3;
+    case 32: return 4;
+    default:
+      throw AnimationCodecError.unknownPackBitStride(depth: depth);
+    }
+  }
+  
+  func writeStride(x: Int, y: Int, data: ArraySlice<UInt8>) throws {
+    let offset = (y * rowBytes) + (x * depth / 8);
+    for (i, v) in data.enumerated() {
+      guard offset + i < pixmap.count else {
+        throw AnimationCodecError.outOfBoundWrite(x:x, y:y,length:  i);
+      }
+      pixmap[offset + i] = v;
+    }
+  }
+  
+  func parseRunLength(data : ArraySlice<UInt8>, x: inout Int, y: inout Int) throws -> Int {
+    let stride = try packBitStride();
+    var index = data.startIndex;
+    while index < data.endIndex {
+      var decompressed : [UInt8] = [];
+      let code = Int8(bitPattern: data[index]);
+      index += 1;
+      switch code {
+      case 0: return index - data.startIndex ;
+      case -1:
+        x = 0; y += 1; return index - data.startIndex;
+      case let v where v > 0:
+        index += try copyDiscrete(length: Int(code), src: data[index...], destination: &decompressed, byteNum: stride);
+      case let v where v < -1:
+        index += try copyRepeated(length: -Int(code) , src: data[index...], destination: &decompressed, byteNum: stride);
+      default:
+        throw AnimationCodecError.unknownPackBitOpcode(code: code);
+      }
+      try writeStride(x: x, y:y, data: decompressed[0...]);
+      x += (decompressed.count * 8 / depth);
+    }
+    return index - data.startIndex;
+  }
+  
+  func load(data : Data) throws {
+    let reader = try QuickDrawDataReader(data: data, position:0);
+    let _ = try reader.readUInt32();
+    var x = 0;
+    var y = 0;
+    let head_flag = try reader.readUInt16();
+    if (head_flag & 0x0008) != 0{
+      y = Int(try reader.readInt16());
+      reader.skip(bytes: 6);
+    }
+    let encoded = try reader.readUInt8(bytes: reader.remaining);
+    var index = 0;
+    
+    while (index < encoded.count - 1) {
+      let skip = Int(encoded[index]);
+      index += 1;
+      x += (skip - 1);
+      index += try parseRunLength(data: encoded[index...], x: &x, y: &y);
+    }
+  }
+  
+  
+  let dimensions: QDDelta;
+  let depth: Int;
+  let clut: QDColorTable?;
+  var pixmap : [UInt8];
+  
+}

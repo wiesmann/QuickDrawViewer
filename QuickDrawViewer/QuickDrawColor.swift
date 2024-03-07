@@ -162,6 +162,7 @@ class QDColorTable : CustomStringConvertible {
   static func forClutId(clutId: Int) -> QDColorTable? {
     switch clutId {
     case 1: return blackWhite;
+    case 2: return palette2;
     case 4: return palette4;
     case 8: return palette8;
     default:
