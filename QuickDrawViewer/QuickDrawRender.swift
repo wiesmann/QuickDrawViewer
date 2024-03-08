@@ -4,6 +4,7 @@
 //
 //  Created by Matthias Wiesmann on 03.12.2023.
 //
+// Renderer based on Core Graphics, Image-IO and Core-Text.
 
 import Foundation
 import CoreGraphics
@@ -17,7 +18,7 @@ enum CoreGraphicRenderError : LocalizedError {
   case notRgbColor(color: CGColor);
   case imageCreationFailed(message: String, quicktimeOpcode: QuickTimeOpcode);
   case imageSourceFailure(status: CGImageSourceStatus);
-  case imageFailure(message: String);
+  case imageFailure(message: String, metadata: PixMapMetadata);
   case unsupportedOpcode(opcode: OpCode);
   case inconsistentPoly(message: String);
   case unsupportedMode(mode: QuickDrawMode);
@@ -497,7 +498,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(
-          message: String(localized:"Could not create palette image."));
+          message: String(localized:"Could not create palette image."),
+          metadata: metadata);
     }
     try applyMode(mode: mode);
     context!.drawFlipped(
@@ -552,7 +554,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(
-        message: String(localized:"Could not create RGB bitmap."));
+        message: String(localized:"Could not create RGB bitmap."),
+        metadata: metadata);
     }
     try applyMode(mode: mode);
     context!.drawFlipped(
@@ -750,5 +753,4 @@ class PDFRenderer : QuickdrawCGRenderer {
   }
   
   let consumer : CGDataConsumer;
-  // let url : CFURL;
 }

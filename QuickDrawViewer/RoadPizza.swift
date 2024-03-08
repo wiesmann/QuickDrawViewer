@@ -170,4 +170,10 @@ class RoadPizzaImage : PixMapMetadata {
   
   static let blockSize = 4;
   static let blockDimensions = QDDelta(dv: blockSize, dh: blockSize);
+  
+  var description: String {
+    return "RPZA: \(dimensions) blocks per line: \(blocksPerLine)";
+  }
+  
+  
 }

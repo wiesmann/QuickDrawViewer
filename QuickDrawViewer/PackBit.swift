@@ -4,9 +4,11 @@
 //
 //  Created by Matthias Wiesmann on 16.12.2023.
 //
+// Facilities to handle PackBit and PackBit like compression.
 
 enum PackbitError: Error  {
   case mismatchedLength(expectedLength: Int, actualLength: Int);
+  case emptySlice;
   case outOfBoundRunStart(start: Int, dataSize: Int);
   case outOfBoundRunEnd(end: Int, data: ArraySlice<UInt8>);
 }
@@ -22,6 +24,9 @@ import Foundation
 /// - Throws: outOfBoundRunEnd if pattern is larger than `src`.
 /// - Returns: number of bytes read, always `byteNum`.
 func copyRepeated(length: Int, src : ArraySlice<UInt8>, destination: inout [UInt8], byteNum: Int) throws -> Int {
+  guard !src.isEmpty else {
+    throw PackbitError.emptySlice;
+  }
   let start = src.startIndex;
   let end = start + byteNum;
   guard end <= src.endIndex else {
@@ -42,6 +47,9 @@ func copyRepeated(length: Int, src : ArraySlice<UInt8>, destination: inout [UInt
 /// - Throws: outOfBoundRunEnd if length × byteNum > src
 /// - Returns: number of bytes read,
 func copyDiscrete(length: Int, src : ArraySlice<UInt8>, destination : inout [UInt8], byteNum: Int) throws -> Int {
+  guard !src.isEmpty else {
+    throw PackbitError.emptySlice;
+  }
   let start = src.startIndex;
   let end = start + (length * byteNum);
   guard end <= src.endIndex else {

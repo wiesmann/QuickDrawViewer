@@ -4,6 +4,7 @@
 //
 //  Created by Matthias Wiesmann on 09.02.2024.
 //
+// Decoder for the QuickTime `8BPS` "Planar" codec.
 
 import Foundation
 
@@ -13,7 +14,7 @@ enum PlanarImageError : Error {
 }
 
 class PlanarImage : PixMapMetadata {
-
+  
   init(dimensions: QDDelta, depth: Int, clut: QDColorTable?) throws {
     self.dimensions = dimensions;
     self.depth = depth;
@@ -76,5 +77,10 @@ class PlanarImage : PixMapMetadata {
   var pixmap : [UInt8];
   
   var clut: QDColorTable?;
+  
+  var description: String {
+    return "Planar Image: \(dimensions), depth: \(depth), channels \(channels)";
+  }
+  
 }
 

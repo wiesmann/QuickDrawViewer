@@ -115,6 +115,9 @@ struct ConvertedImageMeta : PixMapMetadata {
   let pixelSize: Int;
   let dimensions: QDDelta;
   let clut: QDColorTable?;
+  var description: String {
+    return "dimensions: \(dimensions), rowBytes: \(rowBytes), cmpSize: \(cmpSize) pixelSize: \(pixelSize)";
+  }
 }
 
 enum QuickTimePictureDataStatus {
@@ -131,7 +134,7 @@ class QuickTimeIdsc : CustomStringConvertible {
     result += " dimensions: \(dimensions), resolution: \(resolution)";
     result += " frameCount: \(frameCount), depth: \(depth)";
     result += " temporalQuality: \(temporalQuality) spatialQuality: \(spatialQuality)"
-    result += " clutId: \(clutId) dataSize: \(dataSize) idscSize: \(idscSize)";
+    result += " clutId: \(clutId) dataSize: \(dataSize) (\(compression * 100)%) idscSize: \(idscSize)";
     result += " data status: \(dataStatus)";
     if let d = data {
       let subdata = d.subdata(in: 0..<16);
@@ -140,6 +143,12 @@ class QuickTimeIdsc : CustomStringConvertible {
       result += " (\(d.count) bytes)"
     }
     return result;
+  }
+  
+  var compression : Float {
+    let rawSize = dimensions.dh.rounded * dimensions.dv.rounded * depth / 8;
+    let ratio = Float(dataSize) / Float(rawSize);
+    return ratio;
   }
   
   var codecType : MacTypeCode = MacTypeCode.zero;

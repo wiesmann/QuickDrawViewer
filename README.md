@@ -45,7 +45,9 @@ It supports the following features.
     (these are handled natively by the renderer).
   * RAW (`raw `).
   * MacPaint
-  * Apple Video (`RPZA`), Apple Component Video (`YUV2`).
+  * Apple Video (`RPZA`)
+  * Apple Component Video (`YUV2`)
+  * Apple Animation (`RLE `) with depths of 2,4,8,16, 24 and 32 bits/pixel
   * Planar Video (`8BPS`). 
 
 Some basic comment parsing is used to improve images, in particular:

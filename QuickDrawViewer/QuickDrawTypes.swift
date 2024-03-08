@@ -160,8 +160,6 @@ class QDPolygon {
   }
 }
 
-
-
 enum QDVerb : UInt16 {
   case frame = 0;
   case paint = 1;
@@ -294,14 +292,8 @@ struct QDPattern : Equatable {
     return Double(total) / (Double(UInt8.bitWidth) * Double(bytes.count));
   }
   
-  // TODO: move the mix function into QDColor.
-  func mixColors(fgColor: QDColor, bgColor: QDColor) -> QDColor {
-    let fg = intensity;
-    let bg = 1 - fg;
-    let red = UInt16(fg * Double(fgColor.red) + bg * Double(bgColor.red));
-    let green = UInt16(fg * Double(fgColor.green) + bg * Double(bgColor.green));
-    let blue = UInt16(fg * Double(fgColor.blue) + bg * Double(bgColor.blue));
-    return QDColor(red: red, green: green, blue: blue);
+  func blendColors(fgColor: QDColor, bgColor: QDColor) -> QDColor {
+    return QDColor.blend(a: fgColor, b: bgColor, aWeight: intensity);
   }
   
   static let black = QDPattern(bytes:[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
@@ -326,12 +318,12 @@ class PenState {
   var ovalSize : QDDelta = QDDelta.zero;
   
   var drawColor : QDColor {
-    let result = drawPattern.mixColors(fgColor: fgColor, bgColor: bgColor);
+    let result = drawPattern.blendColors(fgColor: fgColor, bgColor: bgColor);
     return result;
   }
   
   var fillColor : QDColor {
-    return fillPattern.mixColors(fgColor: fgColor, bgColor: bgColor);
+    return fillPattern.blendColors(fgColor: fgColor, bgColor: bgColor);
   }
   
   /// Pen width, assuming a square pen (height = width).
@@ -467,7 +459,7 @@ class QDPixMapInfo : CustomStringConvertible {
 }
 
 // Abstract view of a bitmap information
-protocol PixMapMetadata {
+protocol PixMapMetadata : CustomStringConvertible {
   var rowBytes : Int {get};
   var cmpSize : Int {get};
   var pixelSize : Int {get};
@@ -524,7 +516,7 @@ class QDBitMapInfo : CustomStringConvertible, PixMapMetadata {
     if let pix_info = pixMapInfo {
       return pix_info.clut!;
     }
-    return QDColorTable.blackWhite;
+    return QDColorTable.palette1;
   }
   
   public var description : String {

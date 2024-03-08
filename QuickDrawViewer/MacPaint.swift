@@ -4,6 +4,8 @@
 //
 //  Created by Matthias Wiesmann on 29.02.2024.
 //
+// Decoder for the MacPaint QuickTime codec.
+// As well as support for loading MacPaint files by converting them to pictures.
 
 import Foundation
 
@@ -41,6 +43,11 @@ class MacPaintImage : PixMapMetadata {
   var cmpSize: Int = 1;
   var pixelSize: Int = 1;
   let dimensions = QDDelta(dv: FixedPoint(720), dh: FixedPoint(576));
-  var clut: QDColorTable? = QDColorTable.blackWhite;
+  var clut: QDColorTable? = QDColorTable.palette1;
   var bitmap: [UInt8] = [];
+  
+  var description: String {
+    return "MacPaint: \(dimensions)";
+  }
+  
 }

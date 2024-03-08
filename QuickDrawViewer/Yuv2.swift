@@ -4,6 +4,7 @@
 //
 //  Created by Matthias Wiesmann on 31.01.2024.
 //
+// Decoder for the QuickTime `yuv2` codec.
 
 import Foundation
 import CoreGraphics
@@ -36,6 +37,3 @@ func convertYuv2Data(data: Data) -> [UInt8] {
   return rgb;
 }
 
-
-
-  
