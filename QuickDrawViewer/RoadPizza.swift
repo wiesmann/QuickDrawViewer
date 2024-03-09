@@ -7,8 +7,6 @@
 
 import Foundation
 
-
-
 /// Creates a ARGB555 color that is ⅔ color a and ⅓ color b.
 /// - Parameters:
 ///   - a: color to mix ⅔ from
@@ -174,6 +172,4 @@ class RoadPizzaImage : PixMapMetadata {
   var description: String {
     return "RPZA: \(dimensions) blocks per line: \(blocksPerLine)";
   }
-  
-  
 }

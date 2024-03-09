@@ -42,12 +42,14 @@ It supports the following features.
 * Direct (RGB) images
 * QuickTime embedded images with the following codecs:
   * External image formats: JPEG, TIFF, PNG, BMP, JPEG-2000, GIF 
-    (these are handled natively by the renderer).
-  * RAW (`raw `).
+    (these are handled natively by the renderer)
+  * RAW (`raw `)
   * MacPaint
   * Apple Video (`RPZA`)
   * Apple Component Video (`YUV2`)
+  * Apple Graphics (`smc `)
   * Apple Animation (`RLE `) with depths of 2,4,8,16, 24 and 32 bits/pixel
+  
   * Planar Video (`8BPS`). 
 
 Some basic comment parsing is used to improve images, in particular:

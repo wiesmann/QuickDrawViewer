@@ -7,13 +7,7 @@
 
 import Foundation
 
-func byteArrayLE<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
-  withUnsafeBytes(of: value.littleEndian, Array.init)
-}
 
-func byteArrayBE<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
-  withUnsafeBytes(of: value.bigEndian, Array.init)
-}
 
 /// Point in the QuickDraw space.
 struct QDPoint : CustomStringConvertible, Equatable {
@@ -271,9 +265,24 @@ struct QDResolution : Equatable, CustomStringConvertible {
 
 /// Black and white pattern (8×8 pixels)
 // TODO: make this a UInt64, Raw representable
-struct QDPattern : Equatable {
+struct QDPattern : Equatable, PixMapMetadata {
+  
+  let rowBytes : Int = 1;
+  let cmpSize: Int = 1;
+  let pixelSize: Int = 1;
+  let dimensions =  QDDelta(dv: FixedPoint(8), dh: FixedPoint(8));
+  // Color table is only known at runtime.
+  let clut: QDColorTable? = nil;
+  var description: String {
+    return "Pat: \(bytes)";
+  }
+  
   let bytes : [UInt8];
-
+  
+  static func == (lhs: QDPattern, rhs: QDPattern) -> Bool {
+    return lhs.bytes == rhs.bytes;
+  }
+  
   /// Should the pattern represent a shade of color, i.e. the pattern was  used for dither.
   public var isShade : Bool {
     return [
@@ -295,7 +304,7 @@ struct QDPattern : Equatable {
   func blendColors(fgColor: QDColor, bgColor: QDColor) -> QDColor {
     return QDColor.blend(a: fgColor, b: bgColor, aWeight: intensity);
   }
-  
+
   static let black = QDPattern(bytes:[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
   static let white = QDPattern(bytes:[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
   static let gray = QDPattern(bytes:[0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55]);

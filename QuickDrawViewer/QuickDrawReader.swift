@@ -7,11 +7,7 @@
 
 import Foundation
 
-extension Data {
-    var bytes: [UInt8] {
-        return [UInt8](self)
-    }
-}
+
 
 /// Class that handles reading from the data object.
 /// Handles deserialisation of various QuickDraw types.
@@ -142,6 +138,12 @@ class QuickDrawDataReader {
   
   func readInt32() throws -> Int32 {
     return Int32(bitPattern: try readUInt32());
+  }
+  
+  func readUInt64() throws -> UInt64 {
+    let high = try readUInt32();
+    let low = try readUInt32();
+    return UInt64(high) << 32 | UInt64(low);
   }
   
   func readFixed() throws -> FixedPoint {

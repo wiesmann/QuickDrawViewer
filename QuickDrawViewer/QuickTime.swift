@@ -106,6 +106,7 @@ enum QuickTimeError: LocalizedError {
   case missingQuickTimeData(quicktimeImage: QuickTimeIdsc);
   case corruptQuickTimeAtomLength(length: Int);
   case missingQuickTimePart(code: MacTypeCode);
+  case missingClut(quicktimeImage: QuickTimeIdsc);
 }
 
 // Representation of a converted image
@@ -315,7 +316,15 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
     let data = animation.pixmap;
     quicktimeImage.dataStatus = .decoded(decodedMetaData: animation);
     quicktimeImage.data = Data(data);
-    
+  case "smc ":
+    guard let clut = quicktimeImage.clut else {
+      throw QuickTimeError.missingClut(quicktimeImage: quicktimeImage);
+    }
+    let graphics = QuickTimeGraphicsImage(dimensions: quicktimeImage.dimensions, clut: clut);
+    try graphics.load(data: data);
+    let data = graphics.pixmap;
+    quicktimeImage.dataStatus = .decoded(decodedMetaData: graphics);
+    quicktimeImage.data = Data(data);
   default:
     break;
   }
@@ -338,6 +347,8 @@ func codecToContentType(qtImage : QuickTimeIdsc) -> String {
     return "com.apple.macpaint-image";
   case "gif ":
     return "com.compuserve.gif";
+  case ".SGI":
+    return "com.sgi.sgi-image";
   default:
     return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
   }

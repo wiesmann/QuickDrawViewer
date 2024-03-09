@@ -200,11 +200,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let provider = CGDataProvider(data: cfData)!;
     let bitmapInfo = CGBitmapInfo();
     let patternImage = CGImage(
-      width: 8,
-      height: 8,
-      bitsPerComponent: 1,
-      bitsPerPixel: 1,
-      bytesPerRow: 1,
+      width: penState.drawPattern.dimensions.dh.rounded,
+      height: penState.drawPattern.dimensions.dv.rounded,
+      bitsPerComponent: penState.drawPattern.cmpSize,
+      bitsPerPixel: penState.drawPattern.pixelSize,
+      bytesPerRow: penState.drawPattern.rowBytes,
       space: paintColorSpace(),
       bitmapInfo: bitmapInfo,
       provider: provider,
