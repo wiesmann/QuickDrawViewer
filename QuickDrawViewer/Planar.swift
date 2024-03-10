@@ -79,7 +79,8 @@ class PlanarImage : PixMapMetadata {
   var clut: QDColorTable?;
   
   var description: String {
-    return "Planar Image: \(dimensions), depth: \(depth), channels \(channels)";
+    let pm = describePixMap(self);
+    return "Planar Image: \(pm), channels \(channels)";
   }
   
 }

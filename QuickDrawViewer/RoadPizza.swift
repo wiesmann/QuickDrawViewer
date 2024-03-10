@@ -35,18 +35,10 @@ enum RoadPizzaError : Error {
 /// Image compressed with the RPZA (RoadPizza) compression.
 /// Decode the sequence of opcodes into a ARGB555 buffer.
 /// Skipped blocks will have transparent pixels.
-class RoadPizzaImage : PixMapMetadata {
+class RoadPizzaImage : BlockPixMap {
   
   init(dimensions: QDDelta) {
-    self.dimensions = dimensions;
-    self.blocksPerLine = (dimensions.dh.rounded + 3) / 4
-    self.totalBlocks = blocksPerLine * (dimensions.dv.rounded + 3) / 4
-    self.pixmap = [UInt8].init(
-      repeating: 0, count: totalBlocks * 16 * ARGB555.pixelBytes);
-  }
-  
-  var rowBytes : Int {
-    return blocksPerLine * RoadPizzaImage.blockSize * 2;
+    super.init(dimensions: dimensions, blockSize: 4, pixelSize: ARGB555.pixelSize, cmpSize: ARGB555.componentSize, clut: nil);
   }
   
   /// Function that writes a line of pixels from a block into the buffer.
@@ -55,13 +47,8 @@ class RoadPizzaImage : PixMapMetadata {
   ///   - line: line number within the block
   ///   - color4: slice of 4 pixels
   private func writePixelLine(block: Int, line: Int, color4: ArraySlice<ARGB555>) throws {
-    assert(color4.count == RoadPizzaImage.blockSize, "Invalid pixel line size");
-    let row = (block / blocksPerLine) * 4 + line;
-    let offset = (block % blocksPerLine);
-    let p = (row * rowBytes) + (offset * RoadPizzaImage.blockSize * ARGB555.pixelBytes)
-    guard 0..<pixmap.count ~= p else {
-      throw RoadPizzaError.badPixMapIndex(index: p);
-    }
+    assert(color4.count == blockSize, "Invalid pixel line size");
+    let p = try getOffset(block: block, line: line);
     for (index, value) in color4.enumerated() {
       let rawValue = value.rawValue;
       pixmap[p + (index * 2)] =  UInt8(rawValue >> 8);
@@ -70,20 +57,20 @@ class RoadPizzaImage : PixMapMetadata {
   }
   
   func execute1Color(block: Int, color: ARGB555) throws {
-    let color4 = [ARGB555].init(repeating: color, count: RoadPizzaImage.blockSize);
-    for line in 0..<RoadPizzaImage.blockSize {
+    let color4 = [ARGB555].init(repeating: color, count: blockSize);
+    for line in 0..<blockSize {
       try writePixelLine(block: block, line: line, color4: color4[0..<4]);
     }
   }
   
   func executeIndexColor(block: Int, colorA: ARGB555, colorB: ARGB555, data: [UInt8]) throws {
-    assert(data.count == RoadPizzaImage.blockSize, "Invalid index color data size");
+    assert(data.count == blockSize, "Invalid index color data size");
     let colorTable : [ARGB555] = [
       colorB, mix⅔(colorB, colorA), mix⅔(colorA, colorB), colorA];
     for (line, value) in data.enumerated() {
       var color4 : [ARGB555] = [];
       var shiftedValue = value;
-      for _ in 0..<RoadPizzaImage.blockSize {
+      for _ in 0..<blockSize {
         let index = Int((shiftedValue & 0xc0) >> 6);
         color4.append(colorTable[index]);
         shiftedValue = shiftedValue << 2;
@@ -93,10 +80,10 @@ class RoadPizzaImage : PixMapMetadata {
   }
   
   func executeDirectColor(block: Int, data: [ARGB555]) throws {
-    assert(data.count == RoadPizzaImage.blockSize * RoadPizzaImage.blockSize,
+    assert(data.count == blockSize * blockSize,
            "Invalid direct color data size");
     
-    for line in 0..<RoadPizzaImage.blockSize {
+    for line in 0..<blockSize {
       try writePixelLine(block: block, line: line, color4: data[line*4..<(line + 1)*4]);
     }
   }
@@ -124,7 +111,7 @@ class RoadPizzaImage : PixMapMetadata {
         if (try reader.peekUInt8() & 0x80) != 0 {
           /// Special case of palette block
           colorB = try reader.ReadRGB555();
-          let data = try reader.readUInt8(bytes: RoadPizzaImage.blockSize);
+          let data = try reader.readUInt8(bytes: blockSize);
           try executeIndexColor(block: block, colorA: colorA, colorB: colorB, data: data);
           block += 1;
         } else {
@@ -158,18 +145,7 @@ class RoadPizzaImage : PixMapMetadata {
     }
   }
   
-  let dimensions : QDDelta;
-  let blocksPerLine : Int;
-  let totalBlocks : Int;
-  let cmpSize : Int = 5;
-  let pixelSize: Int = 16;
-  var pixmap : [UInt8];
-  var clut: QDColorTable? = nil;
-  
-  static let blockSize = 4;
-  static let blockDimensions = QDDelta(dv: blockSize, dh: blockSize);
-  
-  var description: String {
-    return "RPZA: \(dimensions) blocks per line: \(blocksPerLine)";
+  override var description: String {
+    return "RPZA: " + super.description;
   }
 }

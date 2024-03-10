@@ -7,8 +7,6 @@
 
 import Foundation
 
-
-
 /// Point in the QuickDraw space.
 struct QDPoint : CustomStringConvertible, Equatable {
   
@@ -263,55 +261,7 @@ struct QDResolution : Equatable, CustomStringConvertible {
   static let zeroResolution = QDResolution(hRes: FixedPoint.zero, vRes: FixedPoint.zero);
 }
 
-/// Black and white pattern (8×8 pixels)
-// TODO: make this a UInt64, Raw representable
-struct QDPattern : Equatable, PixMapMetadata {
-  
-  let rowBytes : Int = 1;
-  let cmpSize: Int = 1;
-  let pixelSize: Int = 1;
-  let dimensions =  QDDelta(dv: FixedPoint(8), dh: FixedPoint(8));
-  // Color table is only known at runtime.
-  let clut: QDColorTable? = nil;
-  var description: String {
-    return "Pat: \(bytes)";
-  }
-  
-  let bytes : [UInt8];
-  
-  static func == (lhs: QDPattern, rhs: QDPattern) -> Bool {
-    return lhs.bytes == rhs.bytes;
-  }
-  
-  /// Should the pattern represent a shade of color, i.e. the pattern was  used for dither.
-  public var isShade : Bool {
-    return [
-      QDPattern.black, QDPattern.white,
-      QDPattern.gray, QDPattern.darkGray,
-      QDPattern.lightGray, QDPattern.batmanGray
-    ].contains(where: {$0 == self} );
-  }
-  
-  /// Scalar intensity of the pattern, going from 0 (white) to 1.0 (black).
-  var intensity : Double {
-    var total = 0;
-    for b in bytes {
-      total += b.nonzeroBitCount;
-    }
-    return Double(total) / (Double(UInt8.bitWidth) * Double(bytes.count));
-  }
-  
-  func blendColors(fgColor: QDColor, bgColor: QDColor) -> QDColor {
-    return QDColor.blend(a: fgColor, b: bgColor, aWeight: intensity);
-  }
 
-  static let black = QDPattern(bytes:[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
-  static let white = QDPattern(bytes:[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-  static let gray = QDPattern(bytes:[0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55]);
-  static let darkGray =  QDPattern(bytes:[0x88, 0x00, 0x22, 0x00, 0x88, 0x00, 0x22, 0x00]);
-  static let lightGray = QDPattern(bytes:[0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77]);
-  static let batmanGray = QDPattern(bytes: [0x88, 0x00, 0x22, 0x88, 0x00, 0x22]);
-}
 
 /// All the state associated with drawing
 class PenState {
@@ -467,14 +417,6 @@ class QDPixMapInfo : CustomStringConvertible {
   var clut : QDColorTable?;
 }
 
-// Abstract view of a bitmap information
-protocol PixMapMetadata : CustomStringConvertible {
-  var rowBytes : Int {get};
-  var cmpSize : Int {get};
-  var pixelSize : Int {get};
-  var dimensions : QDDelta {get};
-  var clut: QDColorTable? {get};
-}
 
 class QDBitMapInfo : CustomStringConvertible, PixMapMetadata {
   
@@ -529,7 +471,8 @@ class QDBitMapInfo : CustomStringConvertible, PixMapMetadata {
   }
   
   public var description : String {
-    var result = "Bitmap info [row_bytes: \(rowBytes) packed: \(isPacked) ";
+    let pm = describePixMap(self);
+    var result = "Bitmap info [\(pm) packed: \(isPacked) ";
     result += "Bounds \(bounds) "
     if srcRect != nil {
       result += "src: \(srcRect!) ";

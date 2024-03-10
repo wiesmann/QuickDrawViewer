@@ -145,6 +145,7 @@ class AnimationImage : PixMapMetadata {
   }
   
   var description: String {
-    return "Animation: \(dimensions), depth: \(depth) rowbytes: \(rowBytes)";
+    let desc = describePixMap(self);
+    return "Animation: \(desc)";
   }
 }

@@ -47,7 +47,8 @@ class MacPaintImage : PixMapMetadata {
   var bitmap: [UInt8] = [];
   
   var description: String {
-    return "MacPaint: \(dimensions)";
+    let pm = describePixMap(self);
+    return "MacPaint: \(pm)";
   }
   
 }

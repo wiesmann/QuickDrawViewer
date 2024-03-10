@@ -1,0 +1,65 @@
+//
+//  QuickDrawPattern.swift
+//  QuickDrawViewer
+//
+//  Created by Matthias Wiesmann on 10.03.2024.
+//
+
+import Foundation
+
+/// Black and white pattern (8×8 pixels)
+struct QDPattern : Equatable, PixMapMetadata, RawRepresentable {
+  
+  init(rawValue: UInt64) {
+    self.rawValue = rawValue;
+  }
+  
+  init(bytes: [UInt8]) {
+    var buffer : UInt64 = 0;
+    for v in bytes {
+      buffer = buffer << 8  | UInt64(v);
+    }
+    self.rawValue = buffer;
+  }
+  
+  let rowBytes : Int = 1;
+  let cmpSize: Int = 1;
+  let pixelSize: Int = 1;
+  let rawValue: UInt64;
+  let dimensions =  QDDelta(dv: FixedPoint(8), dh: FixedPoint(8));
+  let clut: QDColorTable? = nil; // Color table is only known at runtime.
+  var description: String {
+    return "Pat: \(bytes)";
+  }
+  
+  var bytes : [UInt8] {
+    return byteArrayBE(from: rawValue);
+  }
+  
+  /// Should the pattern represent a shade of color, i.e. the pattern was  used for dither.
+  public var isShade : Bool {
+    return [
+      QDPattern.black, QDPattern.white,
+      QDPattern.gray, QDPattern.darkGray,
+      QDPattern.lightGray, QDPattern.batmanGray
+    ].contains(where: {$0 == self} );
+  }
+  
+  /// Scalar intensity of the pattern, going from 0 (white) to 1.0 (black).
+  var intensity : Double {
+    let total = rawValue.nonzeroBitCount;
+    return Double(total) / Double(UInt64.bitWidth);
+  }
+  
+  // Blend fgColor and bgColor using the intensity of this pattern.
+  func blendColors(fgColor: QDColor, bgColor: QDColor) -> QDColor {
+    return QDColor.blend(a: fgColor, b: bgColor, aWeight: intensity);
+  }
+
+  static let black = QDPattern(bytes:[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+  static let white = QDPattern(bytes:[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  static let gray = QDPattern(bytes:[0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55]);
+  static let darkGray =  QDPattern(bytes:[0x88, 0x00, 0x22, 0x00, 0x88, 0x00, 0x22, 0x00]);
+  static let lightGray = QDPattern(bytes:[0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77]);
+  static let batmanGray = QDPattern(bytes: [0x88, 0x00, 0x22, 0x88, 0x00, 0x22]);
+}

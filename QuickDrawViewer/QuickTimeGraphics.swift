@@ -10,8 +10,6 @@
 import Foundation
 
 enum QuickTimeGraphicsError : Error {
-  case invalidBlockNum(blockNum : Int);
-  case invalidLineNum(lineNum: Int);
   case invalidBlockData(data: [UInt8]);
   case invalidCacheEntry(entry: [UInt8]);
   case unknownOpcode(opcode: UInt8);
@@ -43,33 +41,16 @@ class QuickTimeGraphicsColorCache {
   var pos : Int = 0;
 }
 
-class QuickTimeGraphicsImage : PixMapMetadata {
+/// QuickTime `Graphics` codec.
+class QuickTimeGraphicsImage : BlockPixMap {
   
   init(dimensions: QDDelta, clut: QDColorTable) {
-    self.dimensions = dimensions;
-    self.clut = clut;
-    self.blocksPerLine = (dimensions.dh.rounded + 3) / 4
-    let blockLines = (dimensions.dv.rounded + 3) / 4;
-    self.bufferDimensions = QDDelta(dv: FixedPoint(blockLines * 4), dh: FixedPoint(blocksPerLine * 4));
-    self.totalBlocks = blocksPerLine * blockLines;
-    self.pixmap = [UInt8].init(repeating: 0, count: totalBlocks * 16);
+    super.init(dimensions: dimensions, blockSize: 4, pixelSize: 8, cmpSize: 8, clut: clut);
   }
   
   func toRange(blockNum: Int, lineNum: Int) throws -> Range<Int> {
-    guard blockNum >= 0 && blockNum < totalBlocks else {
-      throw QuickTimeGraphicsError.invalidBlockNum(blockNum: blockNum);
-    }
-    guard lineNum >= 0 && lineNum < QuickTimeGraphicsImage.blockSize else {
-      throw  QuickTimeGraphicsError.invalidLineNum(lineNum: lineNum);
-    }
-
-    let y = (blockNum / blocksPerLine) * QuickTimeGraphicsImage.blockSize + lineNum;
-    let x = (blockNum % blocksPerLine) * QuickTimeGraphicsImage.blockSize;
-    
-    assert(y <= bufferDimensions.dv.rounded);
-    assert(x <= bufferDimensions.dh.rounded);
-    let start = (y * rowBytes) + x;
-    let end = start + QuickTimeGraphicsImage.blockSize;
+    let start = try getOffset(block: blockNum, line: lineNum);
+    let end = start + blockSize;
     return start..<end;
   }
   
@@ -80,7 +61,7 @@ class QuickTimeGraphicsImage : PixMapMetadata {
   
   func readBlock(blockNum: Int) throws -> [UInt8] {
     var block : [UInt8] = [];
-    for line in 0..<QuickTimeGraphicsImage.blockSize {
+    for line in 0..<blockSize {
       block.append(contentsOf: try readBlockLine(blockNum: blockNum, lineNum: line))
     }
     return block;
@@ -102,9 +83,9 @@ class QuickTimeGraphicsImage : PixMapMetadata {
       throw QuickTimeGraphicsError.invalidBlockData(data: values);
     }
     
-    for line in 0..<QuickTimeGraphicsImage.blockSize {
-      let start = line * 4;
-      let end = start + 4;
+    for line in 0..<blockSize {
+      let start = line * blockSize;
+      let end = start + blockSize;
       try writeBlockLine(blockNum: blockNum, lineNum: line, values: values[start..<end]);
     }
   }
@@ -282,26 +263,11 @@ class QuickTimeGraphicsImage : PixMapMetadata {
     }
   }
   
-  let cmpSize: Int = 8;
-  let pixelSize: Int = 8;
-  let dimensions: QDDelta;
-  let bufferDimensions : QDDelta;
-  let clut: QDColorTable?;
-  let blocksPerLine : Int;
-  let totalBlocks : Int;
-  var pixmap : [UInt8];
   let color2Cache = QuickTimeGraphicsColorCache(entrySize: 2);
   let color4Cache = QuickTimeGraphicsColorCache(entrySize: 4);
   let color8Cache = QuickTimeGraphicsColorCache(entrySize: 8);
   
-  var rowBytes : Int {
-    return blocksPerLine * QuickTimeGraphicsImage.blockSize;
-  }
-  
-  static let blockSize = 4;
-  static let blockDimensions = QDDelta(dv: blockSize, dh: blockSize);
-  
-  var description: String {
-    return "QuickTimeGraphicsImage: \(dimensions) rowBytes: \(rowBytes) blocksPerLine \(blocksPerLine)";
+  override var  description: String {
+    return "QuickTimeGraphicsImage " + super.description;
   }
 }

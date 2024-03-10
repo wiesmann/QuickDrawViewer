@@ -32,14 +32,14 @@ protocol QuickDrawRenderer {
 extension CGImageSourceStatus : CustomStringConvertible {
   public var description: String {
     switch self {
-    case .statusUnexpectedEOF: return "Unexpected end-of-file";
-    case .statusInvalidData: return "Invalid Data";
-    case .statusUnknownType: return "Unknown image type";
-    case .statusIncomplete: return  "Incomplete";
-    case .statusReadingHeader: return "Reading header";
-    case .statusComplete: return "Complete";
+    case .statusUnexpectedEOF: return String(localized: "Unexpected end-of-file");
+    case .statusInvalidData: return String(localized: "Invalid data");
+    case .statusUnknownType: return String(localized: "Unknown image type");
+    case .statusIncomplete: return String(localized: "Incomplete");
+    case .statusReadingHeader: return String(localized: "Reading header");
+    case .statusComplete: return String(localized: "Complete");
     default:
-      return "Unknown";
+      return String(localized: "Unknown");
     }
   }
 }
@@ -680,9 +680,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     let origin = CGPoint(qd_point: picture.frame.topLeft);
     context!.translateBy(x: -origin.x, y: -origin.y);
 
-    let vScale = QDResolution.defaultResolution.vRes.value / picture.resolution.vRes.value;
+    // TODO: figure out when this should be turned on.
+    // Scaling causes regressions on old pictures.
+    /*let vScale = QDResolution.defaultResolution.vRes.value / picture.resolution.vRes.value;
     let hScale = QDResolution.defaultResolution.hRes.value / picture.resolution.hRes.value;
-    context!.scaleBy(x: hScale, y: vScale);
+    context!.scaleBy(x: hScale, y: vScale);*/
     context!.scaleBy(x: zoom, y: zoom);
     
     for opcode in picture.opcodes {
