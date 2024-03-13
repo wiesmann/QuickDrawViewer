@@ -74,7 +74,7 @@ This is how the Picture is rendered in Preview Version 11.0 on Mac OS X 14.4 (So
 
 This is how it is rendered in QuickDraw Viewer:
 
-![Example Pict (QuickDraw Viewer)](docs/inside_macintosh_pict.png.png)
+![Example Pict (QuickDraw Viewer)](docs/inside_macintosh_pict.png)
 
 
 ## Supported File types
