@@ -145,7 +145,7 @@ class QDColorTable : CustomStringConvertible {
   public var description: String {
     let string_flag = String(format: "%0X ", clutFlags);
     var result = "flags: \(string_flag) "
-    result += "clut \(clut)";
+    // result += "clut \(clut)";
     return result;
   }
   

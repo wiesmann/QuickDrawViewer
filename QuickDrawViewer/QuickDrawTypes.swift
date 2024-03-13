@@ -129,7 +129,8 @@ class QDPolygon {
   init(boundingBox: QDRect?, points: [QDPoint]) {
     self.boundingBox = boundingBox;
     self.points = points;
-    self.closed  = false;
+    self.closed = false;
+    self.smooth = false;
   }
   
   convenience init() {
@@ -139,6 +140,7 @@ class QDPolygon {
   var boundingBox : QDRect?;
   var points : [QDPoint];
   var closed : Bool;
+  var smooth : Bool;
   
   func AddLine(line : [QDPoint]) {
     if points.isEmpty {

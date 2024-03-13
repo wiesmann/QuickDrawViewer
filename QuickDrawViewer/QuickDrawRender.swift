@@ -458,6 +458,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
             message: String(localized: "Closing non existing polygon."));
       }
       poly.closed = true;
+    case (.polySmooth, _):
+      guard let poly = polyAccumulator else {
+        throw CoreGraphicRenderError.inconsistentPoly(
+          message: String(localized: "Ending non existing polygon."));
+      }
+      poly.smooth = true;
     case (.polyEnd, _):
       guard let poly = polyAccumulator else {
         throw CoreGraphicRenderError.inconsistentPoly(

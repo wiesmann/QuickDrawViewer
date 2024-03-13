@@ -61,9 +61,9 @@ func DecodeRegionLine(boundingBox: QDRect, data: [UInt16], index : inout Int) th
 /// Convert a line of pixels into a sequence of ranges.
 /// - Parameter line: pixels of one line, one byte per pixel
 /// - Returns: set of ranges of active (non zero) pixels.
-func BitLineToRanges(line: [UInt8]) -> [Range<Int>] {
+func BitLineToRanges(line: [UInt8]) -> Set<Range<Int>> {
   var index = 0;
-  var result : [Range<Int>] = [];
+  var result = Set<Range<Int>>();
   while true {
     while index < line.count && line[index] == 0  {
       index += 1;
@@ -75,7 +75,7 @@ func BitLineToRanges(line: [UInt8]) -> [Range<Int>] {
     while index < line.count && line[index] != 0  {
       index += 1;
     }
-    result.append(start..<index);
+    result.insert(start..<index);
     if index == line.count {
       return result;
     }
