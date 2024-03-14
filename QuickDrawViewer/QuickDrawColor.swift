@@ -145,7 +145,7 @@ class QDColorTable : CustomStringConvertible {
   public var description: String {
     let string_flag = String(format: "%0X ", clutFlags);
     var result = "flags: \(string_flag) "
-    // result += "clut \(clut)";
+    result += "clut \(clut.count) entries";
     return result;
   }
   
@@ -197,6 +197,32 @@ class QDColorTable : CustomStringConvertible {
   }
 }
 
+extension QuickDrawDataReader {
+  func readColor() throws -> QDColor {
+    let red = try readUInt16();
+    let green = try readUInt16();
+    let blue = try readUInt16();
+    return QDColor(red: red, green: green, blue: blue);
+  }
+  
+  func readClut() throws -> QDColorTable {
+    skip(bytes: 4);
+    let clutFlags = try readUInt16();
+    let colorTable = QDColorTable(clutFlags: clutFlags);
+    let clutSize = try readUInt16();
+    for index in 0...clutSize {
+      let r_index = try readUInt16();
+      // DeskDraw produces index with value 0x8000
+      if r_index != index && r_index != 0x8000 {
+        print("Inconsistent index: \(r_index)≠\(index)");
+      }
+      let color = try readColor();
+      colorTable.clut.append(color)
+    }
+    return colorTable;
+  }
+}
+
 /// Pixel in ARGB555 format with the alpha in the first bit.
 /// Mostly used by the RoadPizza decompressor.
 struct ARGB555: RawRepresentable {
@@ -228,28 +254,4 @@ struct ARGB555: RawRepresentable {
   static let componentSize = 5;
 }
 
-extension QuickDrawDataReader {
-  func readColor() throws -> QDColor {
-    let red = try readUInt16();
-    let green = try readUInt16();
-    let blue = try readUInt16();
-    return QDColor(red: red, green: green, blue: blue);
-  }
-  
-  func readClut() throws -> QDColorTable {
-    skip(bytes: 4);
-    let clutFlags = try readUInt16();
-    let colorTable = QDColorTable(clutFlags: clutFlags);
-    let clutSize = try readUInt16();
-    for index in 0...clutSize {
-      let r_index = try readUInt16();
-      // DeskDraw produces index with value 0x8000
-      if r_index != index && r_index != 0x8000 {
-        print("Inconsistent index: \(r_index)≠\(index)");
-      }
-      let color = try readColor();
-      colorTable.clut.append(color)
-    }
-    return colorTable;
-  }
-}
+

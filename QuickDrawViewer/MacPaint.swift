@@ -50,5 +50,4 @@ class MacPaintImage : PixMapMetadata {
     let pm = describePixMap(self);
     return "MacPaint: \(pm)";
   }
-  
 }

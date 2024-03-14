@@ -100,13 +100,36 @@ final class QuickDrawTests: XCTestCase {
     XCTAssertEqual(deg2rad(90), -.pi);
     XCTAssertEqual(deg2rad(180),  -1.5 * .pi);
   }
+  
+  func testmakeUInt24() throws {
+    XCTAssertEqual(makeUInt24(bytes: (0xff, 0xff, 0xff)), 0xffffff);
+    XCTAssertEqual(makeUInt24(bytes: (0x00, 0x00, 0x00)), 0x000000);
+    XCTAssertEqual(makeUInt24(bytes: (0x10, 0x00, 0x00)), 0x100000);
+    XCTAssertEqual(makeUInt24(bytes: (0xab, 0xcd, 0xef)), 0xabcdef);
+  }
+  
+  func testColor() throws {
+    XCTAssertEqual(QDColor.black.rgb, [0x00, 0x00, 0x00]);
+    XCTAssertEqual(QDColor.red.rgb, [0xff, 0x00, 0x00]);
+    XCTAssertEqual(QDColor.green.rgb, [0x00, 0xff, 0x00]);
+    XCTAssertEqual(QDColor.blue.rgb, [0x00, 0x00, 0xff]);
+    XCTAssertEqual(
+      QDColor.blend(a: QDColor.black, b: QDColor.white, aWeight: 0.5),
+      QDColor(red: 0x7fff, green: 0x7fff, blue: 0x7fff));
+    XCTAssertEqual(
+      QDColor.blend(a: QDColor.black, b: QDColor.white, aWeight: 1.0),
+      QDColor.black);
+    XCTAssertEqual(
+      QDColor.blend(a: QDColor.black, b: QDColor.white, aWeight: 0.0),
+      QDColor.white);
+    XCTAssertEqual(QDColor.cyan.rawValue, 0x0000ffffffff);
+  }
 
-
-    func testPerformanceExample() throws {
+  func testPerformanceExample() throws {
         // This is an example of a performance test case.
         self.measure {
             // Put the code you want to measure the time of here.
         }
-    }
+  }
 
 }
