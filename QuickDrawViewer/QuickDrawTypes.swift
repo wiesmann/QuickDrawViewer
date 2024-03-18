@@ -495,9 +495,11 @@ public class QDPicture : CustomStringConvertible {
     self.size = size;
     self.frame = frame;
     self.filename = filename;
+    self.srcRect = frame;
   }
   
   let size: Int;
+  var srcRect : QDRect;
   var frame: QDRect;
   var resolution : QDResolution = QDResolution.defaultResolution;
   var version: Int = 1;
@@ -509,7 +511,7 @@ public class QDPicture : CustomStringConvertible {
     if let name = filename {
       result += "filename: \(name) ";
     }
-    result += "frame: \(frame) @ \(resolution)\n";
+    result += "frame: \(frame) src: \(srcRect) @ \(resolution)\n";
     result += "===========================\n";
     for (index, opcode) in opcodes.enumerated() {
       result += "\(index): \(opcode)\n";

@@ -108,7 +108,7 @@ class AnimationImage : PixMapMetadata {
     return index - data.startIndex;
   }
   
-  func load(data : Data) throws {
+  func load(data : consuming Data) throws {
     let s = rowBytes * (dimensions.dv.rounded + 1);
     pixmap = Array<UInt8>(repeating: UInt8.zero, count: s);
     let reader = try QuickDrawDataReader(data: data, position:0);

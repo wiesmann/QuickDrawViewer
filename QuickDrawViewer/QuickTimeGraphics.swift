@@ -140,7 +140,7 @@ class QuickTimeGraphicsImage : BlockPixMap {
     try writeBlock(blockNum: blockNum, values: values);
   }
   
-  func load(data : Data) throws {
+  func load(data : consuming Data) throws {
     let reader = try QuickDrawDataReader(data: data, position: 4);
     var currentBlock = 0;
     while reader.remaining > 2 && currentBlock < totalBlocks {

@@ -21,7 +21,7 @@ enum CoreGraphicRenderError : LocalizedError {
   case imageFailure(message: String, metadata: PixMapMetadata);
   case unsupportedOpcode(opcode: OpCode);
   case inconsistentPoly(message: String);
-  case unsupportedMode(mode: QuickDrawMode);
+  case unsupportedMode(mode: QuickDrawTransferMode);
 }
 
 protocol QuickDrawRenderer {
@@ -225,8 +225,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       context!.setBlendMode(.xor);
     case .notOrMode:
       context!.setBlendMode(.destinationAtop);
+    case .notBic:
+      context!.setBlendMode(.normal);
+    case .notCopyMode:
+      context!.setBlendMode(.darken);
     default:
-      throw CoreGraphicRenderError.unsupportedMode(mode: penState.mode);
+      throw CoreGraphicRenderError.unsupportedMode(mode: mode);
     }
   }
   
@@ -396,7 +400,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     return traits;
   }
   
-  func renderString(text : String) {
+  func renderString(text : String) throws {
     let fontName = SubstituteFontName(fontName: fontState.getFontName()) as CFString;
     let fontSize = CGFloat(fontState.fontSize.value);
     let fgColor = ToCGColor(qdcolor: penState.fgColor);
@@ -415,6 +419,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     }
     // Start work
     context!.saveGState();
+    try applyMode(mode: fontState.fontMode.mode);
     // Use the ratios, but invert the y axis
     context!.textMatrix = CGAffineTransform(scaleX: fontState.xRatio.value, y: -fontState.yRatio.value);
     if fontState.fontStyle.contains(.outlineBit) {
@@ -430,22 +435,22 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     }
     
     // TODO: use fontState.textCenter to adjust the width of strings.
-    
     let lineToDraw: CTLine = CTLineCreateWithAttributedString(lineText);
-    context!.textPosition = CGPoint(qd_point: fontState.location);
+    let position = CGPoint(qd_point: fontState.location);
+    context!.textPosition = position
     CTLineDraw(lineToDraw, context!);
     context!.restoreGState();
     fontState.textCenter = nil;
   }
   
-  func executeText(textOp: LongTextOp) {
+  func executeText(textOp: LongTextOp) throws {
     fontState.location = textOp.position;
-    renderString(text: textOp.text);
+    try renderString(text: textOp.text);
   }
   
-  func executeText(textOp: DHDVTextOp) {
+  func executeText(textOp: DHDVTextOp) throws {
     fontState.location = fontState.location + textOp.delta;
-    renderString(text: textOp.text);
+    try renderString(text: textOp.text);
   }
   
   func executeComment(commentOp: CommentOp) throws {
@@ -640,11 +645,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     case let fontOp as FontStateOperation:
       fontOp.execute(fontState: &fontState);
     case let textOp as LongTextOp:
-      executeText(textOp: textOp);
+      try executeText(textOp: textOp);
     case let originOp as OriginOp:
       executeOrigin(originOp:originOp);
     case let textOp as DHDVTextOp:
-      executeText(textOp : textOp);
+      try executeText(textOp : textOp);
     case let lienOp as LineOp:
       try executeLine(lineop: lienOp);
     case let rectop as RectOp:

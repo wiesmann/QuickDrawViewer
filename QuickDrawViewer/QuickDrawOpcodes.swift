@@ -107,6 +107,7 @@ struct Version2HeaderOp : OpCode, PictureOperation {
   func execute(picture: inout QDPicture) {
     if resolution != QDResolution.zeroResolution {
       picture.resolution = resolution;
+      picture.srcRect = srcRect;
     }
   }
   

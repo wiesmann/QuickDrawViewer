@@ -29,7 +29,7 @@ class PlanarImage : PixMapMetadata {
     self.pixmap = [];
   }
   
-  func load(data : Data) throws {
+  func load(data : consuming Data) throws {
     let reader = try QuickDrawDataReader(data: data, position:0);
     let lines = (dimensions.dv.rounded * channels);
     var lineLengths : [Int] = [];

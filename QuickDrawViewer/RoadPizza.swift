@@ -88,7 +88,7 @@ class RoadPizzaImage : BlockPixMap {
     }
   }
   
-  func load(data : Data) throws {
+  func load(data : consuming Data) throws {
     let reader = try QuickDrawDataReader(data: data, position: 0);
     let magic = try reader.readUInt8();
     guard magic == 0xe1 else {
