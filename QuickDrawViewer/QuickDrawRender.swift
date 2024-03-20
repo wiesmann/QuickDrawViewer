@@ -12,6 +12,47 @@ import CoreText
 import ImageIO
 import os
 
+
+struct QDPortBits : OptionSet {
+  let rawValue: UInt16;
+  static let textEnable = QDPortBits(rawValue: 1 << 0);
+  static let lineEnable = QDPortBits(rawValue: 1 << 1);
+  static let rectEnable = QDPortBits(rawValue: 1 << 3);
+  static let rRectEnable = QDPortBits(rawValue: 1 << 4);
+  static let ovalEnable = QDPortBits(rawValue: 1 << 5);
+  static let arcEnable = QDPortBits(rawValue: 1 << 6);
+  static let polyEnable = QDPortBits(rawValue: 1 << 7);
+  static let rgnEnable = QDPortBits(rawValue: 1 << 8);
+  static let bitsEnable = QDPortBits(rawValue: 1 << 9);
+  static let commentsEnable = QDPortBits(rawValue: 1 << 10);
+  static let txtMeasEnable = QDPortBits(rawValue: 1 << 11);
+  static let clipEnable = QDPortBits(rawValue: 1 << 12);
+  static let quickTimeEnable = QDPortBits(rawValue: 1 << 13);
+  static let defaultState = QDPortBits([
+    textEnable, lineEnable, rectEnable, rRectEnable, ovalEnable,
+    arcEnable, polyEnable, rgnEnable, bitsEnable, commentsEnable,
+    txtMeasEnable, clipEnable, quickTimeEnable
+  ]);
+}
+
+
+/// Ideally, most of the rendering logic should be decoupled from the rendering implementation.
+/// We are not there yet (and we only have one rendered anyway).
+protocol QuickDrawRenderer {
+  func execute(opcode: OpCode) throws -> Void;
+  func execute(picture: QDPicture, zoom: Double) throws -> Void;
+  /// Bottleneck functions
+  func stdPoly(polygon: QDPolygon, verb: QDVerb) throws -> Void;
+  func stdRect(rect : QDRect, verb: QDVerb) throws -> Void;
+  func stdText(text : String) throws -> Void;
+
+  
+  var penState : PenState {get  set };
+  var fontState : QDFontState {get set};
+  var portBits : QDPortBits {get set};
+  
+}
+
 enum CoreGraphicRenderError : LocalizedError {
   case noContext(message: String);
   case noPdfContext(rect: CGRect);
@@ -24,10 +65,8 @@ enum CoreGraphicRenderError : LocalizedError {
   case unsupportedMode(mode: QuickDrawTransferMode);
 }
 
-protocol QuickDrawRenderer {
-  func execute(opcode: OpCode) throws -> Void;
-  func execute(picture: QDPicture, zoom: Double) throws -> Void;
-}
+
+
 
 extension CGImageSourceStatus : CustomStringConvertible {
   public var description: String {
@@ -139,7 +178,9 @@ let tau = 2.0 * .pi;
 /// Convert degrees as used in QuickDraw to radians as used by CoreGraphics
 /// - Parameter number: angle in degrees, 0° is vertical.
 /// - Returns: radians, from the X axis
-func deg2rad(_ angle: Int16) -> Double {
+///
+///
+func deg2rad<T: BinaryInteger>(_ angle: T) -> Double {
   return -Double(angle + 90) * tau / 360;
 }
 
@@ -273,22 +314,33 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     context!.translateBy(x: -originOp.delta.dh.value, y: -originOp.delta.dv.value);
   }
   
+  func stdLine(points: [QDPoint]) throws {
+    guard portBits.contains(.lineEnable) else {
+      return;
+    }
+    let cg_points = points.map({ CGPoint(qd_point:$0)});
+    context!.addLines(between: cg_points);
+    try applyVerbToPath(verb: .frame);
+  }
+  
   func executeLine(lineop : LineOp) throws {
     let qd_points = lineop.getPoints(current: penState.location);
     // If we are inside a polygon, add the points and do nothing.
     if let poly = polyAccumulator {
       poly.AddLine(line: qd_points);
     } else {
-      let cg_points = qd_points.map({ CGPoint(qd_point:$0)});
-      context!.addLines(between: cg_points);
-      try applyVerbToPath(verb: .frame);
+      try stdLine(points: qd_points);
     }
     if let last = qd_points.last {
       penState.location = last;
     }
   }
   
-  func executePoly(polygon: QDPolygon, verb: QDVerb) throws {
+  func stdPoly(polygon: QDPolygon, verb: QDVerb) throws {
+    guard portBits.contains(.polyEnable) else {
+      return;
+    }
+    
     if polygon.points.count > 0 {
       let cg_points = polygon.points.map({ CGPoint(qd_point:$0)});
       context!.beginPath();
@@ -302,7 +354,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   
   func executePoly(polyop: PolygonOp) throws {
     let poly = polyop.GetPolygon(last: lastPoly);
-    try executePoly(polygon: poly, verb: polyop.verb);
+    try stdPoly(polygon: poly, verb: polyop.verb);
   }
   
   
@@ -311,6 +363,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   ///   - rect: rectangle to draw
   ///   - verb: QuickDraw verb to use for drawing.
   func stdRect(rect : QDRect, verb: QDVerb) throws {
+    guard portBits.contains(.rectEnable) else {
+      return;
+    }
     context!.beginPath();
     context!.addRect(CGRect(qdrect: rect));
     context!.closePath();
@@ -323,8 +378,10 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     lastRect = rect;
   }
   
-  func executeRoundRect(roundRectOp : RoundRectOp) throws {
-    let rect = roundRectOp.rect ?? lastRect;
+  func stdRoundRect(rect : QDRect, verb: QDVerb) throws {
+    guard portBits.contains(.rRectEnable) else {
+      return;
+    }
     context!.beginPath();
     let path = CGMutablePath();
     // Core graphics dies if the corners are too big
@@ -333,10 +390,18 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     path.addRoundedRect(in: CGRect(qdrect: rect), cornerWidth: cornerWidth, cornerHeight: cornerHeight);
     context!.addPath(path);
     context!.closePath();
-    try applyVerbToPath(verb: roundRectOp.verb);
+    try applyVerbToPath(verb: verb);
+  }
+  
+  func executeRoundRect(roundRectOp : RoundRectOp) throws {
+    let rect = roundRectOp.rect ?? lastRect;
+    try stdRoundRect(rect: rect, verb: roundRectOp.verb);
   }
   
   func executeOval(ovalOp: OvalOp) throws {
+    guard portBits.contains(.ovalEnable) else {
+      return;
+    }
     let rect = ovalOp.rect ?? lastRect;
     context!.beginPath();
     context!.addEllipse(in: CGRect(qdrect: rect));
@@ -346,6 +411,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   }
   
   func executeArc(arcOp: ArcOp) throws {
+    guard portBits.contains(.arcEnable) else {
+      return;
+    }
     let rect = arcOp.rect ?? lastRect;
     // try executeRect(rect: rect, verb: QDVerb.frame);
     let width = rect.dimensions.dh.value;
@@ -370,6 +438,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   }
   
   func executeRegion(regionOp: RegionOp) throws {
+    guard portBits.contains(.rgnEnable) else {
+      return;
+    }
     let region = regionOp.region ?? lastRegion!;
     if region.isRect {
       try stdRect(rect: region.boundingBox, verb: regionOp.verb);
@@ -400,7 +471,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     return traits;
   }
   
-  func renderString(text : String) throws {
+  func stdText(text : String) throws {
+    guard portBits.contains(QDPortBits.textEnable) else {
+      return;
+    }
+    
     let fontName = SubstituteFontName(fontName: fontState.getFontName()) as CFString;
     let fontSize = CGFloat(fontState.fontSize.value);
     let fgColor = ToCGColor(qdcolor: penState.fgColor);
@@ -434,9 +509,22 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       context!.setTextDrawingMode(.fill);
     }
     
-    // TODO: use fontState.textCenter to adjust the width of strings.
-    let lineToDraw: CTLine = CTLineCreateWithAttributedString(lineText);
     let position = CGPoint(qd_point: fontState.location);
+    
+    // TODO: use fontState.textCenter to adjust the width of strings.
+    if let pictRect = fontState.textPictRecord {
+      if pictRect.angle != FixedPoint.zero {
+        let x = position.x + (fontState.textCenter?.dh ?? FixedPoint.zero).value;
+        let y = position.y + (fontState.textCenter?.dv ?? FixedPoint.zero).value;
+        let angle = deg2rad(pictRect.angle.rounded);
+        context!.translateBy(x: x, y: y);
+        context!.rotate(by: angle);
+        context!.translateBy(x: -x, y: -y)
+      }
+    }
+    
+    let lineToDraw: CTLine = CTLineCreateWithAttributedString(lineText);
+    
     context!.textPosition = position
     CTLineDraw(lineToDraw, context!);
     context!.restoreGState();
@@ -445,16 +533,21 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   
   func executeText(textOp: LongTextOp) throws {
     fontState.location = textOp.position;
-    try renderString(text: textOp.text);
+    try stdText(text: textOp.text);
   }
   
   func executeText(textOp: DHDVTextOp) throws {
     fontState.location = fontState.location + textOp.delta;
-    try renderString(text: textOp.text);
+    try stdText(text: textOp.text);
   }
   
   func executeComment(commentOp: CommentOp) throws {
     switch (commentOp.kind, commentOp.payload) {
+    case (.textBegin, .fontStatePayload(let fontOp)):
+      fontOp.execute(fontState: &fontState);
+      portBits = [.textEnable];
+    case (.textEnd, _):
+      portBits = QDPortBits.defaultState;
     case (.polyBegin, _):
       polyAccumulator = QDPolygon();
     case (.polyClose, _):
@@ -474,7 +567,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
         throw CoreGraphicRenderError.inconsistentPoly(
           message: String(localized: "Ending non existing polygon."));
       }
-      try executePoly(polygon: poly, verb: QDVerb.frame);
+      try stdPoly(polygon: poly, verb: QDVerb.frame);
       polyAccumulator = nil;
     case (_, .penStatePayload(let penOp)):
       penOp.execute(penState: &penState);
@@ -524,6 +617,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     guard let clut = bitRectOp.bitmapInfo.clut else {
       throw QuickDrawError.missingColorTableError;
     }
+    guard portBits.contains(.bitsEnable) else {
+      return;
+    }
     return try executePaletteImage(
       metadata: bitRectOp.bitmapInfo,
       destination: bitRectOp.bitmapInfo.destinationRect,
@@ -532,7 +628,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       clut: clut);
   }
 
-  func GetBitmapInfo(metadata: PixMapMetadata) -> CGBitmapInfo {
+  func getBitmapInfo(metadata: PixMapMetadata) -> CGBitmapInfo {
     switch metadata.pixelSize {
     case 16:
       return CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
@@ -550,7 +646,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   ///   - mode: QuickDraw rendering mode.
   ///   - data: raw data to render.
   func executeRGBImage(metadata: PixMapMetadata, destination: QDRect, mode: QuickDrawTransferMode, data: [UInt8]) throws {
-    let bitmapInfo = GetBitmapInfo(metadata: metadata);
+    let bitmapInfo = getBitmapInfo(metadata: metadata);
     let cfData = CFDataCreate(nil, data, data.count)!;
     let provider = CGDataProvider(data: cfData)!;
     guard let image = CGImage(
@@ -575,6 +671,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   }
   
   func executeDirectBitOp(directBitOp: DirectBitOpcode) throws {
+    guard portBits.contains(.bitsEnable) else {
+      return;
+    }
     return try executeRGBImage(
       metadata: directBitOp.bitmapInfo,
       destination: directBitOp.bitmapInfo.destinationRect,
@@ -584,8 +683,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   
   /// Prevent error messages by forcing a clip.
   func preventQuickTimeMessage() {
-    context!.addRect(CGRect(qdrect:QDRect.empty));
-    context!.clip();
+    portBits = [.quickTimeEnable];
   }
   
   func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
@@ -719,6 +817,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   // Quickdraw state
   var penState : PenState;
   var fontState : QDFontState;
+  var portBits = QDPortBits.defaultState ;
   // Last shapes, used by the SameXXX operations.
   var lastPoly : QDPolygon?;
   var lastRect : QDRect = QDRect.empty;

@@ -367,11 +367,18 @@ enum QDTextFlip : UInt8 {
   case textFlipVertical = 2;
 }
 
+enum QDTextLineHeight : UInt8 {
+  case single = 1;
+  case oneAndHalf = 2;
+  case double = 3;
+}
+
 // Text annotation for text comments
 struct QDTextPictRecord {
   let justification : QDTextJustification;
   let flip : QDTextFlip;
   let angle : FixedPoint;
+  let lineHeight : QDTextLineHeight;
 }
 
 enum QDPackType : UInt16 {
