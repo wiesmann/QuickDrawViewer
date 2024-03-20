@@ -125,6 +125,7 @@ Some basic comment parsing is used to improve images, in particular:
 
 * Polygon annotations to connect the lines and close polygons
 * Fractional pen width
+* Text rotation
 
 ## Unsupported features
 
