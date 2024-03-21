@@ -131,7 +131,7 @@ Some basic comment parsing is used to improve images, in particular:
 
 Currently, the following QuickDraw features don't work:
 
-* All modes except `copy` 
+* Some exotic compositing modes (which are typically not supported by printers)
 * Text alignement
 * Polygon smoothing
 * Color patterns
