@@ -87,12 +87,28 @@ struct TextPictPayload : FontStateOperation {
   let textPictRecord : QDTextPictRecord;
 }
 
+struct PolySmoothVerb : OptionSet, CustomStringConvertible {
+  var description: String {
+    var result : String = "PolySmoothVerb "
+    if contains(.polyFrame) {result += " frame"}
+    if contains(.polyFill) {result += " fill"}
+    if contains(.polyClose) {result += " close"}
+    return result;
+  }
+  
+  let rawValue: UInt8;
+  static let polyFrame = PolySmoothVerb(rawValue: 1 << 0);
+  static let polyFill = PolySmoothVerb(rawValue: 1 << 1) ;
+  static let polyClose = PolySmoothVerb(rawValue: 1 << 2);
+}
+
 enum CommentPayload {
   case noPayload;
   case dataPayload(creator: String, data: Data);
   case postScriptPayLoad(postscript: String);
   case fontStatePayload(fontOperation: FontStateOperation);
   case penStatePayload(penOperation: PenStateOperation);
+  case polySmoothPayload(verb: PolySmoothVerb);
   case unknownPayload(rawType: Int, data: Data);
 }
 
@@ -151,6 +167,9 @@ struct CommentOp : OpCode {
       let h = try subreader.readFixed();
       let fontOp = TextCenterPayload(center: QDDelta(dv: v, dh: h));
       payload = .fontStatePayload(fontOperation: fontOp);
+    case (.polySmooth, 1):
+      let verb = PolySmoothVerb(rawValue: try reader.readUInt8());
+      payload = .polySmoothPayload(verb: verb);
     case (_, 0):
       payload = .noPayload;
     case (.unknown, let size) where size > 0:

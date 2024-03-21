@@ -31,6 +31,10 @@ protocol FontStateOperation {
   func execute(fontState : inout QDFontState) -> Void;
 }
 
+protocol PortOperation {
+  func execute(port: inout QuickDrawPort) throws -> Void;
+}
+
 /// -----------------
 /// Simple control opcodes
 /// -----------------
@@ -130,9 +134,15 @@ struct OriginOp : OpCode {
 /// Shape opcodes
 /// ---------------------
 
-struct RegionOp : OpCode {
+struct RegionOp : OpCode, PortOperation {
+  
   mutating func load(reader: QuickDrawDataReader) throws {
     try region = reader.readRegion();
+  }
+  
+  func execute(port: inout any QuickDrawPort) throws {
+    let rgn = self.region ?? port.lastRegion;
+    try port.stdRegion(region: rgn, verb: verb);
   }
   
   let same : Bool;
@@ -140,11 +150,17 @@ struct RegionOp : OpCode {
   var region: QDRegion?;
 }
 
-struct RectOp : OpCode {
+/// Rectangle operation
+struct RectOp : OpCode, PortOperation {
   mutating func load(reader: QuickDrawDataReader) throws {
     if !same {
       rect = try reader.readRect();
     }
+  }
+  
+  func execute(port: inout any QuickDrawPort) throws {
+    let rect = rect ?? port.lastRect;
+    try port.stdRect(rect : rect, verb: verb);
   }
   
   let same: Bool;
@@ -152,11 +168,17 @@ struct RectOp : OpCode {
   var rect: QDRect?;
 }
 
-struct OvalOp : OpCode {
+/// Oval operation
+struct OvalOp : OpCode, PortOperation {
   mutating func load(reader: QuickDrawDataReader) throws {
     if !same {
       rect = try reader.readRect();
     }
+  }
+  
+  func execute(port: inout any QuickDrawPort) throws {
+    let rect = rect ?? port.lastRect;
+    try port.stdOval(rect : rect, verb: verb);
   }
   
   let same: Bool;
@@ -164,7 +186,12 @@ struct OvalOp : OpCode {
   var rect: QDRect?;
 }
 
-struct RoundRectOp : OpCode {
+struct RoundRectOp : OpCode, PortOperation {
+  func execute(port: inout any QuickDrawPort) throws {
+    let rect = rect ?? port.lastRect;
+    try port.stdRoundRect(rect: rect, verb: verb);
+  }
+  
   mutating func load(reader: QuickDrawDataReader) throws {
     if !same {
       rect = try reader.readRect();
@@ -188,7 +215,9 @@ struct OvalSizeOp : OpCode, PenStateOperation {
   var size : QDDelta = QDDelta.zero;
 }
 
-struct ArcOp : OpCode {
+/// Arc operation
+struct ArcOp : OpCode, PortOperation {
+  
   mutating func load(reader: QuickDrawDataReader) throws {
     if !same {
       rect = try reader.readRect();
@@ -197,20 +226,33 @@ struct ArcOp : OpCode {
     angle = try reader.readInt16();
   }
   
+  func execute(port: inout any QuickDrawPort) throws {
+    try port.stdAngle(
+      rect: rect, startAngle : startAngle, angle: angle, verb: verb);
+  }
+  
   let same: Bool;
   let verb: QDVerb;
-  var rect: QDRect?;
+  var rect = QDRect.empty;
   var startAngle: Int16 = 0;
   var angle: Int16 = 0;
 }
 
-struct PolygonOp : OpCode {
+
+/// Polygon operation
+struct PolygonOp : OpCode, PortOperation {
+  
   mutating func load(reader: QuickDrawDataReader) throws {
     poly = try reader.readPoly();
   }
   
-  func GetPolygon(last : QDPolygon?) -> QDPolygon {
-    return self.poly ?? last!;
+  func execute(port: inout any QuickDrawPort) throws {
+    let poly = GetPolygon(last: port.lastPoly);
+    try port.stdPoly(polygon: poly, verb: verb);
+  }
+  
+  func GetPolygon(last : QDPolygon) -> QDPolygon {
+    return self.poly ?? last;
   }
   
   let same: Bool;
@@ -228,7 +270,7 @@ enum LineDestination {
   case absolute(point: QDPoint);
 }
 
-struct LineOp : OpCode, CustomStringConvertible {
+struct LineOp : OpCode, PortOperation, CustomStringConvertible {
   
   mutating func load(reader: QuickDrawDataReader) throws {
     if !from {
@@ -243,9 +285,14 @@ struct LineOp : OpCode, CustomStringConvertible {
     }
   }
   
+  func execute(port: inout any QuickDrawPort) throws {
+    let qd_points = getPoints(current: port.penState.location);
+    try port.stdLine(points: qd_points);
+  }
+  
   // Get the set of points for the line (2).
   // current is required for `from` operations.
-  func getPoints(current : QDPoint?) -> [QDPoint] {
+  private func getPoints(current : QDPoint?) -> [QDPoint] {
     let p1 = (start ?? current)!;
     var points : [QDPoint] = [p1];
     switch end {
@@ -476,7 +523,8 @@ struct FontStyleOp : OpCode, FontStateOperation {
   var fontStyle = QDFontStyle(rawValue:0);
 }
 
-struct DHDVTextOp : OpCode {
+struct DHDVTextOp : OpCode, PortOperation {
+  
   mutating func load(reader: QuickDrawDataReader) throws {
     var dv = 0;
     var dh = 0;
@@ -490,6 +538,11 @@ struct DHDVTextOp : OpCode {
     text = try reader.readPascalString();
   }
   
+  func execute(port: inout any QuickDrawPort) throws {
+    port.fontState.location = port.fontState.location + self.delta;
+    try port.stdText(text: self.text);
+  }
+  
   let readDh : Bool;
   let readDv : Bool;
   var delta : QDDelta = QDDelta.zero;
@@ -498,10 +551,17 @@ struct DHDVTextOp : OpCode {
   
 }
 
-struct LongTextOp : OpCode {
+struct LongTextOp : OpCode, PortOperation {
+  
+  
   mutating func load(reader: QuickDrawDataReader) throws {
     position = try reader.readPoint();
     text = try reader.readPascalString();
+  }
+  
+  func execute(port: inout any QuickDrawPort) throws {
+    port.fontState.location = self.position;
+    try port.stdText(text: self.text);
   }
   
   var position : QDPoint = QDPoint.zero;

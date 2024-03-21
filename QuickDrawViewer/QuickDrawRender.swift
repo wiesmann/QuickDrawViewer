@@ -13,46 +13,6 @@ import ImageIO
 import os
 
 
-struct QDPortBits : OptionSet {
-  let rawValue: UInt16;
-  static let textEnable = QDPortBits(rawValue: 1 << 0);
-  static let lineEnable = QDPortBits(rawValue: 1 << 1);
-  static let rectEnable = QDPortBits(rawValue: 1 << 3);
-  static let rRectEnable = QDPortBits(rawValue: 1 << 4);
-  static let ovalEnable = QDPortBits(rawValue: 1 << 5);
-  static let arcEnable = QDPortBits(rawValue: 1 << 6);
-  static let polyEnable = QDPortBits(rawValue: 1 << 7);
-  static let rgnEnable = QDPortBits(rawValue: 1 << 8);
-  static let bitsEnable = QDPortBits(rawValue: 1 << 9);
-  static let commentsEnable = QDPortBits(rawValue: 1 << 10);
-  static let txtMeasEnable = QDPortBits(rawValue: 1 << 11);
-  static let clipEnable = QDPortBits(rawValue: 1 << 12);
-  static let quickTimeEnable = QDPortBits(rawValue: 1 << 13);
-  static let defaultState = QDPortBits([
-    textEnable, lineEnable, rectEnable, rRectEnable, ovalEnable,
-    arcEnable, polyEnable, rgnEnable, bitsEnable, commentsEnable,
-    txtMeasEnable, clipEnable, quickTimeEnable
-  ]);
-}
-
-
-/// Ideally, most of the rendering logic should be decoupled from the rendering implementation.
-/// We are not there yet (and we only have one rendered anyway).
-protocol QuickDrawRenderer {
-  func execute(opcode: OpCode) throws -> Void;
-  func execute(picture: QDPicture, zoom: Double) throws -> Void;
-  /// Bottleneck functions
-  func stdPoly(polygon: QDPolygon, verb: QDVerb) throws -> Void;
-  func stdRect(rect : QDRect, verb: QDVerb) throws -> Void;
-  func stdText(text : String) throws -> Void;
-
-  
-  var penState : PenState {get  set };
-  var fontState : QDFontState {get set};
-  var portBits : QDPortBits {get set};
-  
-}
-
 enum CoreGraphicRenderError : LocalizedError {
   case noContext(message: String);
   case noPdfContext(rect: CGRect);
@@ -64,9 +24,6 @@ enum CoreGraphicRenderError : LocalizedError {
   case inconsistentPoly(message: String);
   case unsupportedMode(mode: QuickDrawTransferMode);
 }
-
-
-
 
 extension CGImageSourceStatus : CustomStringConvertible {
   public var description: String {
@@ -187,7 +144,10 @@ func deg2rad<T: BinaryInteger>(_ angle: T) -> Double {
 
 /// Renderer that wraps a core-graphics context.
 /// All QuickDraw operations are translated into Core Graphics, Core Text, or Core Image ones.
-class QuickdrawCGRenderer : QuickDrawRenderer {
+/// Ideally, most of the rendering logic should be decoupled from the rendering implementation.
+/// We are not there yet (and we only have one rendered anyway).
+class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
+  
   
   init(context : CGContext?) {
     self.context = context;
@@ -318,20 +278,14 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     guard portBits.contains(.lineEnable) else {
       return;
     }
-    let cg_points = points.map({ CGPoint(qd_point:$0)});
-    context!.addLines(between: cg_points);
-    try applyVerbToPath(verb: .frame);
-  }
-  
-  func executeLine(lineop : LineOp) throws {
-    let qd_points = lineop.getPoints(current: penState.location);
-    // If we are inside a polygon, add the points and do nothing.
     if let poly = polyAccumulator {
-      poly.AddLine(line: qd_points);
+      poly.AddLine(line: points);
     } else {
-      try stdLine(points: qd_points);
+      let cg_points = points.map({ CGPoint(qd_point:$0)});
+      context!.addLines(between: cg_points);
+      try applyVerbToPath(verb: .frame);
     }
-    if let last = qd_points.last {
+    if let last = points.last {
       penState.location = last;
     }
   }
@@ -340,7 +294,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     guard portBits.contains(.polyEnable) else {
       return;
     }
-    
     if polygon.points.count > 0 {
       let cg_points = polygon.points.map({ CGPoint(qd_point:$0)});
       context!.beginPath();
@@ -350,13 +303,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       }
       try applyVerbToPath(verb: verb);
     }
+    lastPoly = polygon;
   }
-  
-  func executePoly(polyop: PolygonOp) throws {
-    let poly = polyop.GetPolygon(last: lastPoly);
-    try stdPoly(polygon: poly, verb: polyop.verb);
-  }
-  
   
   /// Bottleneck function for rectangle rendering.
   /// - Parameters:
@@ -370,11 +318,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     context!.addRect(CGRect(qdrect: rect));
     context!.closePath();
     try applyVerbToPath(verb: verb);
-  }
-  
-  func executeRect(rectop : RectOp) throws {
-    let rect = rectop.rect ?? lastRect;
-    try stdRect(rect : rect, verb: rectop.verb);
     lastRect = rect;
   }
   
@@ -393,35 +336,28 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     try applyVerbToPath(verb: verb);
   }
   
-  func executeRoundRect(roundRectOp : RoundRectOp) throws {
-    let rect = roundRectOp.rect ?? lastRect;
-    try stdRoundRect(rect: rect, verb: roundRectOp.verb);
-  }
-  
-  func executeOval(ovalOp: OvalOp) throws {
+  func stdOval(rect : QDRect, verb : QDVerb) throws {
     guard portBits.contains(.ovalEnable) else {
       return;
     }
-    let rect = ovalOp.rect ?? lastRect;
     context!.beginPath();
     context!.addEllipse(in: CGRect(qdrect: rect));
     context!.closePath();
-    try applyVerbToPath(verb: ovalOp.verb);
+    try applyVerbToPath(verb: verb);
     lastRect = rect;
   }
   
-  func executeArc(arcOp: ArcOp) throws {
+  func stdAngle(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws {
     guard portBits.contains(.arcEnable) else {
       return;
     }
-    let rect = arcOp.rect ?? lastRect;
-    // try executeRect(rect: rect, verb: QDVerb.frame);
+    /// Compute stuff
     let width = rect.dimensions.dh.value;
     let height = rect.dimensions.dv.value;
-    let startAngle = deg2rad(arcOp.startAngle);
-    let endAngle = deg2rad(arcOp.startAngle + arcOp.angle);
-    let clockwise = arcOp.angle > 0;
-    
+    let radStartAngle = deg2rad(startAngle);
+    let radEndAngle = deg2rad(startAngle + angle);
+    let clockwise = angle > 0;
+    /// Core graphics can only do angles in a circle, so do it on the unit circle, and scale it.
     context!.saveGState();
     context!.beginPath();
     context!.translateBy(x: rect.center.horizontal.value, y: rect.center.vertical.value);
@@ -430,27 +366,25 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     /// startAngle The angle to the starting point of the arc, measured in radians from the positive x-axis.
     /// endAngle The angle to the end point of the arc, measured in radians from the positive x-axis.
     context!.move(to: CGPoint(x: 0, y: 0));
-    context!.addArc(center: CGPoint(x:0, y:0), radius: 1.0, startAngle: startAngle, endAngle: endAngle, clockwise: clockwise);
+    context!.addArc(
+        center: CGPoint(x:0, y:0),
+        radius: 1.0,
+        startAngle: radStartAngle, endAngle: radEndAngle, clockwise: clockwise);
     context!.move(to: CGPoint(x: 0, y: 0));
-    try applyVerbToPath(verb: arcOp.verb);
+    try applyVerbToPath(verb: verb);
     // context!.fillPath();
     context!.restoreGState();
   }
   
-  func executeRegion(regionOp: RegionOp) throws {
+  func stdRegion(region: QDRegion, verb: QDVerb) throws {
     guard portBits.contains(.rgnEnable) else {
       return;
     }
-    let region = regionOp.region ?? lastRegion!;
-    if region.isRect {
-      try stdRect(rect: region.boundingBox, verb: regionOp.verb);
-    } else {
-      let qdRects = region.rects.map({CGRect(qdrect: $0)});
-      context!.beginPath();
-      context!.addRects(qdRects);
-      context!.closePath();
-      try applyVerbToPath(verb: regionOp.verb);
-    }
+    let qdRects = region.getRects().map({CGRect(qdrect: $0)});
+    context!.beginPath();
+    context!.addRects(qdRects);
+    context!.closePath();
+    try applyVerbToPath(verb: verb);
     lastRegion = region;
   }
   
@@ -531,16 +465,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     fontState.textCenter = nil;
   }
   
-  func executeText(textOp: LongTextOp) throws {
-    fontState.location = textOp.position;
-    try stdText(text: textOp.text);
-  }
-  
-  func executeText(textOp: DHDVTextOp) throws {
-    fontState.location = fontState.location + textOp.delta;
-    try stdText(text: textOp.text);
-  }
-  
   func executeComment(commentOp: CommentOp) throws {
     switch (commentOp.kind, commentOp.payload) {
     case (.textBegin, .fontStatePayload(let fontOp)):
@@ -556,19 +480,30 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
             message: String(localized: "Closing non existing polygon."));
       }
       poly.closed = true;
-    case (.polySmooth, _):
+    case (.polySmooth, .polySmoothPayload(let polyVerb)):
       guard let poly = polyAccumulator else {
         throw CoreGraphicRenderError.inconsistentPoly(
           message: String(localized: "Ending non existing polygon."));
       }
       poly.smooth = true;
+      if polyVerb.contains(.polyClose) {
+        poly.closed = true;
+      }
+      self.polyVerb = polyVerb;
+    case (.polyIgnore, _):
+      // Disabling the poly operations and executing it later (with polyClose)
+      // Causes problems with patterns, which are converted to shades.
+      break;
     case (.polyEnd, _):
       guard let poly = polyAccumulator else {
         throw CoreGraphicRenderError.inconsistentPoly(
           message: String(localized: "Ending non existing polygon."));
       }
+      portBits = QDPortBits.defaultState;
+      // Do something with polyverb?
       try stdPoly(polygon: poly, verb: QDVerb.frame);
       polyAccumulator = nil;
+      polyVerb = nil;
     case (_, .penStatePayload(let penOp)):
       penOp.execute(penState: &penState);
     case (_, .fontStatePayload(let fontOp)):
@@ -681,11 +616,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       data: directBitOp.bitmapInfo.data);
   }
   
-  /// Prevent error messages by forcing a clip.
-  func preventQuickTimeMessage() {
-    portBits = [.quickTimeEnable];
-  }
-  
   func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
     let mode = quicktimeOp.quicktimePayload.mode.mode;
     // TODO: use QuickTime transform.
@@ -697,6 +627,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     }
     
     let qtImage = quicktimeOp.quicktimePayload.idsc;
+    /// First option, the image data was decoded.
     switch qtImage.dataStatus {
     case let  .decoded(metadata):
       if let clut = metadata.clut {
@@ -705,11 +636,13 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
         try executeRGBImage(
           metadata: metadata, destination: destRec, mode: mode, data: Array(payload));
       }
-      preventQuickTimeMessage();
+      /// Prevent error message by disabling other procs.
+      portBits = [.quickTimeEnable];
       return;
     default:
       break;
     }
+    /// Second option, the image is something CoreGraphics can handle, like JPEG.
     let options : NSDictionary = [ kCGImageSourceTypeIdentifierHint: codecToContentType(qtImage:qtImage)];
     guard let imageSource = CGImageSourceCreateWithData(payload as CFData, options) else {
       throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateWithData", quicktimeOpcode: quicktimeOp);
@@ -725,7 +658,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
     context!.drawFlipped(
         image,
         in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
-    preventQuickTimeMessage()
+    /// Prevent error message by disabling other procs.
+    portBits = [.quickTimeEnable];
   }
   
   func executeDefHighlight() throws {
@@ -742,30 +676,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
       penOp.execute(penState: &penState);
     case let fontOp as FontStateOperation:
       fontOp.execute(fontState: &fontState);
-    case let textOp as LongTextOp:
-      try executeText(textOp: textOp);
+    case let portOp as PortOperation:
+      var port : QuickDrawPort = self;
+      try portOp.execute(port: &port);
     case let originOp as OriginOp:
       executeOrigin(originOp:originOp);
-    case let textOp as DHDVTextOp:
-      try executeText(textOp : textOp);
-    case let lienOp as LineOp:
-      try executeLine(lineop: lienOp);
-    case let rectop as RectOp:
-      try executeRect(rectop: rectop);
-    case let roundRectOp as RoundRectOp:
-      try executeRoundRect(roundRectOp: roundRectOp)
-    case let polyop as PolygonOp:
-      try executePoly(polyop: polyop);
-    case let arcOp as ArcOp:
-      try executeArc(arcOp: arcOp);
     case let bitRectOp as BitRectOpcode:
       try executeBitRect(bitRectOp: bitRectOp);
     case let directBitOp as DirectBitOpcode:
       try executeDirectBitOp(directBitOp: directBitOp);
-    case let ovalOp as OvalOp:
-      try executeOval(ovalOp: ovalOp);
-    case let regionOp as RegionOp:
-      try executeRegion(regionOp: regionOp);
     case let quicktimeOp as QuickTimeOpcode:
       try executeQuickTime(quicktimeOp: quicktimeOp);
     case let commentOp as CommentOp:
@@ -819,11 +738,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer {
   var fontState : QDFontState;
   var portBits = QDPortBits.defaultState ;
   // Last shapes, used by the SameXXX operations.
-  var lastPoly : QDPolygon?;
+  var lastPoly : QDPolygon = QDPolygon();
   var lastRect : QDRect = QDRect.empty;
-  var lastRegion :QDRegion?;
+  var lastRegion :QDRegion = QDRegion.empty;
   // Polygon for reconstruction.
   var polyAccumulator : QDPolygon?;
+  var polyVerb : PolySmoothVerb?;
   
   // Logger
   let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "render");

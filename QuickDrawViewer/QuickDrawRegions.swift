@@ -143,7 +143,18 @@ struct QDRegion : CustomStringConvertible {
     return QDRegion(boundingBox: rect, rects:[], bitlines:[[]]);
   }
   
+  static let empty = QDRegion(
+    boundingBox: QDRect.empty, rects: [], bitlines: []);
+   
   let rects : [QDRect];
+  
+  func getRects() ->  [QDRect] {
+    if isRect {
+      return [boundingBox];
+    }
+    return rects;
+  }
+  
   let bitlines: [[UInt8]];
 }
 
