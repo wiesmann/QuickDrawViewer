@@ -29,7 +29,7 @@ struct QDPattern : Equatable, PixMapMetadata, RawRepresentable {
   let dimensions =  QDDelta(dv: FixedPoint(8), dh: FixedPoint(8));
   let clut: QDColorTable? = nil; // Color table is only known at runtime.
   var description: String {
-    return "Pat: \(bytes)";
+    return "Pat: \(bytes): \(isShade)";
   }
   
   var bytes : [UInt8] {

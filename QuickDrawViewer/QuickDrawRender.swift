@@ -184,7 +184,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   }
   
   /// Paint the current path using the current pattern.
-  func paintPath() throws {
+  func paintPath(pattern: QDPattern) throws {
     // Check if the pattern can be replaced with a color.
     if penState.drawPattern.isShade {
       let color = penState.drawColor;
@@ -244,14 +244,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         // The difference between paint and fill verbs is that paint uses the
         // pen (frame) color.
       case QDVerb.paint:
-        try paintPath();
+        try paintPath(pattern: penState.drawPattern);
       case QDVerb.fill:
         context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
         context!.fillPath();
       case QDVerb.frame:
-        context!.setLineWidth(penState.penWidth.value);
-        context!.setStrokeColor(ToCGColor(qdcolor: penState.drawColor));
-        context!.strokePath();
+        let width = penState.penWidth.value
+        context!.setLineWidth(width);
+        context!.replacePathWithStrokedPath();
+        try paintPath(pattern: penState.drawPattern);
       case QDVerb.erase:
         context!.setFillColor(ToCGColor(qdcolor: penState.bgColor));
         context!.fillPath();
