@@ -61,16 +61,16 @@ struct ReservedOp : OpCode, PictureOperation {
   
   mutating func load(reader: QuickDrawDataReader) throws {
     switch reservedType {
-    case let .fixedLength(bytes):
-      length = bytes;
-    case let .readLength(bytes) where bytes == 4:
-      length = Data.Index(try reader.readUInt32());
-    case let .readLength(bytes) where bytes == 2:
-      length = Data.Index(try reader.readUInt16());
-    case let .readLength(bytes) where bytes == 1:
-      length = Data.Index(try reader.readUInt8());
-    default:
-      throw QuickDrawError.invalidReservedSize(reservedType: reservedType);
+      case let .fixedLength(bytes):
+        length = bytes;
+      case let .readLength(bytes) where bytes == 4:
+        length = Data.Index(try reader.readUInt32());
+      case let .readLength(bytes) where bytes == 2:
+        length = Data.Index(try reader.readUInt16());
+      case let .readLength(bytes) where bytes == 1:
+        length = Data.Index(try reader.readUInt8());
+      default:
+        throw QuickDrawError.invalidReservedSize(reservedType: reservedType);
     }
     reader.skip(bytes: length)
   }
@@ -227,7 +227,7 @@ struct ArcOp : OpCode, PortOperation {
   }
   
   func execute(port: inout any QuickDrawPort) throws {
-    try port.stdAngle(
+    try port.stdArc(
       rect: rect, startAngle : startAngle, angle: angle, verb: verb);
   }
   
@@ -296,12 +296,12 @@ struct LineOp : OpCode, PortOperation, CustomStringConvertible {
     let p1 = (start ?? current)!;
     var points : [QDPoint] = [p1];
     switch end {
-    case .absolute(let point):
-      points.append(point);
-    case .relative(let delta):
-      points.append(p1 + delta);
-    case .unset:
-      break;
+      case .absolute(let point):
+        points.append(point);
+      case .relative(let delta):
+        points.append(p1 + delta);
+      case .unset:
+        break;
     }
     return points;
   }
@@ -312,12 +312,12 @@ struct LineOp : OpCode, PortOperation, CustomStringConvertible {
       result += "\(s)"
     }
     switch end {
-    case .absolute(let point):
-      result += "→ \(point)";
-    case .relative(let delta):
-      result += "→ \(delta)";
-    case .unset:
-      break;
+      case .absolute(let point):
+        result += "→ \(point)";
+      case .relative(let delta):
+        result += "→ \(delta)";
+      case .unset:
+        break;
     }
     return result;
   }
@@ -347,10 +347,10 @@ struct ColorOp : OpCode, PenStateOperation {
   
   func execute(penState: inout PenState) {
     switch selection {
-    case QDColorSelection.foreground: penState.fgColor = color;
-    case QDColorSelection.background: penState.bgColor = color;
-    case QDColorSelection.operations: penState.opColor = color;
-    case QDColorSelection.highlight: penState.highlightColor = color;
+      case QDColorSelection.foreground: penState.fgColor = color;
+      case QDColorSelection.background: penState.bgColor = color;
+      case QDColorSelection.operations: penState.opColor = color;
+      case QDColorSelection.highlight: penState.highlightColor = color;
     }
   }
   
@@ -365,12 +365,12 @@ struct ColorOp : OpCode, PenStateOperation {
 struct PatternOp : OpCode, PenStateOperation  {
   func execute(penState: inout PenState) {
     switch verb {
-    case .fill, .paint:
-      penState.fillPattern = pattern;
-    case .frame:
-      penState.drawPattern = pattern;
-    default:
-      print("Unsupported pattern verb in \(self)");
+      case .fill, .paint:
+        penState.fillPattern = pattern;
+      case .frame:
+        penState.drawPattern = pattern;
+      default:
+        print("Unsupported pattern verb in \(self)");
     }
   }
   
@@ -648,14 +648,14 @@ struct DirectBitOpcode : OpCode {
     bitmapInfo.dstRect = try reader.readRect();
     bitmapInfo.mode = try QuickDrawMode(rawValue: reader.readUInt16());
     switch bitmapInfo.pixMapInfo!.packType {
-    case .noPack, .defaultPack:
-      try loadUnpacked(reader:reader);
-    case .removePadByte:
-      try loadRemovePad(reader: reader);
-    case .pixelRunLength:
-      try loadPixelRunLength(reader: reader);
-    case .componentRunLength:
-      try loadComponentRunLength(reader: reader);
+      case .noPack, .defaultPack:
+        try loadUnpacked(reader:reader);
+      case .removePadByte:
+        try loadRemovePad(reader: reader);
+      case .pixelRunLength:
+        try loadPixelRunLength(reader: reader);
+      case .componentRunLength:
+        try loadComponentRunLength(reader: reader);
     }
   }
   

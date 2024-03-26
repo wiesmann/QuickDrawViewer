@@ -38,7 +38,7 @@ protocol QuickDrawPort {
   func stdRegion(region : QDRegion, verb: QDVerb) throws -> Void;
   func stdRoundRect(rect : QDRect, verb: QDVerb) throws -> Void;
   func stdLine(points: [QDPoint]) throws -> Void;
-  func stdAngle(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws -> Void;
+  func stdArc(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws -> Void;
 
   // Port state
   var penState : PenState {get  set };

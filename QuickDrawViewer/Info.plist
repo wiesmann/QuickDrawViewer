@@ -5,16 +5,22 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>Apple QuickTime picture</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.apple.quicktime-image</string>
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>Apple QuickDraw pictures</string>
 			<key>CFBundleTypeRole</key>
@@ -27,15 +33,20 @@
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeIconSystemGenerated</key>
+			<integer>1</integer>
 			<key>CFBundleTypeName</key>
 			<string>Apple MacPaint pictures</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.apple.macpaint-image</string>
 			</array>
 		</dict>
+		<dict/>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
@@ -46,6 +57,13 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>QuickTime Picture</string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconBadgeName</key>
+				<string></string>
+				<key>UTTypeIconText</key>
+				<string>QuickTime</string>
+			</dict>
 			<key>UTTypeIdentifier</key>
 			<string>com.apple.quicktime-image</string>
 			<key>UTTypeTagSpecification</key>
@@ -53,6 +71,11 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>qtif</string>
+					<string>qif</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>Image/x-quicktime</string>
 				</array>
 			</dict>
 		</dict>
@@ -63,6 +86,11 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>Quickdraw Picture</string>
+			<key>UTTypeIcons</key>
+			<dict>
+				<key>UTTypeIconText</key>
+				<string>PICT</string>
+			</dict>
 			<key>UTTypeIdentifier</key>
 			<string>com.apple.pict</string>
 			<key>UTTypeTagSpecification</key>
@@ -70,6 +98,12 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>pict</string>
+					<string>pct</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>image/x-pict</string>
+					<string>image/pict</string>
 				</array>
 			</dict>
 		</dict>
@@ -80,6 +114,8 @@
 			</array>
 			<key>UTTypeDescription</key>
 			<string>MacPaint Picture</string>
+			<key>UTTypeIcons</key>
+			<dict/>
 			<key>UTTypeIdentifier</key>
 			<string>com.apple.macpaint-image</string>
 			<key>UTTypeTagSpecification</key>
@@ -87,6 +123,10 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>pntg</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>Image/x-macpaint</string>
 				</array>
 			</dict>
 		</dict>

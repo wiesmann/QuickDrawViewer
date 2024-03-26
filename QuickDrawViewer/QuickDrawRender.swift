@@ -28,14 +28,14 @@ enum CoreGraphicRenderError : LocalizedError {
 extension CGImageSourceStatus : CustomStringConvertible {
   public var description: String {
     switch self {
-    case .statusUnexpectedEOF: return String(localized: "Unexpected end-of-file");
-    case .statusInvalidData: return String(localized: "Invalid data");
-    case .statusUnknownType: return String(localized: "Unknown image type");
-    case .statusIncomplete: return String(localized: "Incomplete");
-    case .statusReadingHeader: return String(localized: "Reading header");
-    case .statusComplete: return String(localized: "Complete");
-    default:
-      return String(localized: "Unknown");
+      case .statusUnexpectedEOF: return String(localized: "Unexpected end-of-file");
+      case .statusInvalidData: return String(localized: "Invalid data");
+      case .statusUnknownType: return String(localized: "Unknown image type");
+      case .statusIncomplete: return String(localized: "Incomplete");
+      case .statusReadingHeader: return String(localized: "Reading header");
+      case .statusComplete: return String(localized: "Complete");
+      default:
+        return String(localized: "Unknown");
     }
   }
 }
@@ -122,9 +122,9 @@ func ToQDColor(color: CGColor) throws -> QDColor  {
 func SubstituteFontName(fontName : String?) -> String {
   if let name = fontName {
     switch name {
-    case "Geneva" : return "Verdana";
-    default:
-      return name;
+      case "Geneva" : return "Verdana";
+      default:
+        return name;
     }
   }
   return "Helvetica";
@@ -138,7 +138,7 @@ let tau = 2.0 * .pi;
 ///
 ///
 func deg2rad<T: BinaryInteger>(_ angle: T) -> Double {
-  return -Double(angle + 90) * tau / 360;
+  return -Double((angle + 90) % 360) * tau / 360;
 }
 
 
@@ -218,20 +218,20 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   
   func applyMode(mode: QuickDrawTransferMode) throws {
     switch mode {
-    case .copyMode:
-      context!.setBlendMode(.normal);
-    case .orMode:
-      context!.setBlendMode(.darken);
-    case .xorMode:
-      context!.setBlendMode(.xor);
-    case .notOrMode:
-      context!.setBlendMode(.destinationAtop);
-    case .notBic:
-      context!.setBlendMode(.normal);
-    case .notCopyMode:
-      context!.setBlendMode(.darken);
-    default:
-      throw CoreGraphicRenderError.unsupportedMode(mode: mode);
+      case .copyMode:
+        context!.setBlendMode(.normal);
+      case .orMode:
+        context!.setBlendMode(.darken);
+      case .xorMode:
+        context!.setBlendMode(.xor);
+      case .notOrMode:
+        context!.setBlendMode(.destinationAtop);
+      case .notBic:
+        context!.setBlendMode(.normal);
+      case .notCopyMode:
+        context!.setBlendMode(.darken);
+      default:
+        throw CoreGraphicRenderError.unsupportedMode(mode: mode);
     }
   }
   
@@ -241,32 +241,32 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   func applyVerbToPath(verb: QDVerb) throws {
     try applyMode(mode: penState.mode.mode);
     switch verb {
-      // The difference between paint and fill verbs is that paint uses the
-      // pen (frame) color.
-    case QDVerb.paint:
-      try paintPath();
-    case QDVerb.fill:
-      context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
-      context!.fillPath();
-    case QDVerb.frame:
-      context!.setLineWidth(penState.penWidth.value);
-      context!.setStrokeColor(ToCGColor(qdcolor: penState.drawColor));
-      context!.strokePath();
-    case QDVerb.erase:
-      context!.setFillColor(ToCGColor(qdcolor: penState.bgColor));
-      context!.fillPath();
-    case QDVerb.clip:
-      /// Quickdraw clip operation replace the existing clip, where CoreGraphic ones are cumulative (intersection).
-      context!.resetClip();
-      context!.clip();
-    case QDVerb.invert:
-      context!.saveGState();
-      context!.setBlendMode(CGBlendMode.difference);
-      context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
-      context!.fillPath();
-      context!.restoreGState();
-    case QDVerb.ignore:
-      break;
+        // The difference between paint and fill verbs is that paint uses the
+        // pen (frame) color.
+      case QDVerb.paint:
+        try paintPath();
+      case QDVerb.fill:
+        context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
+        context!.fillPath();
+      case QDVerb.frame:
+        context!.setLineWidth(penState.penWidth.value);
+        context!.setStrokeColor(ToCGColor(qdcolor: penState.drawColor));
+        context!.strokePath();
+      case QDVerb.erase:
+        context!.setFillColor(ToCGColor(qdcolor: penState.bgColor));
+        context!.fillPath();
+      case QDVerb.clip:
+        /// Quickdraw clip operation replace the existing clip, where CoreGraphic ones are cumulative (intersection).
+        context!.resetClip();
+        context!.clip();
+      case QDVerb.invert:
+        context!.saveGState();
+        context!.setBlendMode(CGBlendMode.difference);
+        context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
+        context!.fillPath();
+        context!.restoreGState();
+      case QDVerb.ignore:
+        break;
     }
   }
   
@@ -347,7 +347,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     lastRect = rect;
   }
   
-  func stdAngle(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws {
+  // TODO: Picture DeskDrawCar.pict bugs with angles.
+  func stdArc(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws {
     guard portBits.contains(.arcEnable) else {
       return;
     }
@@ -357,6 +358,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     let radStartAngle = deg2rad(startAngle);
     let radEndAngle = deg2rad(startAngle + angle);
     let clockwise = angle > 0;
+    
     /// Core graphics can only do angles in a circle, so do it on the unit circle, and scale it.
     context!.saveGState();
     context!.beginPath();
@@ -367,9 +369,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     /// endAngle The angle to the end point of the arc, measured in radians from the positive x-axis.
     context!.move(to: CGPoint(x: 0, y: 0));
     context!.addArc(
-        center: CGPoint(x:0, y:0),
-        radius: 1.0,
-        startAngle: radStartAngle, endAngle: radEndAngle, clockwise: clockwise);
+      center: CGPoint(x:0, y:0),
+      radius: 1.0,
+      startAngle: radStartAngle, endAngle: radEndAngle, clockwise: clockwise);
     context!.move(to: CGPoint(x: 0, y: 0));
     try applyVerbToPath(verb: verb);
     // context!.fillPath();
@@ -467,49 +469,49 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   
   func executeComment(commentOp: CommentOp) throws {
     switch (commentOp.kind, commentOp.payload) {
-    case (.textBegin, .fontStatePayload(let fontOp)):
-      fontOp.execute(fontState: &fontState);
-      portBits = [.textEnable];
-    case (.textEnd, _):
-      portBits = QDPortBits.defaultState;
-    case (.polyBegin, _):
-      polyAccumulator = QDPolygon();
-    case (.polyClose, _):
-      guard let poly = polyAccumulator else {
-        throw CoreGraphicRenderError.inconsistentPoly(
+      case (.textBegin, .fontStatePayload(let fontOp)):
+        fontOp.execute(fontState: &fontState);
+        portBits = [.textEnable];
+      case (.textEnd, _):
+        portBits = QDPortBits.defaultState;
+      case (.polyBegin, _):
+        polyAccumulator = QDPolygon();
+      case (.polyClose, _):
+        guard let poly = polyAccumulator else {
+          throw CoreGraphicRenderError.inconsistentPoly(
             message: String(localized: "Closing non existing polygon."));
-      }
-      poly.closed = true;
-    case (.polySmooth, .polySmoothPayload(let polyVerb)):
-      guard let poly = polyAccumulator else {
-        throw CoreGraphicRenderError.inconsistentPoly(
-          message: String(localized: "Ending non existing polygon."));
-      }
-      poly.smooth = true;
-      if polyVerb.contains(.polyClose) {
+        }
         poly.closed = true;
-      }
-      self.polyVerb = polyVerb;
-    case (.polyIgnore, _):
-      // Disabling the poly operations and executing it later (with polyClose)
-      // Causes problems with patterns, which are converted to shades.
-      break;
-    case (.polyEnd, _):
-      guard let poly = polyAccumulator else {
-        throw CoreGraphicRenderError.inconsistentPoly(
-          message: String(localized: "Ending non existing polygon."));
-      }
-      portBits = QDPortBits.defaultState;
-      // Do something with polyverb?
-      try stdPoly(polygon: poly, verb: QDVerb.frame);
-      polyAccumulator = nil;
-      polyVerb = nil;
-    case (_, .penStatePayload(let penOp)):
-      penOp.execute(penState: &penState);
-    case (_, .fontStatePayload(let fontOp)):
-      fontOp.execute(fontState: &fontState);
-    default:
-      break;
+      case (.polySmooth, .polySmoothPayload(let polyVerb)):
+        guard let poly = polyAccumulator else {
+          throw CoreGraphicRenderError.inconsistentPoly(
+            message: String(localized: "Ending non existing polygon."));
+        }
+        poly.smooth = true;
+        if polyVerb.contains(.polyClose) {
+          poly.closed = true;
+        }
+        self.polyVerb = polyVerb;
+      case (.polyIgnore, _):
+        // Disabling the poly operations and executing it later (with polyClose)
+        // Causes problems with patterns, which are converted to shades.
+        break;
+      case (.polyEnd, _):
+        guard let poly = polyAccumulator else {
+          throw CoreGraphicRenderError.inconsistentPoly(
+            message: String(localized: "Ending non existing polygon."));
+        }
+        portBits = QDPortBits.defaultState;
+        // Do something with polyverb?
+        try stdPoly(polygon: poly, verb: QDVerb.frame);
+        polyAccumulator = nil;
+        polyVerb = nil;
+      case (_, .penStatePayload(let penOp)):
+        penOp.execute(penState: &penState);
+      case (_, .fontStatePayload(let fontOp)):
+        fontOp.execute(fontState: &fontState);
+      default:
+        break;
     }
   }
   
@@ -537,8 +539,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(
-          message: String(localized:"Could not create palette image."),
-          metadata: metadata);
+        message: String(localized:"Could not create palette image."),
+        metadata: metadata);
     }
     try applyMode(mode: mode);
     context!.drawFlipped(
@@ -562,15 +564,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       data: bitRectOp.bitmapInfo.data,
       clut: clut);
   }
-
+  
   func getBitmapInfo(metadata: PixMapMetadata) -> CGBitmapInfo {
     switch metadata.pixelSize {
-    case 16:
-      return CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
-    case 32:
-      return CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
-    default:
-      return CGBitmapInfo();
+      case 16:
+        return CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
+      case 32:
+        return CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
+      default:
+        return CGBitmapInfo();
     }
   }
   
@@ -629,18 +631,18 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     let qtImage = quicktimeOp.quicktimePayload.idsc;
     /// First option, the image data was decoded.
     switch qtImage.dataStatus {
-    case let  .decoded(metadata):
-      if let clut = metadata.clut {
-        try executePaletteImage(metadata: metadata, destination: destRec, mode: mode, data: Array(payload), clut: clut);
-      } else {
-        try executeRGBImage(
-          metadata: metadata, destination: destRec, mode: mode, data: Array(payload));
-      }
-      /// Prevent error message by disabling other procs.
-      portBits = [.quickTimeEnable];
-      return;
-    default:
-      break;
+      case let  .decoded(metadata):
+        if let clut = metadata.clut {
+          try executePaletteImage(metadata: metadata, destination: destRec, mode: mode, data: Array(payload), clut: clut);
+        } else {
+          try executeRGBImage(
+            metadata: metadata, destination: destRec, mode: mode, data: Array(payload));
+        }
+        /// Prevent error message by disabling other procs.
+        portBits = [.quickTimeEnable];
+        return;
+      default:
+        break;
     }
     /// Second option, the image is something CoreGraphics can handle, like JPEG.
     let options : NSDictionary = [ kCGImageSourceTypeIdentifierHint: codecToContentType(qtImage:qtImage)];
@@ -656,8 +658,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateImageAtIndex \(imageSource): \(count)", quicktimeOpcode: quicktimeOp);
     }
     context!.drawFlipped(
-        image,
-        in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
+      image,
+      in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
     /// Prevent error message by disabling other procs.
     portBits = [.quickTimeEnable];
   }
@@ -672,29 +674,29 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   /// - Parameter opcode: opcode to dispatch
   func execute(opcode: OpCode) throws {
     switch opcode {
-    case let penOp as PenStateOperation:
-      penOp.execute(penState: &penState);
-    case let fontOp as FontStateOperation:
-      fontOp.execute(fontState: &fontState);
-    case let portOp as PortOperation:
-      var port : QuickDrawPort = self;
-      try portOp.execute(port: &port);
-    case let originOp as OriginOp:
-      executeOrigin(originOp:originOp);
-    case let bitRectOp as BitRectOpcode:
-      try executeBitRect(bitRectOp: bitRectOp);
-    case let directBitOp as DirectBitOpcode:
-      try executeDirectBitOp(directBitOp: directBitOp);
-    case let quicktimeOp as QuickTimeOpcode:
-      try executeQuickTime(quicktimeOp: quicktimeOp);
-    case let commentOp as CommentOp:
-      try executeComment(commentOp:commentOp);
-    case is DefHiliteOp:
-      try executeDefHighlight();
-    case is PictureOperation:
-      break;
-    default:
-      throw CoreGraphicRenderError.unsupportedOpcode(opcode: opcode);
+      case let penOp as PenStateOperation:
+        penOp.execute(penState: &penState);
+      case let fontOp as FontStateOperation:
+        fontOp.execute(fontState: &fontState);
+      case let portOp as PortOperation:
+        var port : QuickDrawPort = self;
+        try portOp.execute(port: &port);
+      case let originOp as OriginOp:
+        executeOrigin(originOp:originOp);
+      case let bitRectOp as BitRectOpcode:
+        try executeBitRect(bitRectOp: bitRectOp);
+      case let directBitOp as DirectBitOpcode:
+        try executeDirectBitOp(directBitOp: directBitOp);
+      case let quicktimeOp as QuickTimeOpcode:
+        try executeQuickTime(quicktimeOp: quicktimeOp);
+      case let commentOp as CommentOp:
+        try executeComment(commentOp:commentOp);
+      case is DefHiliteOp:
+        try executeDefHighlight();
+      case is PictureOperation:
+        break;
+      default:
+        throw CoreGraphicRenderError.unsupportedOpcode(opcode: opcode);
     }
   }
   
@@ -707,12 +709,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     self.picture = picture;
     let origin = CGPoint(qd_point: picture.frame.topLeft);
     context!.translateBy(x: -origin.x, y: -origin.y);
-
+    
     // TODO: figure out when this should be turned on.
     // Scaling causes regressions on old pictures.
     /*let vScale = QDResolution.defaultResolution.vRes.value / picture.resolution.vRes.value;
-    let hScale = QDResolution.defaultResolution.hRes.value / picture.resolution.hRes.value;
-    context!.scaleBy(x: hScale, y: vScale);*/
+     let hScale = QDResolution.defaultResolution.hRes.value / picture.resolution.hRes.value;
+     context!.scaleBy(x: hScale, y: vScale);*/
     context!.scaleBy(x: zoom, y: zoom);
     
     for opcode in picture.opcodes {
