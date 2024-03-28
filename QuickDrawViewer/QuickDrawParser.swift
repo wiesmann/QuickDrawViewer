@@ -32,100 +32,104 @@ class QDParser {
   /// - Returns: an OpCode instance
   func decode(opcode: UInt16) throws -> OpCode {
     switch opcode {
-    case 0x00: return NoOp();
-    case 0x01: return RegionOp(same: false, verb: QDVerb.clip);
-    case 0x03: return FontOp(longOp: false);
-    case 0x04: return FontStyleOp();
-    case 0x05: return TextModeOp();
-    case 0x07: return PenSizeOp();
-    case 0x08: return PenModeOp();
-    case 0x09: return PatternOp(verb: QDVerb.frame);
-    case 0x0A: return PatternOp(verb: QDVerb.fill);
-    case 0x0B: return OvalSizeOp();
-    case 0x0C: return OriginOp();
-    case 0x0D: return FontSizeOp();
-    case 0x0E: return ColorOp(rgb:false, selection: QDColorSelection.foreground);
-    case 0x0F: return ColorOp(rgb:false, selection: QDColorSelection.background);
-    case 0x10: return TextRatioOp();
-    case 0x11, 0x02FF:
-      return VersionOp();
+      case 0x00: return NoOp();
+      case 0x01: return RegionOp(same: false, verb: QDVerb.clip);
+      case 0x03: return FontOp(longOp: false);
+      case 0x04: return FontStyleOp();
+      case 0x05: return TextModeOp();
+      case 0x06: return SpaceExtraOp()
+      case 0x07: return PenSizeOp();
+      case 0x08: return PenModeOp();
+      case 0x09: return PatternOp(verb: QDVerb.frame);
+      case 0x0A: return PatternOp(verb: QDVerb.fill);
+      case 0x0B: return OvalSizeOp();
+      case 0x0C: return OriginOp();
+      case 0x0D: return FontSizeOp();
+      case 0x0E: return ColorOp(rgb:false, selection: QDColorSelection.foreground);
+      case 0x0F: return ColorOp(rgb:false, selection: QDColorSelection.background);
+      case 0x10: return TextRatioOp();
+      case 0x11, 0x02FF:
+        return VersionOp();
       // case 0x12: return ColorPattern op
-    case 0x1A: return ColorOp(rgb: true, selection: QDColorSelection.foreground);
-    case 0x1B: return ColorOp(rgb: true, selection: QDColorSelection.background);
-    case 0x1D: return ColorOp(rgb: true, selection: QDColorSelection.highlight);
-    case 0x1E: return DefHiliteOp();
-    case 0x1F: return ColorOp(rgb: true, selection: QDColorSelection.operations);
-    case 0x20: return LineOp(short: false, from:false);
-    case 0x21: return LineOp(short: false, from:true);
-    case 0x22: return LineOp(short: true, from: false);
-    case 0x23: return LineOp(short: true, from: true);
-    case 0x24...0x27: return ReservedOp(reservedType: .readLength(bytes: 2));
-    case 0x28: return LongTextOp();
-    case 0x29: return DHDVTextOp(readDh: true, readDv: false);
-    case 0x2a: return DHDVTextOp(readDh: false, readDv: true);
-    case 0x2b: return DHDVTextOp(readDh: true , readDv: true);
-    case 0x2c: return FontOp(longOp: true);
-    case 0x2e: return GlyphStateOp();
-    case 0x30...0x34:
-      return RectOp(same: false, verb: QDVerb(rawValue: opcode - 0x30)!);
-    case 0x35...0x37:
-      return ReservedOp(reservedType: .fixedLength(bytes: 8));
-    case 0x38...0x3C:
-      return RectOp(same: true, verb: QDVerb(rawValue: opcode - 0x38)!);
-    case 0x3D...0x3F:
-      return ReservedOp(reservedType: .fixedLength(bytes: 8));
-    case 0x40...0x44:
-      return RoundRectOp(same: false, verb: QDVerb(rawValue: opcode - 0x40)!);
-    case 0x45...0x47:
-      return ReservedOp(reservedType: .fixedLength(bytes: 8));
-    case 0x48...0x4C:
-      return RoundRectOp(same: true, verb: QDVerb(rawValue: opcode - 0x48)!);
-    case 0x4D...0x4F:
-      return ReservedOp(reservedType: .fixedLength(bytes: 0));
-    case 0x50...0x54:
-      return OvalOp(same: false, verb: QDVerb(rawValue: opcode - 0x50)!);
-    case 0x58...0x5C:
-      return OvalOp(same: true, verb: QDVerb(rawValue: opcode - 0x58)!);
-    case 0x60...0x64:
-      return ArcOp(same: false, verb: QDVerb(rawValue: opcode - 0x60)!);
-    case 0x65...0x67:
-      return ReservedOp(reservedType: .fixedLength(bytes: 12));
-    case 0x68...0x6C:
-      return ArcOp(same: true, verb: QDVerb(rawValue: opcode - 0x68)!);
-    case 0x6D...0x6F:
-      return ReservedOp(reservedType: .fixedLength(bytes: 4));
-    case 0x70...0x74:
-      return PolygonOp(same: false, verb: QDVerb(rawValue: opcode - 0x70)!);
-    case 0x80...0x84:
-      return RegionOp(same: false, verb: QDVerb(rawValue: opcode - 0x80)!);
-    case 0x85...0x87:
-      return RegionOp(same: false, verb: .ignore);
-    case 0x90: return BitRectOpcode(isPacked: false);
-    case 0x98: return BitRectOpcode(isPacked: true);
-    case 0x9A: return DirectBitOpcode();
-    case 0xA0: return CommentOp(long_comment:false);
-    case 0xA1: return CommentOp(long_comment:true);
-    case 0xA2...0xAF: return ReservedOp(reservedType: .readLength(bytes: 2));
-    case 0xB0...0xCF: return ReservedOp(reservedType: .fixedLength(bytes: 0));
-    case 0xD0...0xFE: return ReservedOp(reservedType: .readLength(bytes: 4));
-    case 0xFF: return EndOp();
-    case 0x0100...0x1ff: return ReservedOp(reservedType: .fixedLength(bytes: 2));
-    case 0x0200...0x2fe: return ReservedOp(reservedType: .fixedLength(bytes: 4));
-    case 0x0300...0x0bff: 
-      return ReservedOp(reservedType: .fixedLength(bytes: Int(opcode) / 0x80));
-    case 0x0c00: return Version2HeaderOp();
-    case 0x0c01...0x7fff:
-      return ReservedOp(reservedType: .fixedLength(bytes: Int(opcode) / 0x80));
-    case 0x8000...0x80ff:
-      return ReservedOp(reservedType: .fixedLength(bytes: 0));
-    case 0x8100...0x81ff:
-      return ReservedOp(reservedType: .readLength(bytes: 4));
-    case 0x8200: return QuickTimeOpcode();
-    case 0x8202...0xffff:
-      return ReservedOp(reservedType: .readLength(bytes: 4));
-    case 0xFFFF : return ReservedOp(reservedType: .readLength(bytes: 4));
-    default:
-      throw QuickDrawError.unknownOpcodeError(opcode:opcode);
+      case 0x15: return PnLocHFracOp();
+      case 0x16: return SpaceExtraOp();
+      // $0017, $0018, $0019 are reserved with no defined arg size
+      case 0x1A: return ColorOp(rgb: true, selection: QDColorSelection.foreground);
+      case 0x1B: return ColorOp(rgb: true, selection: QDColorSelection.background);
+      case 0x1D: return ColorOp(rgb: true, selection: QDColorSelection.highlight);
+      case 0x1E: return DefHiliteOp();
+      case 0x1F: return ColorOp(rgb: true, selection: QDColorSelection.operations);
+      case 0x20: return LineOp(short: false, from:false);
+      case 0x21: return LineOp(short: false, from:true);
+      case 0x22: return LineOp(short: true, from: false);
+      case 0x23: return LineOp(short: true, from: true);
+      case 0x24...0x27: return ReservedOp(reservedType: .readLength(bytes: 2));
+      case 0x28: return LongTextOp();
+      case 0x29: return DHDVTextOp(readDh: true, readDv: false);
+      case 0x2a: return DHDVTextOp(readDh: false, readDv: true);
+      case 0x2b: return DHDVTextOp(readDh: true , readDv: true);
+      case 0x2c: return FontOp(longOp: true);
+      case 0x2e: return GlyphStateOp();
+      case 0x30...0x34:
+        return RectOp(same: false, verb: QDVerb(rawValue: opcode - 0x30)!);
+      case 0x35...0x37:
+        return ReservedOp(reservedType: .fixedLength(bytes: 8));
+      case 0x38...0x3C:
+        return RectOp(same: true, verb: QDVerb(rawValue: opcode - 0x38)!);
+      case 0x3D...0x3F:
+        return ReservedOp(reservedType: .fixedLength(bytes: 8));
+      case 0x40...0x44:
+        return RoundRectOp(same: false, verb: QDVerb(rawValue: opcode - 0x40)!);
+      case 0x45...0x47:
+        return ReservedOp(reservedType: .fixedLength(bytes: 8));
+      case 0x48...0x4C:
+        return RoundRectOp(same: true, verb: QDVerb(rawValue: opcode - 0x48)!);
+      case 0x4D...0x4F:
+        return ReservedOp(reservedType: .fixedLength(bytes: 0));
+      case 0x50...0x54:
+        return OvalOp(same: false, verb: QDVerb(rawValue: opcode - 0x50)!);
+      case 0x58...0x5C:
+        return OvalOp(same: true, verb: QDVerb(rawValue: opcode - 0x58)!);
+      case 0x60...0x64:
+        return ArcOp(same: false, verb: QDVerb(rawValue: opcode - 0x60)!);
+      case 0x65...0x67:
+        return ReservedOp(reservedType: .fixedLength(bytes: 12));
+      case 0x68...0x6C:
+        return ArcOp(same: true, verb: QDVerb(rawValue: opcode - 0x68)!);
+      case 0x6D...0x6F:
+        return ReservedOp(reservedType: .fixedLength(bytes: 4));
+      case 0x70...0x74:
+        return PolygonOp(same: false, verb: QDVerb(rawValue: opcode - 0x70)!);
+      case 0x80...0x84:
+        return RegionOp(same: false, verb: QDVerb(rawValue: opcode - 0x80)!);
+      case 0x85...0x87:
+        return RegionOp(same: false, verb: .ignore);
+      case 0x90: return BitRectOpcode(isPacked: false);
+      case 0x98: return BitRectOpcode(isPacked: true);
+      case 0x9A: return DirectBitOpcode();
+      case 0xA0: return CommentOp(long_comment:false);
+      case 0xA1: return CommentOp(long_comment:true);
+      case 0xA2...0xAF: return ReservedOp(reservedType: .readLength(bytes: 2));
+      case 0xB0...0xCF: return ReservedOp(reservedType: .fixedLength(bytes: 0));
+      case 0xD0...0xFE: return ReservedOp(reservedType: .readLength(bytes: 4));
+      case 0xFF: return EndOp();
+      case 0x0100...0x1ff: return ReservedOp(reservedType: .fixedLength(bytes: 2));
+      case 0x0200...0x2fe: return ReservedOp(reservedType: .fixedLength(bytes: 4));
+      case 0x0300...0x0bff:
+        return ReservedOp(reservedType: .fixedLength(bytes: Int(opcode) / 0x80));
+      case 0x0c00: return Version2HeaderOp();
+      case 0x0c01...0x7fff:
+        return ReservedOp(reservedType: .fixedLength(bytes: Int(opcode) / 0x80));
+      case 0x8000...0x80ff:
+        return ReservedOp(reservedType: .fixedLength(bytes: 0));
+      case 0x8100...0x81ff:
+        return ReservedOp(reservedType: .readLength(bytes: 4));
+      case 0x8200: return QuickTimeOpcode();
+      case 0x8202...0xffff:
+        return ReservedOp(reservedType: .readLength(bytes: 4));
+      case 0xFFFF : return ReservedOp(reservedType: .readLength(bytes: 4));
+      default:
+        throw QuickDrawError.unknownOpcodeError(opcode:opcode);
     }
   }
   

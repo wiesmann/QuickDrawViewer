@@ -349,6 +349,7 @@ class QDFontState {
   var yRatio : FixedPoint = FixedPoint.one;
   var textCenter: QDDelta?;
   var textPictRecord : QDTextPictRecord?;
+  var extraSpace : FixedPoint = FixedPoint.zero;
 }
 
 enum QDTextJustification : UInt8 {
@@ -371,6 +372,7 @@ enum QDTextLineHeight : UInt8 {
   case single = 1;
   case oneAndHalf = 2;
   case double = 3;
+  case double2 = 4;
 }
 
 // Text annotation for text comments

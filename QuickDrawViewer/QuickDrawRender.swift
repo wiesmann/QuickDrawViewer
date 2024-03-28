@@ -249,10 +249,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
         context!.fillPath();
       case QDVerb.frame:
+        context!.saveGState();
         let width = penState.penWidth.value
         context!.setLineWidth(width);
         context!.replacePathWithStrokedPath();
         try paintPath(pattern: penState.drawPattern);
+        context!.restoreGState();
       case QDVerb.erase:
         context!.setFillColor(ToCGColor(qdcolor: penState.bgColor));
         context!.fillPath();
@@ -444,6 +446,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       lineText.addAttribute(
         kCTForegroundColorAttributeName as NSAttributedString.Key, value: fgColor, range: range);
       context!.setTextDrawingMode(.fill);
+    }
+    
+    if fontState.extraSpace != FixedPoint.zero {
+      let extraSpace = NSNumber(value: fontState.extraSpace.value);
+      lineText.addAttribute(kCTKernAttributeName as NSAttributedString.Key, value: extraSpace, range: range);
     }
     
     let position = CGPoint(qd_point: fontState.location);

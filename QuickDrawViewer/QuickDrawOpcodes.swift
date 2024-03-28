@@ -511,6 +511,35 @@ struct TextRatioOp : OpCode, FontStateOperation {
   var y : FixedPoint = FixedPoint.one;
 }
 
+struct SpaceExtraOp : OpCode, FontStateOperation {
+  mutating func load(reader: QuickDrawDataReader) throws {
+    extraSpace = try reader.readFixed();
+  }
+  
+  func execute(fontState: inout QDFontState) {
+    fontState.extraSpace = extraSpace;
+  }
+  
+  var extraSpace : FixedPoint = FixedPoint.zero;
+}
+
+struct PnLocHFracOp : OpCode, PenStateOperation {
+  mutating func load(reader: QuickDrawDataReader) throws {
+    let f = try reader.readUInt16();
+    penFraction = FixedPoint(rawValue: Int(f ));
+  }
+  
+  func execute(penState: inout PenState) {
+    let v = penState.location.vertical;
+    let h = penState.location.horizontal + penFraction;
+    
+    penState.location = QDPoint(vertical: v, horizontal: h)
+  }
+  
+  var penFraction : FixedPoint = FixedPoint.zero;
+  
+}
+
 struct FontStyleOp : OpCode, FontStateOperation {
   func execute(fontState: inout QDFontState) {
     fontState.fontStyle = fontStyle;
