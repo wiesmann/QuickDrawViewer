@@ -12,6 +12,13 @@ import CoreText
 import ImageIO
 import os
 
+let cgRed = CGColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0);
+let cgGreen = CGColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0);
+let cgBlue = CGColor(red: 0.0, green: 0.0, blue: 1.0, alpha: 1.0);
+let cgCyan = CGColor(genericCMYKCyan: 1.0, magenta: 0.0, yellow: 0.0, black: 0.0, alpha: 1.0);
+let cgMagenta = CGColor(genericCMYKCyan: 0.0, magenta: 1.0, yellow: 0.0, black: 0.0, alpha: 1.0);
+let cgYellow = CGColor(genericCMYKCyan: 0.0, magenta: 0.0, yellow: 1.0, black: 0.0, alpha: 1.0);
+
 
 enum CoreGraphicRenderError : LocalizedError {
   case noContext(message: String);
@@ -82,14 +89,41 @@ extension CGAffineTransform {
   }
 }
 
+func ToFloat(_ value: UInt16) -> CGFloat {
+  return CGFloat(value) / 0x10000;
+}
+
 /// Convert a QuickDraw RGB color into a CoreGraphic one.
 /// - Parameter qdcolor: color to convert
 /// - Returns: corresponding Core Graphics Colour.
-func ToCGColor(qdcolor: QDColor) -> CGColor {
-  let red = CGFloat(qdcolor.red) / 0x10000;
-  let green = CGFloat(qdcolor.green) / 0x10000;
-  let blue = CGFloat(qdcolor.blue) / 0x10000;
-  return CGColor(red: red, green: green, blue: blue, alpha: 1.0);
+func ToCGColor(qdColor: QDColor) -> CGColor {
+  switch qdColor {
+    case .rgb(let rgb):
+      let red = ToFloat(rgb.red);
+      let green = ToFloat(rgb.green);
+      let blue = ToFloat(rgb.blue);
+      return CGColor(red: red, green: green, blue: blue, alpha: 1.0);
+    case .qd1(let qd1):
+      switch qd1 {
+        case .black: return CGColor.black;
+        case .white: return CGColor.white;
+        case .red: return cgRed;
+        case .green: return cgGreen;
+        case .blue: return cgBlue;
+        case .cyan: return cgCyan;
+        case .magenta: return cgMagenta;
+        case .yellow: return cgYellow;
+      }
+      
+    case .cmyk(cmyk: let cmyk, name: _):
+      let c = ToFloat(cmyk.cyan);
+      let m = ToFloat(cmyk.magenta);
+      let y = ToFloat(cmyk.yellow);
+      let k = ToFloat(cmyk.black);
+      return CGColor(genericCMYKCyan: c, magenta: m , yellow:  y, black: k, alpha: 1.0);
+  }
+  
+  
 }
 
 /// Convenience function to convert a float in the 0..1 range to a UInt16.
@@ -113,7 +147,7 @@ func ToQDColor(color: CGColor) throws -> QDColor  {
   let red = FloatToUInt16(components[0]);
   let green = FloatToUInt16(components[1]);
   let blue = FloatToUInt16(components[2]);
-  return QDColor(red: red, green: green, blue: blue);
+  return .rgb(rgb:RGBColor(red: red, green: green, blue: blue));
 }
 
 /// Convert a font name from the classic mac universe ino a corresponding one on Mac OS X.
@@ -176,10 +210,10 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   
   /// Build a color space to paint using the a 1 bit pattern.
   /// - Returns: A 1 bit color-space with the background color (0) and the foreground color (1).
-  func paintColorSpace() -> CGColorSpace {
+  func paintColorSpace() throws -> CGColorSpace {
     var data : [UInt8] = [];
-    data.append(contentsOf: penState.bgColor.rgb);
-    data.append(contentsOf: penState.fgColor.rgb);
+    data.append(contentsOf: try penState.bgColor.getRgb().rgb);
+    data.append(contentsOf: try penState.fgColor.getRgb().rgb);
     return CGColorSpace(indexedBaseSpace: rgbSpace, last: 1, colorTable: &data)!;
   }
   
@@ -187,8 +221,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   func paintPath(pattern: QDPattern) throws {
     // Check if the pattern can be replaced with a color.
     if penState.drawPattern.isShade {
-      let color = penState.drawColor;
-      context!.setFillColor(ToCGColor(qdcolor: color));
+      let color = try penState.drawColor;
+      context!.setFillColor(ToCGColor(qdColor: color));
       context!.fillPath();
       return;
     }
@@ -206,7 +240,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       bitsPerComponent: penState.drawPattern.cmpSize,
       bitsPerPixel: penState.drawPattern.pixelSize,
       bytesPerRow: penState.drawPattern.rowBytes,
-      space: paintColorSpace(),
+      space: try paintColorSpace(),
       bitmapInfo: bitmapInfo,
       provider: provider,
       decode: nil,
@@ -246,7 +280,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       case QDVerb.paint:
         try paintPath(pattern: penState.drawPattern);
       case QDVerb.fill:
-        context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
+        try context!.setFillColor(ToCGColor(qdColor: penState.fillColor));
         context!.fillPath();
       case QDVerb.frame:
         context!.saveGState();
@@ -256,7 +290,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         try paintPath(pattern: penState.drawPattern);
         context!.restoreGState();
       case QDVerb.erase:
-        context!.setFillColor(ToCGColor(qdcolor: penState.bgColor));
+        context!.setFillColor(ToCGColor(qdColor: penState.bgColor));
         context!.fillPath();
       case QDVerb.clip:
         /// Quickdraw clip operation replace the existing clip, where CoreGraphic ones are cumulative (intersection).
@@ -265,7 +299,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       case QDVerb.invert:
         context!.saveGState();
         context!.setBlendMode(CGBlendMode.difference);
-        context!.setFillColor(ToCGColor(qdcolor: penState.fillColor));
+        try context!.setFillColor(ToCGColor(qdColor: penState.fillColor));
         context!.fillPath();
         context!.restoreGState();
       case QDVerb.ignore:
@@ -417,8 +451,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     
     let fontName = SubstituteFontName(fontName: fontState.getFontName()) as CFString;
     let fontSize = CGFloat(fontState.fontSize.value);
-    let fgColor = ToCGColor(qdcolor: penState.fgColor);
-    let bgColor = ToCGColor(qdcolor: penState.bgColor);
+    let fgColor = ToCGColor(qdColor: penState.fgColor);
+    let bgColor = ToCGColor(qdColor: penState.bgColor);
     let parentFont = CTFontCreateWithName(fontName, fontSize, nil);
     let mask : CTFontSymbolicTraits = [.traitItalic, .traitBold];
     let font = CTFontCreateCopyWithSymbolicTraits(
@@ -518,6 +552,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         penOp.execute(penState: &penState);
       case (_, .fontStatePayload(let fontOp)):
         fontOp.execute(fontState: &fontState);
+      case (_, .colorPayload(_, let color)):
+        penState.fgColor = color;
       default:
         break;
     }

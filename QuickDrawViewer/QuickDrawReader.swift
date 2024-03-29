@@ -64,6 +64,10 @@ class QuickDrawDataReader {
     return result;
   }
   
+  func readFullData() throws -> Data {
+    return try readData(bytes: remaining);
+  }
+  
   func subReader(bytes: Data.Index) throws -> QuickDrawDataReader {
     let data = try readData(bytes : bytes);
     let sub = try QuickDrawDataReader(data: data, position: 0);

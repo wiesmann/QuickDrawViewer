@@ -20,7 +20,7 @@ enum QuickDrawError: Error {
   case renderingError (message: String);
   case wrongComponentNumber(componentNumber : Int);
   case unsupportedVerb(verb: QDVerb);
-  case unsupportedColor(colorCode: UInt32);
+  case unsupportedQD1Color(colorCode: UInt32);
   case corruptPayload(message: String);
   case invalidFract(message: String);
   case invalidPhotoShopDepth(depth: Int);
@@ -28,4 +28,6 @@ enum QuickDrawError: Error {
   case invalidReservedSize(reservedType: ReservedOpType);
   case corruptRegionLine(line: Int);
   case missingDestinationRect(message: String);
+  case unsupportedBlend(fg: QDColor, bg: QDColor);
+  case cannotConvertToRGB(color: QDColor);
 }

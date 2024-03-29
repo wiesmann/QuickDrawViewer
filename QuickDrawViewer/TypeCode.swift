@@ -7,9 +7,28 @@
 
 import Foundation
 
+enum MacTypeError: Error {
+  case notMacRoman(str: String);
+  case invalidLength(length: Int);
+}
+
 struct MacTypeCode : RawRepresentable, CustomStringConvertible {
   init(rawValue: UInt32) {
     self.rawValue = rawValue;
+  }
+  
+  init(fromString: String) throws {
+    guard let data = fromString.cString(using: .macOSRoman) else {
+      throw MacTypeError.notMacRoman(str: fromString);
+    }
+    guard data.count == 4 else {
+      throw MacTypeError.invalidLength(length: data.count);
+    }
+    rawValue = 
+        UInt32(data[0]) << 24 |
+        UInt32(data[1]) << 16 | 
+        UInt32(data[2]) << 8 |
+    UInt32(data[3]);
   }
   
   var description: String {

@@ -273,18 +273,21 @@ class PenState {
   var fgColor : QDColor = QDColor.black;
   var bgColor : QDColor = QDColor.white;
   var opColor : QDColor = QDColor.black;
-  var highlightColor : QDColor = QDColor(red: 0, green: 0, blue: 0xffff);
+  var highlightColor : QDColor = .rgb(rgb: RGBColor(red: 0, green: 0, blue: 0xffff));
   var drawPattern: QDPattern = QDPattern.black;
   var fillPattern: QDPattern = QDPattern.black;
   var ovalSize : QDDelta = QDDelta.zero;
   
-  var drawColor : QDColor {
-    let result = drawPattern.blendColors(fgColor: fgColor, bgColor: bgColor);
-    return result;
+  var drawColor : QDColor  {
+    get throws {
+      return try drawPattern.blendColors(fg: fgColor, bg: bgColor);
+    }
   }
   
   var fillColor : QDColor {
-    return fillPattern.blendColors(fgColor: fgColor, bgColor: bgColor);
+    get throws {
+      return try fillPattern.blendColors(fg: fgColor, bg: bgColor);
+    }
   }
   
   /// Pen width, assuming a square pen (height = width).

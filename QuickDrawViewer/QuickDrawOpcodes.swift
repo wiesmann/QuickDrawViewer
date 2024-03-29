@@ -338,10 +338,13 @@ struct ColorOp : OpCode, PenStateOperation {
   
   mutating func load(reader: QuickDrawDataReader) throws {
     if rgb {
-      color = try reader.readColor();
+      color = try .rgb(rgb: reader.readRGB());
     } else {
       let code = try reader.readUInt32();
-      color = try QD1Color(code: code);
+      guard let qd1 = QD1Color(rawValue: code) else {
+        throw QuickDrawError.unsupportedQD1Color(colorCode: code);
+      }
+      color = .qd1(qd1: qd1);
     }
   }
   
@@ -355,7 +358,7 @@ struct ColorOp : OpCode, PenStateOperation {
   }
   
   let rgb : Bool;  // should color be loaded as RGB (true), or old style QuickDraw?
-  let selection : QDColorSelection;  // What xxh
+  let selection : QDColorSelection;  // What selection does the color apply to.
   var color : QDColor = QDColor.white;
 }
 

@@ -8,7 +8,7 @@
 import Foundation
 
 /// Quickdraw stores RGB colours in 3 × 16 bit values.
-struct QDColor : CustomStringConvertible, Hashable, RawRepresentable {
+struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   
   let rawValue : UInt64;
   
@@ -24,9 +24,9 @@ struct QDColor : CustomStringConvertible, Hashable, RawRepresentable {
   }
   
   init (red8: UInt8, green8: UInt8, blue8: UInt8) {
-    let r = QDColor.pad16(red8);
-    let g = QDColor.pad16(green8);
-    let b = QDColor.pad16(blue8);
+    let r = RGBColor.pad16(red8);
+    let g = RGBColor.pad16(green8);
+    let b = RGBColor.pad16(blue8);
     self.init(red: r, green: g, blue: b);
   }
   
@@ -66,42 +66,74 @@ struct QDColor : CustomStringConvertible, Hashable, RawRepresentable {
     return UInt16(value & 0xff) << 8 | UInt16(value & 0xff);
   }
   
-  static func blend(a: QDColor, b: QDColor, aWeight : Double) -> QDColor {
+  static func blend(a: RGBColor, b: RGBColor, aWeight : Double) -> RGBColor {
     let bWeight = 1.0 - aWeight;
     let red = UInt16(aWeight * Double(a.red) + bWeight * Double(b.red));
     let green = UInt16(aWeight * Double(a.green) + bWeight * Double(b.green));
     let blue = UInt16(aWeight * Double(a.blue) + bWeight * Double(b.blue));
-    return QDColor(red: red, green: green, blue: blue);
+    return RGBColor(red: red, green: green, blue: blue);
   }
   
   // Constants that represent the colours of QuickDraw 1.
-  static let black = QDColor(red8: 0x00, green8: 0x00, blue8: 0x00);
-  static let white = QDColor(red8: 0xff, green8: 0xff, blue8: 0xff);
-  static let red = QDColor(red8: 0xff, green8: 0x00, blue8: 0x00);
-  static let green = QDColor(red8: 0x00, green8: 0xff, blue8: 0x00);
-  static let blue = QDColor(red8: 0x00, green8: 0x00, blue8: 0xff);
-  static let cyan = QDColor(red8: 0x00, green8: 0xff, blue8: 0xff);
-  static let magenta = QDColor(red8: 0xff, green8: 0x00, blue8: 0xff);
-  static let yellow = QDColor(red8: 0xff, green8: 0xff, blue8: 0x00);
+  static let black = RGBColor(red8: 0x00, green8: 0x00, blue8: 0x00);
+  static let white = RGBColor(red8: 0xff, green8: 0xff, blue8: 0xff);
+  static let red = RGBColor(red8: 0xff, green8: 0x00, blue8: 0x00);
+  static let green = RGBColor(red8: 0x00, green8: 0xff, blue8: 0x00);
+  static let blue = RGBColor(red8: 0x00, green8: 0x00, blue8: 0xff);
+  static let cyan = RGBColor(red8: 0x00, green8: 0xff, blue8: 0xff);
+  static let magenta = RGBColor(red8: 0xff, green8: 0x00, blue8: 0xff);
+  static let yellow = RGBColor(red8: 0xff, green8: 0xff, blue8: 0x00);
 }
 
-/// Convert pict 1 colour into RGB Quickdraw colors.
-/// These colours are basically plotter bits, with one bit per pen-colour.
-/// - Parameter code: binary code representation
-/// - Throws: unsupported colour error for invalid bit combinations.
-/// - Returns: one of the constants defined in QDColor.
-func QD1Color(code: UInt32) throws -> QDColor {
-  switch code {
-    case 0x21: return QDColor.black;
-    case 0x1e: return QDColor.white;
-    case 0xcd: return QDColor.red;
-    case 0x155: return QDColor.green;
-    case 0x199: return QDColor.blue;
-    case 0x111: return QDColor.cyan;
-    case 0x89: return QDColor.magenta;
-    case 0x45: return QDColor.yellow;
-  default:
-    throw QuickDrawError.unsupportedColor(colorCode: code);
+struct CMKYColor {
+  let cyan: UInt16;
+  let magenta: UInt16;
+  let yellow: UInt16;
+  let black: UInt16;
+}
+
+enum QD1Color : UInt32 {
+  case black = 0x21;
+  case white = 0x1e;
+  case red = 0xcd;
+  case blue = 0x199;
+  case green = 0x155;
+  case cyan = 0x111;
+  case magenta = 0x89;
+  case yellow = 0x45;
+  
+  var rgb : RGBColor {
+    let r = UInt16(rawValue >> 5 & 0x01) * 0xFFFF;
+    let g = UInt16(rawValue >> 4 & 0x01) * 0xFFFF;
+    let b = UInt16(rawValue >> 3 & 0x01) * 0xFFFF;
+    return RGBColor(red: r, green: g, blue: b);
+  }
+  
+  var cmyk : CMKYColor {
+    let c = UInt16(rawValue >> 9 & 0x01) * 0xFFFF;
+    let m = UInt16(rawValue >> 8 & 0x01) * 0xFFFF;
+    let y = UInt16(rawValue >> 7 & 0x01) * 0xFFFF;
+    let k = UInt16(rawValue >> 6 & 0x01) * 0xFFFF;
+    return CMKYColor(cyan: c, magenta: m, yellow: y, black: k);
+  }
+}
+enum QDColor {
+  case rgb(rgb: RGBColor);
+  case qd1(qd1: QD1Color);
+  case cmyk(cmyk: CMKYColor, name: String?);
+
+  static let black : QDColor = .rgb(rgb: RGBColor.black);
+  static let white : QDColor = .rgb(rgb: RGBColor.white);
+  
+  func getRgb() throws  -> RGBColor {
+    switch self {
+      case .rgb(let rgb):
+        return rgb;
+      case .qd1(let qd1):
+        return qd1.rgb;
+      default:
+        throw QuickDrawError.cannotConvertToRGB(color: self);
+    }
   }
 }
 
@@ -120,22 +152,22 @@ func clutFromRaw(raw: [UInt16]) -> QDColorTable {
   let clutFlags = raw[2];
   let size = raw[3];
   var p = 4;
-  var clut : [QDColor] = [];
+  var clut : [RGBColor] = [];
   for _ in 0...size {
     let red = raw[p+1];
     let green = raw[p+2];
     let blue = raw[p+3];
-    clut.append(QDColor(red: red, green: green, blue: blue));
+    clut.append(RGBColor(red: red, green: green, blue: blue));
     p += 4;
   }
   return QDColorTable(clut: clut, id: id, clutFlags:clutFlags);
 }
 
 func makeGrayRamp() -> QDColorTable {
-  var clut : [QDColor] = [];
+  var clut : [RGBColor] = [];
   for v in 0..<0x100 {
     let luma = UInt8(0xff - v);
-    clut.append(QDColor(red8: luma, green8: luma, blue8: luma));
+    clut.append(RGBColor(red8: luma, green8: luma, blue8: luma));
   }
   return QDColorTable(clut: clut, id: 0x28, clutFlags:0x8000);
 }
@@ -153,7 +185,7 @@ class QDColorTable : CustomStringConvertible {
     self.clutFlags = clutFlags;
   }
   
-  init(clut : [QDColor], id: Int, clutFlags : UInt16) {
+  init(clut : [RGBColor], id: Int, clutFlags : UInt16) {
     self.id = id;
     self.clutFlags = clutFlags;
     self.clut = clut;
@@ -163,16 +195,16 @@ class QDColorTable : CustomStringConvertible {
     self.id = id;
     self.clutFlags = 0;
     for v in raw {
-      let r = QDColor.pad16(v >> 16)
-      let g = QDColor.pad16(v >> 8);
-      let b = QDColor.pad16(v);
-      let color = QDColor(red: r, green: g, blue: b);
+      let r = RGBColor.pad16(v >> 16)
+      let g = RGBColor.pad16(v >> 8);
+      let b = RGBColor.pad16(v);
+      let color = RGBColor(red: r, green: g, blue: b);
       clut.append(color)
     }
   }
   
   let clutFlags : UInt16;
-  var clut : [QDColor] = [];
+  var clut : [RGBColor] = [];
   var id : Int = 0;
   
   // Standard Apple color tables.
@@ -198,11 +230,19 @@ class QDColorTable : CustomStringConvertible {
 }
 
 extension QuickDrawDataReader {
-  func readColor() throws -> QDColor {
+  func readRGB() throws -> RGBColor {
     let red = try readUInt16();
     let green = try readUInt16();
     let blue = try readUInt16();
-    return QDColor(red: red, green: green, blue: blue);
+    return RGBColor(red: red, green: green, blue: blue);
+  }
+  
+  func readCMKY() throws -> CMKYColor {
+    let c = try readUInt16();
+    let m = try readUInt16();
+    let y = try readUInt16();
+    let k = try readUInt16();
+    return CMKYColor(cyan: c, magenta: m, yellow: y, black: k);
   }
   
   func readClut() throws -> QDColorTable {
@@ -216,7 +256,7 @@ extension QuickDrawDataReader {
       if r_index != index && r_index != 0x8000 {
         print("Inconsistent index: \(r_index)≠\(index)");
       }
-      let color = try readColor();
+      let color = try readRGB();
       colorTable.clut.append(color)
     }
     return colorTable;

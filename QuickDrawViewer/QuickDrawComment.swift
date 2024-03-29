@@ -102,13 +102,16 @@ struct PolySmoothVerb : OptionSet, CustomStringConvertible {
   static let polyClose = PolySmoothVerb(rawValue: 1 << 2);
 }
 
+
 enum CommentPayload {
   case noPayload;
-  case dataPayload(creator: String, data: Data);
+  case dataPayload(creator: MacTypeCode, data: Data);
   case postScriptPayLoad(postscript: String);
   case fontStatePayload(fontOperation: FontStateOperation);
   case penStatePayload(penOperation: PenStateOperation);
   case polySmoothPayload(verb: PolySmoothVerb);
+  case canvasPayload(canvas: CanvasPayload);
+  case colorPayload(creator: MacTypeCode, color: QDColor);
   case unknownPayload(rawType: Int, data: Data);
 }
 
@@ -138,6 +141,36 @@ func readTextPictRecord(reader: QuickDrawDataReader) throws -> QDTextPictRecord 
     justification: justification, flip: flip, angle: angle, lineHeight: lineHeight);
 }
 
+enum CanvasPayload {
+  case canvasEnd;
+  case canvasUnknown(code: UInt16, data: Data);
+}
+
+func parseCanvasPayload(creator: MacTypeCode, data: Data) throws -> CommentPayload {
+  let reader = try QuickDrawDataReader(data: data, position: 0);
+  let code = try reader.readUInt16();
+  switch code {
+    case 0x44:
+      return .canvasPayload(canvas: .canvasEnd);
+    case 0xF7D3:
+      reader.skip(bytes :10);
+      let cmyk = try reader.readCMKY();
+      let name = try reader.readPascalString();
+      return .colorPayload(creator: creator, color: .cmyk(cmyk: cmyk, name: name));
+    default:
+      return .canvasPayload(canvas: .canvasUnknown(code: code, data: try reader.readFullData()));
+  }
+}
+
+func parseProprietaryPayload(creator: MacTypeCode, data: Data) throws -> CommentPayload {
+  switch creator.description {
+    case "drw2":
+      return try parseCanvasPayload(creator: creator, data: data);
+    default:
+      return .dataPayload(creator: creator, data: data);
+  }
+}
+
 struct CommentOp : OpCode {
   mutating func load(reader: QuickDrawDataReader) throws {
     let value = try reader.readUInt16();
@@ -145,7 +178,9 @@ struct CommentOp : OpCode {
     let size = long_comment ? Data.Index(try reader.readUInt16()) : Data.Index(0);
     switch (kind, size) {
     case (.proprietary, let size) where size > 4:
-      payload = .dataPayload(creator: try reader.readString(bytes: 4), data: try reader.readData(bytes: size - 4));
+      let creator = try reader.readType();
+      let data = try reader.readData(bytes: size - 4);
+      payload = try parseProprietaryPayload(creator: creator, data: data);
     case (.postscriptBeginNoSave, _),
       (.postscriptStart, _),
       (.postscriptFile, _),
@@ -175,7 +210,8 @@ struct CommentOp : OpCode {
     case (.unknown, let size) where size > 0:
       payload = .unknownPayload(rawType: Int(value), data: try reader.readData(bytes: size));
     case (_, let size) where size > 0:
-      payload = .dataPayload(creator: "APPL", data: try reader.readData(bytes: size));
+      let creator = try MacTypeCode(fromString: "APPL");
+      payload = .dataPayload(creator: creator, data: try reader.readData(bytes: size));
     default:
       payload = .unknownPayload(rawType: Int(value), data: try reader.readData(bytes: size));
     }
