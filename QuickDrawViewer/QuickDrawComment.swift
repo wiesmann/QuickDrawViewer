@@ -55,6 +55,7 @@ enum CommentType : UInt16, CaseIterable {
   case rotateCenter = 202;
   case formsPrinting = 210;
   case endFormsPrinting = 211;
+  case iccColorProfile = 224;  // https://www.color.org/icc32.pdf
   case creator = 498 ;
   case scale = 499;
   case bitmapThinBegin = 1000;

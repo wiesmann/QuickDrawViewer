@@ -52,10 +52,6 @@ struct QDPattern : Equatable, PixMapMetadata, RawRepresentable {
   }
   
   // Blend fgColor and bgColor using the intensity of this pattern.
-  func blendColors(fgColor: RGBColor, bgColor: RGBColor) -> RGBColor {
-    return RGBColor.blend(a: fgColor, b: bgColor, aWeight: intensity);
-  }
-  
   func blendColors(fg: QDColor, bg: QDColor) throws -> QDColor {
     if intensity == 1.0 {
       return fg;
@@ -63,13 +59,7 @@ struct QDPattern : Equatable, PixMapMetadata, RawRepresentable {
     if intensity == 0.0 {
       return bg;
     }
-    switch (fg, bg) {
-      case (.rgb(let rgbFg), .rgb(let rgbBg)):
-        let blended = blendColors(fgColor: rgbFg, bgColor: rgbBg);
-        return .rgb(rgb: blended);
-      default:
-        throw QuickDrawError.unsupportedBlend(fg: fg, bg: bg);
-    }
+    return .blend(colorA: fg, colorB: bg, weight: intensity);
   }
 
   static let black = QDPattern(bytes:[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);

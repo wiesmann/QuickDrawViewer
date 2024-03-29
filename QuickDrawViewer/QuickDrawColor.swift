@@ -8,6 +8,7 @@
 import Foundation
 
 /// Quickdraw stores RGB colours in 3 × 16 bit values.
+/// Struct represents them as 64 bit value.
 struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   
   let rawValue : UInt64;
@@ -66,14 +67,6 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
     return UInt16(value & 0xff) << 8 | UInt16(value & 0xff);
   }
   
-  static func blend(a: RGBColor, b: RGBColor, aWeight : Double) -> RGBColor {
-    let bWeight = 1.0 - aWeight;
-    let red = UInt16(aWeight * Double(a.red) + bWeight * Double(b.red));
-    let green = UInt16(aWeight * Double(a.green) + bWeight * Double(b.green));
-    let blue = UInt16(aWeight * Double(a.blue) + bWeight * Double(b.blue));
-    return RGBColor(red: red, green: green, blue: blue);
-  }
-  
   // Constants that represent the colours of QuickDraw 1.
   static let black = RGBColor(red8: 0x00, green8: 0x00, blue8: 0x00);
   static let white = RGBColor(red8: 0xff, green8: 0xff, blue8: 0xff);
@@ -85,11 +78,35 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   static let yellow = RGBColor(red8: 0xff, green8: 0xff, blue8: 0x00);
 }
 
-struct CMKYColor {
-  let cyan: UInt16;
-  let magenta: UInt16;
-  let yellow: UInt16;
-  let black: UInt16;
+// CMYK color as a 64 bit quantity.
+struct CMKYColor : RawRepresentable {
+  init(rawValue : UInt64) {
+    self.rawValue = rawValue;
+  }
+  
+  init(cyan: UInt16, magenta: UInt16, yellow: UInt16, black : UInt16) {
+    self.rawValue = 
+        UInt64(cyan) << 48 |
+        UInt64(magenta) << 32 |
+        UInt64(yellow) << 16 |
+    UInt64(black);
+  }
+  
+  let rawValue : UInt64;
+  
+  var cyan: UInt16 {
+    return UInt16((rawValue >> 48) & 0xffff);
+  }
+  var magenta: UInt16 {
+    return UInt16((rawValue >> 32) & 0xffff);
+  }
+  var  yellow: UInt16 {
+    return UInt16((rawValue >> 16) & 0xffff);
+  }
+  var  black: UInt16 {
+    return UInt16((rawValue) & 0xffff);
+  }
+  
 }
 
 enum QD1Color : UInt32 {
@@ -116,11 +133,13 @@ enum QD1Color : UInt32 {
     let k = UInt16(rawValue >> 6 & 0x01) * 0xFFFF;
     return CMKYColor(cyan: c, magenta: m, yellow: y, black: k);
   }
+  
 }
 enum QDColor {
   case rgb(rgb: RGBColor);
   case qd1(qd1: QD1Color);
   case cmyk(cmyk: CMKYColor, name: String?);
+  indirect case blend(colorA: QDColor, colorB: QDColor, weight: Double);
 
   static let black : QDColor = .rgb(rgb: RGBColor.black);
   static let white : QDColor = .rgb(rgb: RGBColor.white);
@@ -229,40 +248,6 @@ class QDColorTable : CustomStringConvertible {
   }
 }
 
-extension QuickDrawDataReader {
-  func readRGB() throws -> RGBColor {
-    let red = try readUInt16();
-    let green = try readUInt16();
-    let blue = try readUInt16();
-    return RGBColor(red: red, green: green, blue: blue);
-  }
-  
-  func readCMKY() throws -> CMKYColor {
-    let c = try readUInt16();
-    let m = try readUInt16();
-    let y = try readUInt16();
-    let k = try readUInt16();
-    return CMKYColor(cyan: c, magenta: m, yellow: y, black: k);
-  }
-  
-  func readClut() throws -> QDColorTable {
-    skip(bytes: 4);
-    let clutFlags = try readUInt16();
-    let colorTable = QDColorTable(clutFlags: clutFlags);
-    let clutSize = try readUInt16();
-    for index in 0...clutSize {
-      let r_index = try readUInt16();
-      // DeskDraw produces index with value 0x8000
-      if r_index != index && r_index != 0x8000 {
-        print("Inconsistent index: \(r_index)≠\(index)");
-      }
-      let color = try readRGB();
-      colorTable.clut.append(color)
-    }
-    return colorTable;
-  }
-}
-
 /// Pixel in ARGB555 format with the alpha in the first bit.
 /// Mostly used by the RoadPizza decompressor.
 struct ARGB555: RawRepresentable {
@@ -294,4 +279,38 @@ struct ARGB555: RawRepresentable {
   static let componentSize = 5;
 }
 
-
+extension QuickDrawDataReader {
+  func readRGB() throws -> RGBColor {
+    let red = try readUInt16();
+    let green = try readUInt16();
+    let blue = try readUInt16();
+    return RGBColor(red: red, green: green, blue: blue);
+  }
+  
+  func readCMKY() throws -> CMKYColor {
+    let raw = try readUInt64();
+    return CMKYColor(rawValue: raw);
+  }
+  
+  func ReadRGB555() throws -> ARGB555 {
+    let raw = (try self.readUInt16()) | 0x8000;
+    return ARGB555(rawValue: raw);
+  }
+  
+  func readClut() throws -> QDColorTable {
+    skip(bytes: 4);
+    let clutFlags = try readUInt16();
+    let colorTable = QDColorTable(clutFlags: clutFlags);
+    let clutSize = try readUInt16();
+    for index in 0...clutSize {
+      let r_index = try readUInt16();
+      // DeskDraw produces index with value 0x8000
+      if r_index != index && r_index != 0x8000 {
+        print("Inconsistent index: \(r_index)≠\(index)");
+      }
+      let color = try readRGB();
+      colorTable.clut.append(color)
+    }
+    return colorTable;
+  }
+}

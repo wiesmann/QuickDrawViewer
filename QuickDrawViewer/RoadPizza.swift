@@ -19,13 +19,6 @@ func mix⅔(_ a: ARGB555, _ b: ARGB555) -> ARGB555 {
     blue: (a.blue * 21 + b.blue * 11) >> 5);
 }
 
-extension QuickDrawDataReader {
-  func ReadRGB555() throws -> ARGB555 {
-    let raw = (try self.readUInt16()) | 0x8000;
-    return ARGB555(rawValue: raw);
-  }
-}
-
 enum RoadPizzaError : Error {
   case badMagic(magic: UInt8);
   case unknownOpcode(opcode: UInt8);
