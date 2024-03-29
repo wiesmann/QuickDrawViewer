@@ -21,7 +21,8 @@ struct MacTypeCode : RawRepresentable, CustomStringConvertible {
     guard let data = fromString.cString(using: .macOSRoman) else {
       throw MacTypeError.notMacRoman(str: fromString);
     }
-    guard data.count == 4 else {
+    // There could be a zero at the end
+    guard data.count >= 4 else {
       throw MacTypeError.invalidLength(length: data.count);
     }
     rawValue = 

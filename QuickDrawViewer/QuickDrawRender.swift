@@ -337,6 +337,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         /// Quickdraw clip operation replace the existing clip, where CoreGraphic ones are cumulative (intersection).
         context!.resetClip();
         context!.clip();
+        break;
       case QDVerb.invert:
         context!.saveGState();
         context!.setBlendMode(CGBlendMode.difference);
@@ -532,10 +533,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     
     // TODO: use fontState.textCenter to adjust the width of strings.
     if let pictRect = fontState.textPictRecord {
+      // Zero means no rotation, but in the QuickDraw referential, it's 12 O'clock.
       if pictRect.angle != FixedPoint.zero {
         let x = position.x + (fontState.textCenter?.dh ?? FixedPoint.zero).value;
         let y = position.y + (fontState.textCenter?.dv ?? FixedPoint.zero).value;
-        let angle = deg2rad(pictRect.angle.rounded);
+        var angle = deg2rad(pictRect.angle.rounded);
+        // 270° would mean 0, but it actually means -90°.
+        if pictRect.angle.rounded == 270 {
+          angle = -0.5 *  .pi;
+        }
         context!.translateBy(x: x, y: y);
         context!.rotate(by: angle);
         context!.translateBy(x: -x, y: -y)
@@ -750,9 +756,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   }
   
   func executeDefHighlight() throws {
-    if let cgColor = highlightColor {
-      penState.highlightColor = try cgColor.qdColor;
-    }
+    penState.highlightColor = try NSColor.highlightColor.cgColor.qdColor;
   }
   
   /// Opcode dispatching function
@@ -815,9 +819,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   var context : CGContext?;
   // Picture being rendered.
   var picture : QDPicture?;
-  // Native highlight color, get converted into QuickDraw
-  // by DefHilite opcode.
-  var highlightColor : CGColor?;
   // Quickdraw state
   var penState : PenState;
   var fontState : QDFontState;

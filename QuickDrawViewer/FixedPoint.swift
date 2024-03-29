@@ -68,6 +68,10 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
     return fixedValue / FixedPoint.multiplier;
   }
   
+  public var fractionPart : FixedPoint {
+    return FixedPoint(rawValue : self.fixedValue & FixedPoint.fractionMask);
+  }
+  
   public var value : Double {
     return Double(fixedValue) / Double(FixedPoint.multiplier);
   }

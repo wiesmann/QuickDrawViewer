@@ -372,6 +372,7 @@ enum QDTextFlip : UInt8 {
 }
 
 enum QDTextLineHeight : UInt8 {
+  case unknown = 0;
   case single = 1;
   case oneAndHalf = 2;
   case double = 3;

@@ -44,7 +44,7 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   }
   
   public var description: String {
-    var result = "Color: 0x";
+    var result = "RGB: 0x";
     result += String(format: "%04X", red);
     result += "|";
     result += String(format: "%04X", green);
@@ -135,7 +135,20 @@ enum QD1Color : UInt32 {
   }
   
 }
-enum QDColor {
+enum QDColor : CustomStringConvertible {
+  var description: String {
+    switch self {
+      case .rgb(let c):
+        return c.description;
+      case .qd1(let c):
+        return "\(c)";
+      case .cmyk(let c, let n):
+        return "\(c) (\(String(describing: n))";
+      case .blend(let a, let b, let w):
+        return "\(a) / \(b) \(w)";
+    }
+  }
+  
   case rgb(rgb: RGBColor);
   case qd1(qd1: QD1Color);
   case cmyk(cmyk: CMKYColor, name: String?);

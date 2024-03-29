@@ -16,14 +16,14 @@ protocol OpCode {
   mutating func load(reader: QuickDrawDataReader) throws -> Void
 }
 
-/// opcodes that affect the pen-state can be execute independently of the target graphic system.
-protocol PenStateOperation {
-  func execute(penState : inout PenState) -> Void;
-}
-
 /// opcodes that affect the picture meta-data, typically execute at load time.
 protocol PictureOperation {
   func execute(picture : inout QDPicture) -> Void;
+}
+
+/// opcodes that affect the pen-state can be execute independently of the target graphic system.
+protocol PenStateOperation {
+  func execute(penState : inout PenState) -> Void;
 }
 
 /// opcodes that affect the font state (size, font-name, etc).
@@ -35,20 +35,28 @@ protocol PortOperation {
   func execute(port: inout QuickDrawPort) throws -> Void;
 }
 
+protocol CullableOpcode {
+  var canCull : Bool {
+    get
+  }
+}
+
 /// -----------------
 /// Simple control opcodes
 /// -----------------
 
-struct NoOp : OpCode, PictureOperation {
+struct NoOp : OpCode, PictureOperation, CullableOpcode {
   func execute(picture: inout QDPicture) {}
   
   mutating func load(reader: QuickDrawDataReader) throws {}
+  let canCull = true;
 }
 
-struct EndOp : OpCode, PictureOperation {
+struct EndOp : OpCode, PictureOperation, CullableOpcode {
   func execute(picture: inout QDPicture) {}
   
   mutating func load(reader: QuickDrawDataReader) throws {}
+  let canCull = true;
 }
 
 enum ReservedOpType {
@@ -56,7 +64,7 @@ enum ReservedOpType {
   case readLength(bytes: Int);
 }
 
-struct ReservedOp : OpCode, PictureOperation {
+struct ReservedOp : OpCode, PictureOperation, CullableOpcode {
   func execute(picture: inout QDPicture) {}
   
   mutating func load(reader: QuickDrawDataReader) throws {
@@ -75,6 +83,7 @@ struct ReservedOp : OpCode, PictureOperation {
     reader.skip(bytes: length)
   }
   
+  let canCull = true;
   let reservedType : ReservedOpType ;
   var length : Data.Index = 0;
 }
@@ -334,7 +343,7 @@ struct LineOp : OpCode, PortOperation, CustomStringConvertible {
 /// Color operations
 /// -------------
 
-struct ColorOp : OpCode, PenStateOperation {
+struct ColorOp : OpCode, PenStateOperation, CustomStringConvertible {
   
   mutating func load(reader: QuickDrawDataReader) throws {
     if rgb {
@@ -355,6 +364,10 @@ struct ColorOp : OpCode, PenStateOperation {
       case QDColorSelection.operations: penState.opColor = color;
       case QDColorSelection.highlight: penState.highlightColor = color;
     }
+  }
+  
+  var description: String {
+    return "ColorOp: \(selection) : \(color)";
   }
   
   let rgb : Bool;  // should color be loaded as RGB (true), or old style QuickDraw?

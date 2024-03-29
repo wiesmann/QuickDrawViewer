@@ -103,11 +103,17 @@ struct PolySmoothVerb : OptionSet, CustomStringConvertible {
   static let polyClose = PolySmoothVerb(rawValue: 1 << 2);
 }
 
+struct PostScript : CustomStringConvertible {
+  var description: String {
+    return "<PostScript>";
+  }
+  let source : String;
+}
 
 enum CommentPayload {
   case noPayload;
   case dataPayload(creator: MacTypeCode, data: Data);
-  case postScriptPayLoad(postscript: String);
+  case postScriptPayLoad(postscript: PostScript);
   case fontStatePayload(fontOperation: FontStateOperation);
   case penStatePayload(penOperation: PenStateOperation);
   case polySmoothPayload(verb: PolySmoothVerb);
@@ -172,7 +178,8 @@ func parseProprietaryPayload(creator: MacTypeCode, data: Data) throws -> Comment
   }
 }
 
-struct CommentOp : OpCode {
+struct CommentOp : OpCode, CustomStringConvertible, CullableOpcode {
+  
   mutating func load(reader: QuickDrawDataReader) throws {
     let value = try reader.readUInt16();
     kind = CommentType(rawValue: value) ?? .unknown;
@@ -186,10 +193,11 @@ struct CommentOp : OpCode {
       (.postscriptStart, _),
       (.postscriptFile, _),
       (.postscriptHandle, _):
-      payload = .postScriptPayLoad(postscript : try reader.readString(bytes: size));
+        let postscript = try reader.readPostScript(bytes: size);
+        payload = .postScriptPayLoad(postscript : postscript);
     case (.textBegin, let size) where size > 0:
       let subreader = try reader.subReader(bytes: size);
-      let fontOp =  TextPictPayload(textPictRecord: try readTextPictRecord(reader: subreader));
+      let fontOp = TextPictPayload(textPictRecord: try readTextPictRecord(reader: subreader));
       payload = .fontStatePayload(fontOperation: fontOp);
     case (.setLineWidth, let size) where size > 0:
       let subreader = try reader.subReader(bytes: size);
@@ -218,7 +226,32 @@ struct CommentOp : OpCode {
     }
   }
   
+  var description: String {
+    return "CommentOp \(kind): [\(payload)]"
+  }
+  
+  var canCull: Bool {
+    switch (kind, payload) {
+      case (_, .postScriptPayLoad): return true;
+      case (.postscriptEnd, _): return true;
+      default:
+        return false;
+    }
+  }
+  
   let long_comment : Bool;
   var kind : CommentType = .unknown;
   var payload : CommentPayload = CommentPayload.noPayload;
+}
+
+extension QuickDrawDataReader {
+  // PostScript is encoded as pure ASCII text.
+  func readPostScript(bytes: Data.Index) throws -> PostScript {
+    let data = try readUInt8(bytes: bytes);
+    guard let str = String(bytes:data, encoding: String.Encoding.ascii) else {
+      throw QuickDrawError.quickDrawIoError(message: "Failed decoding PostScript");
+    }
+    return PostScript(source: str);
+  }
+  
 }

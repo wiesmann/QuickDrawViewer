@@ -99,6 +99,7 @@ final class QuickDrawTests: XCTestCase {
     XCTAssertEqual(deg2rad(0),  -0.5 *  .pi);
     XCTAssertEqual(deg2rad(90), -.pi);
     XCTAssertEqual(deg2rad(180),  -1.5 * .pi);
+    XCTAssertEqual(deg2rad(270),  -0.0);
   }
   
   func testmakeUInt24() throws {
@@ -108,21 +109,12 @@ final class QuickDrawTests: XCTestCase {
     XCTAssertEqual(makeUInt24(bytes: (0xab, 0xcd, 0xef)), 0xabcdef);
   }
   
-  func testColor() throws {
-    XCTAssertEqual(QDColor.black.rgb, [0x00, 0x00, 0x00]);
-    XCTAssertEqual(QDColor.red.rgb, [0xff, 0x00, 0x00]);
-    XCTAssertEqual(QDColor.green.rgb, [0x00, 0xff, 0x00]);
-    XCTAssertEqual(QDColor.blue.rgb, [0x00, 0x00, 0xff]);
-    XCTAssertEqual(
-      QDColor.blend(a: QDColor.black, b: QDColor.white, aWeight: 0.5),
-      QDColor(red: 0x7fff, green: 0x7fff, blue: 0x7fff));
-    XCTAssertEqual(
-      QDColor.blend(a: QDColor.black, b: QDColor.white, aWeight: 1.0),
-      QDColor.black);
-    XCTAssertEqual(
-      QDColor.blend(a: QDColor.black, b: QDColor.white, aWeight: 0.0),
-      QDColor.white);
-    XCTAssertEqual(QDColor.cyan.rawValue, 0x0000ffffffff);
+  func testRGBColor() throws {
+    XCTAssertEqual(RGBColor.black.rgb, [0x00, 0x00, 0x00]);
+    XCTAssertEqual(RGBColor.red.rgb, [0xff, 0x00, 0x00]);
+    XCTAssertEqual(RGBColor.green.rgb, [0x00, 0xff, 0x00]);
+    XCTAssertEqual(RGBColor.blue.rgb, [0x00, 0x00, 0xff]);
+    XCTAssertEqual(RGBColor.cyan.rawValue, 0x0000ffffffff);
   }
   
   func testPackBit() throws {

@@ -145,6 +145,7 @@ class QDParser {
     if let picture_operation = opcode as? PictureOperation {
       picture_operation.execute(picture: &picture);
     }
+
     picture.opcodes.append(opcode);
     guard !(opcode is EndOp) else {
       return false;
@@ -155,7 +156,6 @@ class QDParser {
   /// Parse the actual QuickDraw picture
   /// - Returns: a picture object that can be rendered.
   public func parse() throws -> QDPicture  {
-    let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "parser");
     let startTime = CFAbsoluteTimeGetCurrent();
     // Parse v1 header.
     let size = Int(try dataReader.readUInt16());
@@ -169,11 +169,12 @@ class QDParser {
     }
     let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime;
     let name = picture.filename ?? ""
-    logger.log(level: .info, "Picture \(name) parsed in : \(timeElapsed) seconds");
+    logger.log(level: .debug, "Picture \(name) parsed in : \(timeElapsed) seconds");
     return picture
   }
   
   var dataReader: QuickDrawDataReader;
+  let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "parser");
   
   var filename : String? {
     set (name) {
@@ -183,5 +184,4 @@ class QDParser {
       return dataReader.filename
     }
   }
-  
 }
