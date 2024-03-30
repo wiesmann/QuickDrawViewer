@@ -32,11 +32,13 @@ class QuickDrawViewerDocument: ReferenceFileDocument {
     do {
       let input_url = URL(string: path);
       let parser = try QDParser(contentsOf: input_url!);
+      parser.filename = path;
       picture = try parser.parse();
     }
     catch {
-      logger.log(level: .error, "Failed rendering \(error)");
-      throw CocoaError(.fileReadCorruptFile)
+      let message = String(localized: "Failed parsing QuickDraw file");
+      logger.log(level: .error, "\(message): \(error)");
+      throw CocoaError(.fileReadCorruptFile);
     }
   }
   
@@ -53,9 +55,10 @@ class QuickDrawViewerDocument: ReferenceFileDocument {
       do {
         let reader = try QuickDrawDataReader(data: data, position: 0);
         reader.filename = configuration.file.filename;
-        picture = try parseQuickTimeImage(reader: reader);
+        picture = try reader.readQuickTimeImage();
       } catch {
-        logger.log(level: .error, "Failed parsing quicktime: \(error)");
+        let message = String(localized: "Failed parsing QuickTime file");
+        logger.log(level: .error,  "\(message): \(error)");
         throw error;
       }
     case .macPaintImage:

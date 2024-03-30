@@ -78,7 +78,7 @@ class QuickDrawDataReader {
   func readString(bytes: Data.Index) throws -> String {
     let data = try readUInt8(bytes: bytes);
     guard let str = String(bytes:data, encoding: String.Encoding.macOSRoman) else {
-      throw QuickDrawError.quickDrawIoError(message: "Failed reading string");
+      throw QuickDrawError.quickDrawIoError(message: String(localized: "Failed reading string"));
     }
     return str;
   }
@@ -111,7 +111,7 @@ class QuickDrawDataReader {
   func readInt8() throws -> Int8 {
     return try Int8(bitPattern: readUInt8());
   }
-
+  
   func readUInt16() throws -> UInt16 {
     let bytes = try readUInt8(bytes: 2);
     return UInt16(bytes[0]) << 8 | UInt16(bytes[1]);
@@ -133,7 +133,7 @@ class QuickDrawDataReader {
   func readInt16() throws -> Int16 {
     return Int16(bitPattern: try readUInt16());
   }
-
+  
   func readUInt32() throws  -> UInt32 {
     let high = try readUInt16();
     let low = try readUInt16();
@@ -154,13 +154,13 @@ class QuickDrawDataReader {
     let v = try readInt32();
     return FixedPoint(rawValue: Int(v));
   }
-
+  
   func readPoint() throws -> QDPoint {
     let v = FixedPoint(try readInt16());
     let h = FixedPoint(try readInt16());
     return QDPoint(vertical: v, horizontal: h);
   }
-
+  
   func readDelta() throws -> QDDelta {
     let h = try readInt16();
     let v = try readInt16();
@@ -193,21 +193,19 @@ class QuickDrawDataReader {
     return QDPolygon(boundingBox: boundingBox, points: points);
   }
   
-  
-  
   func readOpcode(version: Int) throws -> UInt16 {
     switch version {
-    case 1:
-      let opcode = try readUInt8()
-      return UInt16(opcode);
-    case 2:
-      if (position % 2) == 1 {
-        position+=1;
-      }
-      let opcode = try readUInt16()
-      return opcode;
-    default:
-      throw QuickDrawError.unknownQuickDrawVersionError(version:version);
+      case 1:
+        let opcode = try readUInt8()
+        return UInt16(opcode);
+      case 2:
+        if (position % 2) == 1 {
+          position+=1;
+        }
+        let opcode = try readUInt16()
+        return opcode;
+      default:
+        throw QuickDrawError.unknownQuickDrawVersionError(version:version);
     }
   }
   

@@ -6,14 +6,14 @@
 //
 // Facilities to handle PackBit and PackBit like compression.
 
+import Foundation
+
 enum PackbitError: Error  {
   case mismatchedLength(expectedLength: Int, actualLength: Int);
   case emptySlice;
   case outOfBoundRunStart(start: Int, dataSize: Int);
   case outOfBoundRunEnd(end: Int, data: ArraySlice<UInt8>);
 }
-
-import Foundation
 
 /// Copy a repeated pattern of length `length`× `byteNum`.
 /// - Parameters:

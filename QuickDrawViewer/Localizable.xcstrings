@@ -2,10 +2,24 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Closing non existing polygon." : {
-
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermeture de polygone non-existant"
+          }
+        }
+      }
     },
     "Complete" : {
-
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminé"
+          }
+        }
+      }
     },
     "Could not create palette image." : {
       "localizations" : {
@@ -53,6 +67,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Échec de création d'opération d'impression."
+          }
+        }
+      }
+    },
+    "Failed parsing QuickDraw file" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur de décodage de Fichier QuickDraw"
+          }
+        }
+      }
+    },
+    "Failed parsing QuickTime file" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur de décodage de Fichier QuickTime"
+          }
+        }
+      }
+    },
+    "Failed reading string" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error de lecture de chaîne de caractère"
           }
         }
       }
@@ -162,7 +206,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erreur inconnue"
+            "value" : "Image de type inconnu"
           }
         }
       }

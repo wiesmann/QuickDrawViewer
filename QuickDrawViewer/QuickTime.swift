@@ -15,85 +15,85 @@
 
 /*
  (
-     "public.jpeg",
-     "public.png",
-     "com.compuserve.gif",
-     "com.canon.tif-raw-image",
-     "com.adobe.raw-image",
-     "com.dxo.raw-image",
-     "com.canon.cr2-raw-image",
-     "com.canon.cr3-raw-image",
-     "com.leafamerica.raw-image",
-     "com.hasselblad.fff-raw-image",
-     "com.hasselblad.3fr-raw-image",
-     "com.nikon.raw-image",
-     "com.nikon.nrw-raw-image",
-     "com.pentax.raw-image",
-     "com.samsung.raw-image",
-     "com.sony.raw-image",
-     "com.sony.sr2-raw-image",
-     "com.sony.arw-raw-image",
-     "com.epson.raw-image",
-     "com.kodak.raw-image",
-     "public.tiff",
-     "public.jpeg-2000",
-     "com.apple.atx",
-     "org.khronos.astc",
-     "org.khronos.ktx",
-     "public.avci",
-     "public.heic",
-     "public.heics",
-     "public.heif",
-     "com.canon.crw-raw-image",
-     "com.fuji.raw-image",
-     "com.panasonic.raw-image",
-     "com.panasonic.rw2-raw-image",
-     "com.leica.raw-image",
-     "com.leica.rwl-raw-image",
-     "com.konicaminolta.raw-image",
-     "com.olympus.sr-raw-image",
-     "com.olympus.or-raw-image",
-     "com.olympus.raw-image",
-     "com.phaseone.raw-image",
-     "com.microsoft.ico",
-     "com.microsoft.bmp",
-     "com.apple.icns",
-     "com.adobe.photoshop-image",
-     "com.microsoft.cur",
-     "com.truevision.tga-image",
-     "com.ilm.openexr-image",
-     "org.webmproject.webp",
-     "com.sgi.sgi-image",
-     "public.radiance",
-     "public.pbm",
-     "public.mpo-image",
-     "public.pvr",
-     "com.microsoft.dds",
-     "com.apple.pict"
+ "public.jpeg",
+ "public.png",
+ "com.compuserve.gif",
+ "com.canon.tif-raw-image",
+ "com.adobe.raw-image",
+ "com.dxo.raw-image",
+ "com.canon.cr2-raw-image",
+ "com.canon.cr3-raw-image",
+ "com.leafamerica.raw-image",
+ "com.hasselblad.fff-raw-image",
+ "com.hasselblad.3fr-raw-image",
+ "com.nikon.raw-image",
+ "com.nikon.nrw-raw-image",
+ "com.pentax.raw-image",
+ "com.samsung.raw-image",
+ "com.sony.raw-image",
+ "com.sony.sr2-raw-image",
+ "com.sony.arw-raw-image",
+ "com.epson.raw-image",
+ "com.kodak.raw-image",
+ "public.tiff",
+ "public.jpeg-2000",
+ "com.apple.atx",
+ "org.khronos.astc",
+ "org.khronos.ktx",
+ "public.avci",
+ "public.heic",
+ "public.heics",
+ "public.heif",
+ "com.canon.crw-raw-image",
+ "com.fuji.raw-image",
+ "com.panasonic.raw-image",
+ "com.panasonic.rw2-raw-image",
+ "com.leica.raw-image",
+ "com.leica.rwl-raw-image",
+ "com.konicaminolta.raw-image",
+ "com.olympus.sr-raw-image",
+ "com.olympus.or-raw-image",
+ "com.olympus.raw-image",
+ "com.phaseone.raw-image",
+ "com.microsoft.ico",
+ "com.microsoft.bmp",
+ "com.apple.icns",
+ "com.adobe.photoshop-image",
+ "com.microsoft.cur",
+ "com.truevision.tga-image",
+ "com.ilm.openexr-image",
+ "org.webmproject.webp",
+ "com.sgi.sgi-image",
+ "public.radiance",
+ "public.pbm",
+ "public.mpo-image",
+ "public.pvr",
+ "com.microsoft.dds",
+ "com.apple.pict"
  )
  (
-     "public.jpeg",
-     "public.png",
-     "com.compuserve.gif",
-     "public.tiff",
-     "public.jpeg-2000",
-     "com.apple.atx",
-     "org.khronos.ktx",
-     "org.khronos.astc",
-     "com.microsoft.dds",
-     "public.heic",
-     "public.heics",
-     "com.microsoft.ico",
-     "com.microsoft.bmp",
-     "com.apple.icns",
-     "com.adobe.photoshop-image",
-     "com.adobe.pdf",
-     "com.truevision.tga-image",
-     "com.ilm.openexr-image",
-     "public.pbm",
-     "public.pvr"
+ "public.jpeg",
+ "public.png",
+ "com.compuserve.gif",
+ "public.tiff",
+ "public.jpeg-2000",
+ "com.apple.atx",
+ "org.khronos.ktx",
+ "org.khronos.astc",
+ "com.microsoft.dds",
+ "public.heic",
+ "public.heics",
+ "com.microsoft.ico",
+ "com.microsoft.bmp",
+ "com.apple.icns",
+ "com.adobe.photoshop-image",
+ "com.adobe.pdf",
+ "com.truevision.tga-image",
+ "com.ilm.openexr-image",
+ "public.pbm",
+ "public.pvr"
  )
-
+ 
  
  */
 
@@ -174,41 +174,22 @@ class QuickTimeIdsc : CustomStringConvertible {
   }
 }
 
-extension QuickDrawDataReader {
-  func readQuickTimeIdsc() throws -> QuickTimeIdsc {
-    let idsc = QuickTimeIdsc();
-    idsc.idscSize = Int(try readUInt32());
-    idsc.codecType = try readType();
-    skip(bytes: 8);
-    idsc.imageVersion = Int(try readUInt16());
-    idsc.imageRevision = Int(try readUInt16());
-    idsc.compressorDevelopper = try readType();
-    idsc.temporalQuality = try readUInt32();  // 4
-    idsc.spatialQuality = try readUInt32(); // 4
-    idsc.dimensions = try readDelta();
-    idsc.resolution = try readResolution();
-    idsc.dataSize = Int(try readInt32());
-    idsc.frameCount = Int(try readInt16());
-    idsc.compressionName = try readStr31();
-    idsc.depth = Int(try readInt16());
-    idsc.clutId = Int(try readInt16());
-    return idsc;
-  }
-}
 
+/// Quicktime payload, typically stored within a QuickTime opcode.
 class QuickTimePayload : CustomStringConvertible {
-  
   public var description: String {
-    var result = "QT Payload mode: \(mode)";
+    var result = "[mode: \(mode)";
     if let mask = srcMask {
       result += " dstMask: \(mask)"
     }
     result += " transform: \(transform)";
     result += " matte: \(matte)"
     result += " idsc: \(idsc)";
+    result += " metadata: \(metadata)]";
     return result;
   }
   
+  // Geometrical transform matrix.
   var transform : [[FixedPoint]] = [];
   
   var matte : QDRect = QDRect.empty;
@@ -216,6 +197,7 @@ class QuickTimePayload : CustomStringConvertible {
   var srcMask : QDRegion?;
   var accuracy : Int = 0;
   var idsc : QuickTimeIdsc = QuickTimeIdsc();
+  var metadata : Dictionary<String, String> = [:];
   
   static let identityTransform = [
     [FixedPoint.one, FixedPoint.zero, FixedPoint.zero],
@@ -223,6 +205,12 @@ class QuickTimePayload : CustomStringConvertible {
     [FixedPoint.zero, FixedPoint.zero, FixedPoint(16384)]];
 }
 
+
+/// Patch a BMP file embedded inside a QuickTime image.
+/// For some reason, a part of the header is omitted,
+/// so we need to add it back so that downstream system understand it as valid BMP file.
+/// - Parameter quicktimeImage: the QuickTime image description object to patch
+/// - Throws: an error if there is no data attached to the QuickTime image.
 func patchQuickTimeBMP(quicktimeImage : inout QuickTimeIdsc) throws {
   guard let data = quicktimeImage.data else {
     throw QuickTimeError.missingQuickTimeData(quicktimeImage: quicktimeImage);
@@ -260,97 +248,97 @@ func patchQuickTimeBMP(quicktimeImage : inout QuickTimeIdsc) throws {
 /// The `dataStatus` field of the image describe in which case we are.
 /// If the data was decoded, a header for rendering is populated within dataStatus.
 /// If the data was in the `raw ` codec, the code sets the header as if were decoded, but the
-/// raw data is left in place (it is technically already decoded). 
-/// - Parameter quicktimeImage: <#quicktimeImage description#>
-/// - Throws: <#description#>
+/// raw data is left in place (it is technically already decoded).
+/// - Parameter quicktimeImage: QuickTime image description object
+/// - Throws: description
 func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
   guard let data = quicktimeImage.data else {
     throw QuickTimeError.missingQuickTimeData(quicktimeImage: quicktimeImage);
   }
   switch quicktimeImage.codecType.description {
-  case "WRLE": 
-    try patchQuickTimeBMP(quicktimeImage: &quicktimeImage);
-  case "raw ":
-    let metadata = ConvertedImageMeta(
-      rowBytes: quicktimeImage.dimensions.dh.rounded * 4,
-      cmpSize: 8,
-      pixelSize: 32,
-      dimensions: quicktimeImage.dimensions,
-      clut: nil);
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata)
-  case "rpza":
-    let rpza = RoadPizzaImage(dimensions: quicktimeImage.dimensions);
-    try rpza.load(data: data);
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: rpza);
-    quicktimeImage.data = Data(rpza.pixmap);
-  case "yuv2":
-    let rgb = convertYuv2Data(data: data);
-    let metadata = ConvertedImageMeta(
-      rowBytes: quicktimeImage.dimensions.dh.rounded * 3,
-      cmpSize: 8,
-      pixelSize: 24,
-      dimensions: quicktimeImage.dimensions,
-      clut: nil);
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
-    quicktimeImage.data = Data(rgb);
-  case "8BPS":
-    let planar = try PlanarImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth, clut: quicktimeImage.clut);
-    try planar.load(data: data);
-    let rgb = planar.pixmap;
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: planar);
-    quicktimeImage.data = Data(rgb);
-    break;
-  case "mjp2":
-    // JPEG-2000 is a QuickTime node so we skip size + type.
-    let skipped = data.subdata(in: 8..<data.count);
-    quicktimeImage.dataStatus = .patched;
-    quicktimeImage.data = skipped;
-  case "PNTG":
-    let macPaintImage = MacPaintImage();
-    try macPaintImage.load(data:data);
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: macPaintImage);
-    quicktimeImage.data = Data(macPaintImage.bitmap);
-  case "rle ":
-    let animation = AnimationImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth, clut: quicktimeImage.clut);
-    try animation.load(data: data);
-    let data = animation.pixmap;
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: animation);
-    quicktimeImage.data = Data(data);
-  case "smc ":
-    guard let clut = quicktimeImage.clut else {
-      throw QuickTimeError.missingClut(quicktimeImage: quicktimeImage);
-    }
-    let graphics = QuickTimeGraphicsImage(dimensions: quicktimeImage.dimensions, clut: clut);
-    try graphics.load(data: data);
-    let data = graphics.pixmap;
-    quicktimeImage.dataStatus = .decoded(decodedMetaData: graphics);
-    quicktimeImage.data = Data(data);
-  default:
-    break;
+    case "WRLE":
+      try patchQuickTimeBMP(quicktimeImage: &quicktimeImage);
+    case "raw ":
+      let metadata = ConvertedImageMeta(
+        rowBytes: quicktimeImage.dimensions.dh.rounded * 4,
+        cmpSize: 8,
+        pixelSize: 32,
+        dimensions: quicktimeImage.dimensions,
+        clut: nil);
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata)
+    case "rpza":
+      let rpza = RoadPizzaImage(dimensions: quicktimeImage.dimensions);
+      try rpza.load(data: data);
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: rpza);
+      quicktimeImage.data = Data(rpza.pixmap);
+    case "yuv2":
+      let rgb = convertYuv2Data(data: data);
+      let metadata = ConvertedImageMeta(
+        rowBytes: quicktimeImage.dimensions.dh.rounded * 3,
+        cmpSize: 8,
+        pixelSize: 24,
+        dimensions: quicktimeImage.dimensions,
+        clut: nil);
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata);
+      quicktimeImage.data = Data(rgb);
+    case "8BPS":
+      let planar = try PlanarImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth, clut: quicktimeImage.clut);
+      try planar.load(data: data);
+      let rgb = planar.pixmap;
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: planar);
+      quicktimeImage.data = Data(rgb);
+      break;
+    case "mjp2":
+      // JPEG-2000 is a QuickTime node so we skip size + type.
+      let skipped = data.subdata(in: 8..<data.count);
+      quicktimeImage.dataStatus = .patched;
+      quicktimeImage.data = skipped;
+    case "PNTG":
+      let macPaintImage = MacPaintImage();
+      try macPaintImage.load(data:data);
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: macPaintImage);
+      quicktimeImage.data = Data(macPaintImage.bitmap);
+    case "rle ":
+      let animation = AnimationImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth, clut: quicktimeImage.clut);
+      try animation.load(data: data);
+      let data = animation.pixmap;
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: animation);
+      quicktimeImage.data = Data(data);
+    case "smc ":
+      guard let clut = quicktimeImage.clut else {
+        throw QuickTimeError.missingClut(quicktimeImage: quicktimeImage);
+      }
+      let graphics = QuickTimeGraphicsImage(dimensions: quicktimeImage.dimensions, clut: clut);
+      try graphics.load(data: data);
+      let data = graphics.pixmap;
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: graphics);
+      quicktimeImage.data = Data(data);
+    default:
+      break;
   }
 }
 
-/// Convert the codec of a QuickTime image into a type description.
+/// Convert the `codec` name of a QuickTime image into a type description.
 /// Not strictly needed, as core-image seems to be able to guess types fines, but we have the data so.
-///  Despite the fact that Preview can handle Targa files, CoreImage cannot.
+/// Despite the fact that Preview can handle Targa files, CoreImage cannot.
 /// - Parameter qtImage: image whose codec will be translated.
 /// - Returns: a type description as used on OS X.
 func codecToContentType(qtImage : QuickTimeIdsc) -> String {
   switch qtImage.codecType.description {
-  case "tga ":
-    return "com.truevision.tga-image";
-  case "mjp2":
-    return "public.jpeg-2000";
-  case "WRLE":
-    return "com.microsoft.bmp";
-  case "PNTG":
-    return "com.apple.macpaint-image";
-  case "gif ":
-    return "com.compuserve.gif";
-  case ".SGI":
-    return "com.sgi.sgi-image";
-  default:
-    return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
+    case "tga ":
+      return "com.truevision.tga-image";
+    case "mjp2":
+      return "public.jpeg-2000";
+    case "WRLE":
+      return "com.microsoft.bmp";
+    case "PNTG":
+      return "com.apple.macpaint-image";
+    case "gif ":
+      return "com.compuserve.gif";
+    case ".SGI":
+      return "com.sgi.sgi-image";
+    default:
+      return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }
 
@@ -380,11 +368,11 @@ struct QuickTimeOpcode : OpCode {
     quicktimePayload.idsc = try subReader.readQuickTimeIdsc();
     do {
       let atomReader = try subReader.subReader(bytes: quicktimePayload.idsc.idscSize - 86);
-      try parseQuickTimeStream(reader: atomReader, quicktimePayload: &quicktimePayload);
+      try atomReader.parseQuickTimeStream(quicktimePayload: &quicktimePayload);
     } catch {
       print("Failed atom parsing: \(error)");
     }
-   
+    
     quicktimePayload.idsc.data = try subReader.readData(bytes: subReader.remaining);
     try patchQuickTimeImage(quicktimeImage: &quicktimePayload.idsc);
   }
@@ -396,56 +384,101 @@ struct QuickTimeOpcode : OpCode {
   var quicktimePayload : QuickTimePayload = QuickTimePayload();
 }
 
-func parseQuickTimeStream(reader: QuickDrawDataReader, quicktimePayload: inout QuickTimePayload ) throws  {
-  var quickTimeIdsc : QuickTimeIdsc?;
-  var quickTimeIdat : Data?;
+extension QuickDrawDataReader {
+  /// Parse a QuickTime image into a QuickDraw picture.
+  /// This will fail if the QuickTime image does not have an `idsc` (image description) atom.
+  /// Note that the resulting file is enough for this program, a valid QuickDraw file would require some
+  /// header operations.
+  /// - Throws: if data is corrupt / unreadable
+  /// - Returns: a _fake_ QuickDraw image with a single QuickTime opcode.
+  func readQuickTimeImage() throws -> QDPicture {
+    let fileSize = self.remaining;
+    var payload = QuickTimePayload();
+    payload.transform = QuickTimePayload.identityTransform;
+    try parseQuickTimeStream(quicktimePayload: &payload);
+    try patchQuickTimeImage(quicktimeImage: &payload.idsc);
+    let frame = QDRect(topLeft: QDPoint.zero, dimension: payload.idsc.dimensions);
+    let destination = QDRegion.forRect(rect: frame);
+    payload.srcMask = destination;
+    let picture = QDPicture(size: fileSize, frame: frame, filename: self.filename);
+    picture.version = 0xff;
+    var opcode = QuickTimeOpcode();
+    opcode.quicktimePayload = payload;
+    picture.opcodes.append(opcode);
+    return picture;
+  }
   
-  while reader.remaining > 8 {
-    let length = Int(try reader.readInt32()) - 8;
-    guard length >= 0 else {
-      throw QuickTimeError.corruptQuickTimeAtomLength(length: length);
+  func parseQuickTimeStream(quicktimePayload: inout QuickTimePayload) throws  {
+    var quickTimeIdsc : QuickTimeIdsc?;
+    var quickTimeIdat : Data?;
+    
+    while self.remaining > 8 {
+      let length = Int(try readInt32()) - 8;
+      guard length >= 0 else {
+        throw QuickTimeError.corruptQuickTimeAtomLength(length: length);
+      }
+      let type = try readType();
+      let data = try readData(bytes: length);
+      switch type.description {
+        case "idsc":
+          let subReader = try QuickDrawDataReader(data: data, position: 0);
+          quickTimeIdsc = try subReader.readQuickTimeIdsc();
+        case "idat":
+          quickTimeIdat = data
+        case "meta":
+          let subReader = try QuickDrawDataReader(data: data, position: 0);
+          quicktimePayload.metadata = try subReader.readQuickTimeMeta();
+        default:
+          print("Ignoring QuickTime atom \(type): \(length) bytes");
+          break;
+      }
     }
-    let type = try reader.readType();
-    let data = try reader.readData(bytes: length);
-    switch type.description {
-    case "idsc":
-      let subReader = try QuickDrawDataReader(data: data, position: 0);
-      quickTimeIdsc = try subReader.readQuickTimeIdsc();
-    case "idat":
-      quickTimeIdat = data
-    default:
-      print("Ignoring QuickTime atom \(type): \(length) bytes");
-      break;
+    if let idsc = quickTimeIdsc {
+      quicktimePayload.idsc = idsc;
+    }
+    if let idat = quickTimeIdat {
+      quicktimePayload.idsc.data = idat;
     }
   }
-  if let idsc = quickTimeIdsc {
-    quicktimePayload.idsc = idsc;
-  }
-  if let idat = quickTimeIdat {
-    quicktimePayload.idsc.data = idat;
-  }
-}
 
-/// Parse a QuickTime image into a QuickDraw picture.
-/// This will fail if the QuickTime image does not have an `idsc` (image description) atom.
-/// Note that the resulting file is enough for this program, a valid QuickDraw file would require some
-/// header operations.
-/// - Parameter reader: reader pointing to the data.
-/// - Throws: if data is corrupt / unreadable
-/// - Returns: a _fake_ QuickDraw image with a single QuickTime opcode.
-func parseQuickTimeImage(reader: QuickDrawDataReader) throws -> QDPicture {
-  let fileSize = reader.remaining;
-  var payload = QuickTimePayload();
-  payload.transform = QuickTimePayload.identityTransform;
-  try parseQuickTimeStream(reader: reader, quicktimePayload: &payload);
-  try patchQuickTimeImage(quicktimeImage: &payload.idsc);
-  let frame = QDRect(topLeft: QDPoint.zero, dimension: payload.idsc.dimensions);
-  let destination = QDRegion.forRect(rect: frame);
-  payload.srcMask = destination;
-  let picture = QDPicture(size: fileSize, frame: frame, filename: reader.filename);
-  picture.version = 0xff;
-  var opcode = QuickTimeOpcode();
-  opcode.quicktimePayload = payload;
-  picture.opcodes.append(opcode);
-  return picture;
+  
+  func readQuickTimeIdsc() throws -> QuickTimeIdsc {
+    let idsc = QuickTimeIdsc();
+    idsc.idscSize = Int(try readUInt32());
+    idsc.codecType = try readType();
+    skip(bytes: 8);
+    idsc.imageVersion = Int(try readUInt16());
+    idsc.imageRevision = Int(try readUInt16());
+    idsc.compressorDevelopper = try readType();
+    idsc.temporalQuality = try readUInt32();  // 4
+    idsc.spatialQuality = try readUInt32(); // 4
+    idsc.dimensions = try readDelta();
+    idsc.resolution = try readResolution();
+    idsc.dataSize = Int(try readInt32());
+    idsc.frameCount = Int(try readInt16());
+    idsc.compressionName = try readStr31();
+    idsc.depth = Int(try readInt16());
+    idsc.clutId = Int(try readInt16());
+    return idsc;
+  }
+  
+  func readQuickTimeMeta() throws -> Dictionary<String, String> {
+    var metadata = Dictionary<String, String>()
+    let size = Int(try readUInt32());
+    guard size >= 0 else {
+      throw QuickTimeError.corruptQuickTimeAtomLength(length: size);
+    }
+    while self.remaining > 8 {
+      let subAtom = try self.readType();
+      let subSize = Int(try readUInt16());
+      switch subAtom.description {
+        case "©cpy":
+          skip(bytes: 2);
+          metadata["copyright"] = try readString(bytes: subSize);
+        default:
+          print("Ignoring copyright atom \(subAtom)");
+      }
+    }
+    return metadata;
+  }
 }

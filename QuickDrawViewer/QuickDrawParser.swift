@@ -165,7 +165,8 @@ class QDParser {
     do {
       while (try parseOne(picture: &picture)) {}
     } catch {
-      logger.log(level: .error, "Failed rendering: \(error)");
+      let message = String(localized: "Failed parsing QuickDraw file");
+      logger.log(level: .error, "\(message): \(error)");
     }
     let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime;
     let name = picture.filename ?? ""

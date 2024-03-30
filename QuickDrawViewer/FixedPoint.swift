@@ -47,19 +47,25 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
     switch fixedValue {
       case 0 :
         return "0";
-    case 0x8000:
-      return "½";
-    case 0x4000:
-      return "¼";
-    case 0xc000:
-      return "¾";
-    case 0x2000:
-      return "⅛";
-    case 0x6000:
-      return "⅜";
-    case let fixedValue where fixedValue & FixedPoint.fractionMask == 0:
+      case 0x8000:
+        return "½";
+      // Quarters
+      case 0x4000:
+        return "¼";
+      case 0xc000:
+        return "¾";
+      // Eights
+      case 0x2000:
+        return "⅛";
+      case 0x6000:
+        return "⅜";
+      case 0xA000:
+        return "⅝";
+      case 0xE000:
+        return "⅞";
+      case let fixedValue where fixedValue & FixedPoint.fractionMask == 0:
         return "\(rounded)";
-    default:
+      default:
         return "\(value)";
     }
   }
@@ -79,7 +85,7 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
   public var isRound : Bool {
     return fixedValue & FixedPoint.fractionMask == 0;
   }
-    
+  
   /// Addition
   /// - Parameters:
   ///   - a: left hand value to add

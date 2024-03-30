@@ -42,10 +42,24 @@ final class QuickDrawTests: XCTestCase {
       XCTAssertEqual((FixedPoint(256) >> 4), FixedPoint(16));
       let half = FixedPoint(0.5);
       XCTAssertEqual(half, FixedPoint.one >> 1);
-      
       XCTAssertEqual(half, FixedPoint.one / FixedPoint(2));
       XCTAssertEqual(half, FixedPoint(100) / FixedPoint(200));
     }
+  
+  func testFixedPointRaw() throws  {
+    XCTAssertEqual(FixedPoint(rawValue: 0), FixedPoint.zero);
+    XCTAssertEqual(FixedPoint(rawValue: 0x8000), FixedPoint(1) / FixedPoint(2));
+    // Quarters
+    XCTAssertEqual(FixedPoint(rawValue: 0x4000), FixedPoint(1) / FixedPoint(4));
+    XCTAssertEqual(FixedPoint(rawValue: 0xc000), FixedPoint(3) / FixedPoint(4));
+    // Eights
+    XCTAssertEqual(FixedPoint(rawValue: 0x2000), FixedPoint(1) / FixedPoint(8));
+    XCTAssertEqual(FixedPoint(rawValue: 0x6000), FixedPoint(3) / FixedPoint(8));
+    XCTAssertEqual(FixedPoint(rawValue: 0xA000), FixedPoint(5) / FixedPoint(8));
+    XCTAssertEqual(FixedPoint(rawValue: 0xE000), FixedPoint(7) / FixedPoint(8));
+    // Sixteenths
+    XCTAssertEqual(FixedPoint(rawValue: 0x1000), FixedPoint(1) / FixedPoint(16));
+  }
   
   func testDelta() throws {
     XCTAssertEqual(QDDelta.zero, QDDelta.zero);
