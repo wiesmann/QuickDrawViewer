@@ -325,7 +325,12 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       try targa.load(data: data);
       quicktimeImage.dataStatus = .decoded(decodedMetaData: targa);
       quicktimeImage.data = Data(targa.pixmap);
-
+    case "YVU9":
+      let intel = IntelRawImage(dimensions: quicktimeImage.dimensions);
+      try intel.load(data: data);
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: intel);
+      quicktimeImage.data = Data(intel.pixmap);
+      
     default:
       break;
   }
