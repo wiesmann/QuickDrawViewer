@@ -62,11 +62,17 @@ class TargaImage : PixMapMetadata {
     self.pixmap = [];
   }
   
-  func descramble16bits() {
+  private func swap16BitColor() {
     let pairs = pixmap.count / 2;
     for p in 0..<pairs {
       let i = p * 2;
       pixmap.swapAt(i, i + 1);
+    }
+  }
+  
+  private func invert8BitGray() {
+    for i in 0..<pixmap.count {
+      pixmap[i] = 255 - pixmap[i];
     }
   }
   
@@ -122,6 +128,7 @@ class TargaImage : PixMapMetadata {
     // Palette data
     let paletteBytes = Int(paletteSize) * Int(paletteDepth / 8);
     let paletteData = try reader.readUInt8(bytes: paletteBytes);
+    // Only load the palette if we need to.
     if paletteData.count > 0 && self.clut == nil {
       if colorMapType == .noColorMap {
         throw TargaImageError.wrongColorMapType;
@@ -153,16 +160,19 @@ class TargaImage : PixMapMetadata {
         let slice = imageData[0..<imageData.count];
         pixmap = try decompressTarga(data: slice, maxSize: rowBytes * height, byteNum: pixelSize / 8);
         if pixelSize == 16 {
-          descramble16bits();
+          swap16BitColor();
         }
-        //
+      case .rleGrayScale:
+        let slice = imageData[0..<imageData.count];
+        pixmap = try decompressTarga(data: slice, maxSize: rowBytes * height, byteNum: 1);
+        invert8BitGray()
       default:
         throw TargaImageError.unsupportedImageType(imageType: imageType);
     }
   }
   
   var description: String {
-    return "TARGA: " + describePixMap(self);
+    return "Targa: " + describePixMap(self);
   }
   
   let dimensions: QDDelta
