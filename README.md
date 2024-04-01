@@ -115,11 +115,13 @@ The library basically parses QuickDraw version 1 and version 2 files
     (these are handled natively by the renderer)
   * RAW (`raw `)
   * MacPaint
+  * Targa (`tga `) for RLE 8-bit palette, RLE 24-bit RGB, RLE 8-bit grayscale.
   * Apple Video (`RPZA`)
   * Apple Component Video (`YUV2`)
   * Apple Graphics (`smc `)
   * Apple Animation (`RLE `) with depths of 2,4,8,16, 24 and 32 bits/pixel
-  * Planar Video (`8BPS`). 
+  * Planar Video (`8BPS`)
+  * Intel Raw (`YVU9`)
 
 Some basic comment parsing is used to improve images, in particular:
 
