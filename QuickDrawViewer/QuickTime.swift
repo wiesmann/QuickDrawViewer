@@ -13,6 +13,13 @@
 /// https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.8.sdk/System/Library/Frameworks/QuickTime.framework/Versions/A/Headers/ImageCompression.h
 /// https://github.com/TheDiamondProject/Graphite/blob/aa6636a1fe09eb2439e4972c4501724b3282ac7c/libGraphite/quicktime/planar.cpp
 
+
+
+/// DV Format
+///  /// Spec if SMPTE314M
+/// http://www.adamwilt.com/DV-FAQ-tech.html
+
+/// Codecs handled by the backend.
 /*
  (
  "public.jpeg",
