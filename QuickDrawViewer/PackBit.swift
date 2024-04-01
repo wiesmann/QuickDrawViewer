@@ -66,7 +66,7 @@ func copyDiscrete(length: Int, src : ArraySlice<UInt8>, destination : inout [UIn
 ///   - unpackedSize: size of the unpacked data
 ///   - byteNum: number of bytes in a chunk (default 1)
 /// - Returns: decompressed data
-func DecompressPackBit(data : [UInt8], unpackedSize: Int, byteNum : Int = 1) throws -> [UInt8] {
+func decompressPackBit(data : [UInt8], unpackedSize: Int, byteNum : Int = 1) throws -> [UInt8] {
   var decompressed : [UInt8] = [];
   decompressed.reserveCapacity(unpackedSize);
   var index = 0;

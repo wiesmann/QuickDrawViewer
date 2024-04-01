@@ -42,7 +42,7 @@ class PlanarImage : PixMapMetadata {
     for (number, length) in lineLengths.enumerated() {
       do {
         let compressed = try reader.readUInt8(bytes: length);
-        let decompressed = try DecompressPackBit(data: compressed, unpackedSize: width);
+        let decompressed = try decompressPackBit(data: compressed, unpackedSize: width);
         raw.append(contentsOf: decompressed);
       } catch let error as PackbitError {
         throw PlanarImageError.packbitError(line: number, packbitError: error);

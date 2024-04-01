@@ -13,7 +13,7 @@ import Foundation
 class MacPaintImage : PixMapMetadata {
   
   func load(data : Data) throws {
-    self.bitmap = try DecompressPackBit(data: Array(data), unpackedSize: 720 * 72);
+    self.bitmap = try decompressPackBit(data: Array(data), unpackedSize: 720 * 72);
   }
   
   /// Convert the MacPaint images into an opcode.

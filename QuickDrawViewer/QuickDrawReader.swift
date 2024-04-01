@@ -130,6 +130,16 @@ class QuickDrawDataReader {
     return result;
   }
   
+  func readUInt16LE() throws ->  UInt16 {
+    let v = try readUInt16();
+    return v.byteSwapped;
+  }
+  
+  func readUInt32LE() throws -> UInt32 {
+    let v = try readUInt32();
+    return v.byteSwapped;
+  }
+  
   func readInt16() throws -> Int16 {
     return Int16(bitPattern: try readUInt16());
   }

@@ -320,6 +320,12 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       let data = graphics.pixmap;
       quicktimeImage.dataStatus = .decoded(decodedMetaData: graphics);
       quicktimeImage.data = Data(data);
+    case "tga ":
+      let targa = TargaImage(dimensions: quicktimeImage.dimensions, clut: quicktimeImage.clut);
+      try targa.load(data: data);
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: targa);
+      quicktimeImage.data = Data(targa.pixmap);
+
     default:
       break;
   }
