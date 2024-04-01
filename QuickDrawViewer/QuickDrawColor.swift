@@ -195,6 +195,16 @@ func clutFromRaw(raw: [UInt16]) -> QDColorTable {
   return QDColorTable(clut: clut, id: id, clutFlags:clutFlags);
 }
 
+func clutFromRgb(rgb: [UInt8]) -> QDColorTable {
+  var clut : [RGBColor] = [];
+  for i in 0..<rgb.count / 3 {
+    let p = i * 3;
+    let color = RGBColor(red8: rgb[p], green8: rgb[p + 1], blue8: rgb[p + 2])
+    clut.append(color);
+  }
+  return QDColorTable(clut: clut, id: 0, clutFlags:0);
+}
+
 func makeGrayRamp() -> QDColorTable {
   var clut : [RGBColor] = [];
   for v in 0..<0x100 {

@@ -13,8 +13,10 @@ enum TargaImageError : Error {
   case unsupportedImageType(imageType: TargaImageType);
   case mismatchedDimensions(expected: QDDelta, parsed: QDDelta);
   case unsupportedOrigin(origin: QDPoint);
-  case duplicateColorTable(externalClut: QDColorTable);
   case unsupportedAlphaDepth(depth: UInt8);
+  case unsupportPaletteDepth(depth: UInt8);
+  case wrongColorMapType;
+  case unsupportPaletteFirstEntry(offset: UInt16);
 }
 
 enum TargaColorMapType : UInt8 {
@@ -82,13 +84,16 @@ class TargaImage : PixMapMetadata {
     self.imageType = imageType;
     // Color map specification
     let paletteFirstEntry = try reader.readUInt16LE();
+    guard paletteFirstEntry == 0 else {
+      throw TargaImageError.unsupportPaletteFirstEntry(offset: paletteFirstEntry);
+    }
     let paletteSize = try reader.readUInt16LE();
     let paletteDepth = try reader.readUInt8();
     assert(reader.position == 8);
     // Image specification
     let xOrigin = try reader.readUInt16LE();
     let yOrigin = try reader.readUInt16LE();
-    let origin = QDPoint(vertical: yOrigin, horizontal: yOrigin);
+    let origin = QDPoint(vertical: yOrigin, horizontal: xOrigin);
     guard origin == QDPoint.zero else {
       throw TargaImageError.unsupportedOrigin(origin: origin);
     }
@@ -117,8 +122,16 @@ class TargaImage : PixMapMetadata {
     // Palette data
     let paletteBytes = Int(paletteSize) * Int(paletteDepth / 8);
     let paletteData = try reader.readUInt8(bytes: paletteBytes);
-    if paletteData.count > 0 && self.clut != nil {
-      throw TargaImageError.duplicateColorTable(externalClut: clut!);
+    if paletteData.count > 0 && self.clut == nil {
+      if colorMapType == .noColorMap {
+        throw TargaImageError.wrongColorMapType;
+      }
+      switch paletteDepth {
+        case 8:
+          clut = clutFromRgb(rgb: paletteData);
+        default: 
+          throw TargaImageError.unsupportPaletteDepth(depth: paletteDepth);
+      }
     }
     // Check the tail
     /*
