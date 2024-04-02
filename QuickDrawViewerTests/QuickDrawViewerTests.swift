@@ -131,15 +131,21 @@ final class QuickDrawTests: XCTestCase {
     XCTAssertEqual(RGBColor.cyan.rawValue, 0x0000ffffffff);
   }
   
+  func testRoundTo() throws {
+    XCTAssertEqual(roundTo(FixedPoint.one, multipleOf: 4), 4);
+    XCTAssertEqual(roundTo(FixedPoint(10), multipleOf: 4), 12);
+    XCTAssertEqual(roundTo(FixedPoint(11), multipleOf: 4), 12);
+  }
+  
   func testPackBit() throws {
     // Discrete run
     let discreteData : [UInt8] = [0x05, 0x01, 0x02, 0x03, 0x04, 0x5, 0x6];
     XCTAssertEqual(
-        try DecompressPackBit(data: discreteData, unpackedSize: 6),
+        try decompressPackBit(data: discreteData, unpackedSize: 6),
         [0x01, 0x02, 0x03, 0x04, 0x5, 0x6]);
     let repeatedData : [UInt8] = [UInt8(bitPattern: Int8(-6)), 0x10];
     XCTAssertEqual(
-        try DecompressPackBit(data: repeatedData, unpackedSize: 7),
+        try decompressPackBit(data: repeatedData, unpackedSize: 7),
         [0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10]);
   }
 

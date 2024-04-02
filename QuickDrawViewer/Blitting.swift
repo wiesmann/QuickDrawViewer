@@ -14,6 +14,30 @@ enum BlittingError : Error {
   case badPixMapIndex(index: Int, pixMapSize: Int);
 }
 
+func roundTo(_ value: FixedPoint, multipleOf: Int) -> Int {
+  return (value.rounded + (multipleOf - 1)) / multipleOf * multipleOf;
+}
+
+/// Convert YUV values to RGB bytes.
+/// - Parameters:
+///   - y: luminence in the 0-255 range
+///   - u: u chrominance in the -127 - 128 range
+///   - v: v chrominance in the -127 - 128 range
+/// - Returns: rgb bytes
+func yuv2Rgb(y : Double, u: Double, v: Double) -> [UInt8] {
+  let r = Int(y + (1.370705 * v));
+  let g = Int(y - (0.698001 * v) - 0.337633 * u);
+  let b = Int(y + (1.732446 * u));
+  return [UInt8(clamping: r), UInt8(clamping: g), UInt8(clamping: b)];
+}
+
+func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> [UInt8] {
+  let nu = Double(u) - 128;
+  let nv = Double(v) - 128;
+  let ny = Double(y);
+  return yuv2Rgb(y: ny, u: nu, v: nv);
+}
+
 /// Abstract view of a bitmap information
 protocol PixMapMetadata : CustomStringConvertible {
   

@@ -16,10 +16,7 @@ func signedYuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> [UInt8] {
   let nu = Double(Int8(bitPattern: u));
   let nv = Double(Int8(bitPattern: v));
   let ny = Double(y);
-  let r = Int(ny + (1.370705 * nv));
-  let g = Int(ny - (0.698001 * nv) - 0.337633 * nu);
-  let b = Int(ny + (1.732446 * nu));
-  return [UInt8(clamping: r), UInt8(clamping: g), UInt8(clamping: b)];
+  return yuv2Rgb(y: ny, u: nu, v: nv);
 }
 
 func convertYuv2Data(data: Data) -> [UInt8] {
