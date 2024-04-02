@@ -71,12 +71,11 @@ he rendering in the book looks like this:
 
 This is how the Picture is rendered in Preview Version 11.0 on Mac OS X 14.4 (Sonoma).
 
-![Example Pict (Broken)](docs/inside_macintosh_preview.png)
+<img src="docs/inside_macintosh_preview.png" alt="Example Pict in Preview (Broken)" width="500 height="auto"/>
 
 This is how it is rendered in QuickDraw Viewer:
 
-![Example Pict (QuickDraw Viewer)](docs/inside_macintosh_pict.png)
-
+<img src="docs/inside_macintosh_pict.png" alt="Example Pict (QuickDraw Viewer)" width="500" height="auto"/>
 
 ## Supported File types
 
