@@ -71,7 +71,7 @@ he rendering in the book looks like this:
 
 This is how the Picture is rendered in Preview Version 11.0 on Mac OS X 14.4 (Sonoma).
 
-<img src="docs/inside_macintosh_preview.png" alt="Example Pict in Preview (Broken)" width="500 height="auto"/>
+<img src="docs/inside_macintosh_preview.png" alt="Example Pict in Preview (Broken)" width="500" height="auto"/>
 
 This is how it is rendered in QuickDraw Viewer:
 
