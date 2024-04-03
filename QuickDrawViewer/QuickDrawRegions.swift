@@ -131,7 +131,11 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], 
 struct QDRegion : CustomStringConvertible {
   
   public var description: String {
-    return "Region \(boundingBox) \(rects.count) rects";
+    var result = "Region \(boundingBox)";
+    if rects.count > 0 {
+      result += " \(rects.count) rects";
+    }
+    return result ;
   }
   
   var boundingBox: QDRect = QDRect.empty;

@@ -124,7 +124,7 @@ struct ConvertedImageMeta : PixMapMetadata {
   let dimensions: QDDelta;
   let clut: QDColorTable?;
   var description: String {
-    return "dimensions: \(dimensions), rowBytes: \(rowBytes), cmpSize: \(cmpSize) pixelSize: \(pixelSize)";
+    return describePixMap(self);
   }
 }
 
@@ -134,15 +134,59 @@ enum QuickTimePictureDataStatus {
   case decoded(decodedMetaData: PixMapMetadata);
 }
 
+struct QuickTimeBitDepth : OptionSet {
+  let rawValue: UInt8;
+  static let bit1 = QDGlyphState(rawValue: 1 << 0);
+  static let bit2 = QDGlyphState(rawValue: 1 << 1);
+  static let bit4 = QDGlyphState(rawValue: 1 << 2);
+  static let bit8 = QDGlyphState(rawValue: 1 << 3);
+  static let bit16 = QDGlyphState(rawValue: 1 << 4);
+  static let bit32 = QDGlyphState(rawValue: 1 << 5);
+}
+
+// Quality value used by QuickTime
+struct QuickTimeQuality : RawRepresentable, CustomStringConvertible {
+  let rawValue: UInt32;
+  
+  var description: String {
+    let quality = rawValue & ~QuickTimeQuality.kDepthMask;
+    var result : String = QuickTimeQuality.qualityStr(quality);
+    let rawDepth = UInt8(rawValue & QuickTimeQuality.kDepthMask);
+    if rawDepth > 0 {
+      let depth = QuickTimeBitDepth(rawValue: rawDepth);
+      result += "\(depth)";
+    }
+    return result;
+  }
+  
+  private static func qualityStr(_ quality : UInt32) -> String {
+    if quality == 0x400 {
+      return "Lossless";
+    }
+    let p = quality * 100 / 0x400 ;
+    return "\(p)%";
+  }
+  
+  private static let kDepthMask : UInt32 = 0b111111;
+}
+
 class QuickTimeIdsc : CustomStringConvertible {
   var description: String {
-    var result = "codec: '\(codecType)': compressor: '\(compressorDevelopper)'";
-    result += " compressionName: '\(compressionName)'";
+    var result = "codec: '\(codecType)' (\(compressorDevelopper))";
+    result += " name: '\(compressionName)'";
     result += " version \(imageVersion).\(imageRevision)";
-    result += " dimensions: \(dimensions), resolution: \(resolution)";
-    result += " frameCount: \(frameCount), depth: \(depth)";
-    result += " temporalQuality: \(temporalQuality) spatialQuality: \(spatialQuality)"
-    result += " clutId: \(clutId) dataSize: \(dataSize) (\(compression * 100)%) idscSize: \(idscSize)";
+    result += " dimensions: \(dimensions), @ \(resolution)";
+    if frameCount > 1 {
+      result += " frameCount: \(frameCount)";
+    }
+    result += " depth: \(depth)";
+    if let sQuality = spatialQuality {
+      result += " quality: \(sQuality)";
+    }
+    if let id = clutId {
+      result += " clutId: \(id)";
+    }
+    result += " dataSize: \(dataSize) (\(compression * 100)%) idscSize: \(idscSize)";
     result += " data status: \(dataStatus)";
     if let d = data {
       let subdata = d.subdata(in: 0..<16);
@@ -163,24 +207,26 @@ class QuickTimeIdsc : CustomStringConvertible {
   var imageVersion : Int = 0;
   var imageRevision : Int = 0;
   var compressorDevelopper : MacTypeCode = MacTypeCode.zero;
-  var temporalQuality : UInt32 = 0;
-  var spatialQuality : UInt32 = 0;
+  var temporalQuality : QuickTimeQuality?;
+  var spatialQuality : QuickTimeQuality?;
   var dimensions : QDDelta = QDDelta.zero;
   var resolution : QDResolution = QDResolution.defaultResolution;
   var dataSize : Int = 0;
   var frameCount : Int = 0;
   var compressionName : String = "";
   var depth : Int = 0;
-  var clutId : Int = 0;
+  var clutId : Int?;
   var idscSize : Int = 0;
   var data : Data?;
   var dataStatus : QuickTimePictureDataStatus = QuickTimePictureDataStatus.unchanged;
   
   var clut : QDColorTable? {
-    return QDColorTable.forClutId(clutId: clutId);
+    if let id = self.clutId {
+      return QDColorTable.forClutId(clutId: id);
+    }
+    return nil;
   }
 }
-
 
 /// Quicktime payload, typically stored within a QuickTime opcode.
 class QuickTimePayload : CustomStringConvertible {
@@ -190,16 +236,20 @@ class QuickTimePayload : CustomStringConvertible {
       result += " dstMask: \(mask)"
     }
     result += " transform: \(transform)";
-    result += " matte: \(matte)"
+    if let matte = self.matte {
+      result += " matte: \(matte)"
+    }
     result += " idsc: \(idsc)";
-    result += " metadata: \(metadata)]";
+    if !metadata.isEmpty {
+      result += " metadata: \(metadata)]";
+    }
     return result;
   }
   
   // Geometrical transform matrix.
   var transform : [[FixedPoint]] = [];
   
-  var matte : QDRect = QDRect.empty;
+  var matte : QDRect? = nil;
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
   var srcMask : QDRegion?;
   var accuracy : Int = 0;
@@ -362,7 +412,7 @@ func codecToContentType(qtImage : QuickTimeIdsc) -> String {
 
 struct QuickTimeOpcode : OpCode {
   mutating func load(reader: QuickDrawDataReader) throws {
-    dataSize = Int(try reader.readInt32());
+    let dataSize = Int(try reader.readInt32());
     let subReader = try reader.subReader(bytes: dataSize);
     opcodeVersion = try subReader.readInt16();
     for _ in 0..<3 {
@@ -372,12 +422,15 @@ struct QuickTimeOpcode : OpCode {
       }
       quicktimePayload.transform.append(line);
     }
-    matteSize = Int(try subReader.readInt32());
-    quicktimePayload.matte = try subReader.readRect();
+    let matteSize = Int(try subReader.readInt32());
+    let rawMatte = try subReader.readRect();
+    if rawMatte != QDRect.empty {
+      quicktimePayload.matte = rawMatte;
+    }
     quicktimePayload.mode = QuickDrawMode(rawValue: try subReader.readUInt16());
     let srcRect = try subReader.readRect();
     quicktimePayload.accuracy = Int(try subReader.readUInt32());
-    maskSize = Int(try subReader.readUInt32());
+    let maskSize = Int(try subReader.readUInt32());
     // variable length parts
     reader.skip(bytes: matteSize);
     let maskData = try subReader.readUInt16(bytes: maskSize);
@@ -396,9 +449,6 @@ struct QuickTimeOpcode : OpCode {
   }
   
   var opcodeVersion : Int16 = 0;
-  var dataSize : Int = 0;
-  var matteSize : Int = 0;
-  var maskSize : Int = 0;
   var quicktimePayload : QuickTimePayload = QuickTimePayload();
 }
 
@@ -458,7 +508,14 @@ extension QuickDrawDataReader {
       quicktimePayload.idsc.data = idat;
     }
   }
-
+  
+  func readQuickTimeQuality() throws -> QuickTimeQuality? {
+    let rawQuality = try readUInt32(); // 4
+    if rawQuality > 0 {
+      return QuickTimeQuality(rawValue: rawQuality);
+    }
+    return nil;
+  }
   
   func readQuickTimeIdsc() throws -> QuickTimeIdsc {
     let idsc = QuickTimeIdsc();
@@ -468,15 +525,18 @@ extension QuickDrawDataReader {
     idsc.imageVersion = Int(try readUInt16());
     idsc.imageRevision = Int(try readUInt16());
     idsc.compressorDevelopper = try readType();
-    idsc.temporalQuality = try readUInt32();  // 4
-    idsc.spatialQuality = try readUInt32(); // 4
+    idsc.temporalQuality  = try readQuickTimeQuality();
+    idsc.spatialQuality = try readQuickTimeQuality();
     idsc.dimensions = try readDelta();
     idsc.resolution = try readResolution();
     idsc.dataSize = Int(try readInt32());
     idsc.frameCount = Int(try readInt16());
     idsc.compressionName = try readStr31();
     idsc.depth = Int(try readInt16());
-    idsc.clutId = Int(try readInt16());
+    let rawClutId = Int(try readInt16());
+    if rawClutId >= 0 {
+      idsc.clutId = rawClutId;
+    }
     return idsc;
   }
   

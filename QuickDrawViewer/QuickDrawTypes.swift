@@ -20,7 +20,7 @@ struct QDPoint : CustomStringConvertible, Equatable {
   }
   
   public var description: String {
-    return "<h\(horizontal),v\(vertical)>";
+    return "<→\(horizontal),↓\(vertical)>";
   }
 
   static func + (point: QDPoint, delta: QDDelta) -> QDPoint {
@@ -62,7 +62,7 @@ struct QDDelta : CustomStringConvertible, Equatable, AdditiveArithmetic {
   }
   
   public var description: String {
-    return "<∂h\(dh),∂v\(dv)>";
+    return "<∂→\(dh),∂↓\(dv)>";
   }
   
   let dh: FixedPoint;
@@ -97,7 +97,7 @@ struct QDRect : CustomStringConvertible, Equatable {
   }
   
   public var description: String {
-    return "Rect: ⌜\(topLeft),\(bottomRight)⌟"
+    return "▭ ⌜\(topLeft),\(bottomRight)⌟"
   }
   
   let topLeft: QDPoint;
@@ -154,7 +154,19 @@ class QDPolygon {
   }
 }
 
-enum QDVerb : UInt16 {
+enum QDVerb : UInt16, CustomStringConvertible {
+  var description: String {
+    switch self {
+      case .frame: return "frame";
+      case .paint: return "paint";
+      case .erase: return "erase";
+      case .fill: return "fill";
+      case .clip: return "clip";
+      case .ignore: return "ignore";
+      case .invert: return "invert";
+    }
+  }
+  
   case frame = 0;
   case paint = 1;
   case erase = 2;
@@ -186,7 +198,26 @@ struct QDFontStyle : OptionSet {
 
 // the 8 first transfer modes from QuickDraw.p
 // Patterns operation is bit 5.
-enum QuickDrawTransferMode : UInt16 {
+enum QuickDrawTransferMode : UInt16,  CustomStringConvertible {
+  public var description: String {
+    return QuickDrawTransferMode.describeRaw(rawValue);
+  }
+  
+  private static func describeRaw(_ rawValue : UInt16) -> String {
+    if rawValue & 0x4 > 0 {
+      return "!" + describeRaw(rawValue & 0x3);
+    }
+    switch rawValue % 4 {
+      case 0 : return "copy";
+      case 1 : return "or";
+      case 2 : return "xor";
+      case 3 : return "bic";
+      default:
+        assert(false);
+        return "never";
+    }
+  }
+  
   case copyMode = 0;
   case orMode = 1;
   case xorMode = 2;
@@ -197,27 +228,38 @@ enum QuickDrawTransferMode : UInt16 {
   case notBic = 7;
 }
 
-struct QuickDrawMode : RawRepresentable {
-  init(rawValue: UInt16) {
-    mode = QuickDrawTransferMode(rawValue: rawValue % 8)!;
-    isPattern = rawValue & QuickDrawMode.patternMask  != 0;
-    isDither = rawValue & QuickDrawMode.ditherMask != 0;
-  }
-  var rawValue: UInt16 {
-    return mode.rawValue | (isPattern ? QuickDrawMode.patternMask : 0)
-      | (isDither ? QuickDrawMode.ditherMask : 0);
+struct QuickDrawMode : RawRepresentable, CustomStringConvertible {
+  
+  let rawValue: UInt16;
+  
+  var mode : QuickDrawTransferMode {
+    return QuickDrawTransferMode(rawValue: rawValue % 8)!;
   }
   
+  var isPattern : Bool {
+    rawValue & QuickDrawMode.patternMask  != 0
+  }
   
-  let mode : QuickDrawTransferMode;
-  let isPattern : Bool;
-  let isDither: Bool;
+  var isDither: Bool {
+    rawValue & QuickDrawMode.ditherMask != 0;
+  }
+  
+  var description: String {
+    var result = "[\(mode)";
+    if isPattern {
+      result += " pattern";
+    }
+    if isDither {
+      result += " dither";
+    }
+    result += "]";
+    return result;
+  }
   
   static private let patternMask : UInt16 = 0x08;
   static private let ditherMask : UInt16 = 0x40;
   static let defaultMode : QuickDrawMode  = QuickDrawMode(rawValue: 0);
 }
-
 
 /// Operator  ⨴ is used for non commutative product between a structured type and a scalar or vector.
 precedencegroup ComparisonPrecedence {
@@ -262,8 +304,6 @@ struct QDResolution : Equatable, CustomStringConvertible {
     hRes: defaultScalarResolution, vRes: defaultScalarResolution);
   static let zeroResolution = QDResolution(hRes: FixedPoint.zero, vRes: FixedPoint.zero);
 }
-
-
 
 /// All the state associated with drawing
 class PenState {

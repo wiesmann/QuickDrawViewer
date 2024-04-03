@@ -165,7 +165,17 @@ class TargaImage : PixMapMetadata {
       case .rleGrayScale:
         let slice = imageData[0..<imageData.count];
         pixmap = try decompressTarga(data: slice, maxSize: rowBytes * height, byteNum: 1);
-        invert8BitGray()
+        invert8BitGray();
+      case .grayScale:
+        pixmap = imageData;
+        invert8BitGray();
+      case .colorMap:
+        pixmap = imageData;
+      case .trueColor:
+        pixmap = imageData;
+        if pixelSize == 16 {
+          swap16BitColor();
+        }
       default:
         throw TargaImageError.unsupportedImageType(imageType: imageType);
     }
