@@ -111,7 +111,7 @@ The library basically parses QuickDraw version 1 and version 2 files
 * Palette images
 * Direct (RGB) images
 * QuickTime embedded images with the following codecs:
-  * External image formats: JPEG, TIFF, PNG, BMP, JPEG-2000, GIF 
+  * External image formats: JPEG, TIFF, PNG, BMP, JPEG-2000, GIF, SGI 
     (these are handled natively by the renderer)
   * RAW (`raw `)
   * MacPaint
@@ -128,6 +128,7 @@ Some basic comment parsing is used to improve images, in particular:
 * Polygon annotations to [connect the lines](https://wiesmann.codiferes.net/wordpress/archives/37337) and close polygons
 * Fractional pen width
 * [Text rotation](https://wiesmann.codiferes.net/wordpress/archives/37285)
+* CMYK colors embedded in proprietary Deneba / Canvas comments.
 
 ## Unsupported features
 
