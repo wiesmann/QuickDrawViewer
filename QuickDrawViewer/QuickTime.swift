@@ -172,8 +172,8 @@ struct QuickTimeQuality : RawRepresentable, CustomStringConvertible {
 
 class QuickTimeIdsc : CustomStringConvertible {
   var description: String {
-    var result = "codec: '\(codecType)' (\(compressorDevelopper))";
-    result += " name: '\(compressionName)'";
+    var result = "'\(compressionName)' ";
+    result += "codec: '\(codecType)' (\(compressorDevelopper))";
     result += " version \(imageVersion).\(imageRevision)";
     result += " dimensions: \(dimensions), @ \(resolution)";
     if frameCount > 1 {
@@ -186,14 +186,15 @@ class QuickTimeIdsc : CustomStringConvertible {
     if let id = clutId {
       result += " clutId: \(id)";
     }
-    result += " dataSize: \(dataSize) (\(compression * 100)%) idscSize: \(idscSize)";
-    result += " data status: \(dataStatus)";
+    result += " data <size: \(dataSize) (\(compression * 100)%) idscSize: \(idscSize)";
+    result += " status: \(dataStatus)";
     if let d = data {
       let subdata = d.subdata(in: 0..<16);
       result += " Magic: "
       result += subdata.map{ String(format:"%02x", $0) }.joined()
       result += " (\(d.count) bytes)"
     }
+    result += ">";
     return result;
   }
   
@@ -296,6 +297,39 @@ func patchQuickTimeBMP(quicktimeImage : inout QuickTimeIdsc) throws {
   quicktimeImage.dataStatus = .patched;
 }
 
+func patchQuickTimeSGI(quicktimeImage : inout QuickTimeIdsc) throws {
+  guard let data = quicktimeImage.data else {
+    throw QuickTimeError.missingQuickTimeData(quicktimeImage: quicktimeImage);
+  }
+  var patched = Data();
+  patched.append(contentsOf: [0x01, 0xDA]);  // SGI header
+  patched.append(contentsOf: [0x01, 0x01]);  // Compressed, 8 bit/channel
+  let numberChannels = UInt16(quicktimeImage.depth / 8);
+  // Number of dimensions ~number of channels
+  patched.append(contentsOf: byteArrayBE(from: numberChannels));
+  let height = UInt16(quicktimeImage.dimensions.dv.rounded);
+  let width = UInt16(quicktimeImage.dimensions.dh.rounded);
+  patched.append(contentsOf: byteArrayBE(from: width));
+  patched.append(contentsOf: byteArrayBE(from: height));
+  // Dimensions ~number of channels
+  patched.append(contentsOf: byteArrayBE(from: numberChannels));
+  let minPixel = UInt32(0);
+  let maxPixel = UInt32(0xff);
+  patched.append(contentsOf: byteArrayBE(from: minPixel));
+  patched.append(contentsOf: byteArrayBE(from: maxPixel));
+  patched.append(contentsOf: [0x00, 0x00, 0x00, 0x00]);
+  let imageName = [UInt8].init(repeating: 0, count: 80);
+  patched.append(contentsOf: imageName);
+  // Default color-map value
+  patched.append(contentsOf: [0x00, 0x00, 0x00, 0x00]);
+  let dummy = [UInt8].init(repeating: 0, count: 404);
+  patched.append(contentsOf: dummy);
+  assert(patched.count == 512);
+  patched.append(contentsOf: data);
+  quicktimeImage.data = patched;
+  quicktimeImage.dataStatus = .patched;
+}
+
 /// Prepare the data in a QuickTime image for downstream processing.
 /// * If the codec of the image can be handled by the system dowstream (core-image).
 ///   The data is just passed along, except in the case of Windows BMP where the headers need to be
@@ -315,6 +349,9 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
   switch quicktimeImage.codecType.description {
     case "WRLE":
       try patchQuickTimeBMP(quicktimeImage: &quicktimeImage);
+    case ".SGI":
+      try patchQuickTimeSGI(quicktimeImage: &quicktimeImage);
+      break
     case "raw ":
       let metadata = ConvertedImageMeta(
         rowBytes: quicktimeImage.dimensions.dh.rounded * 4,
@@ -380,7 +417,6 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       try intel.load(data: data);
       quicktimeImage.dataStatus = .decoded(decodedMetaData: intel);
       quicktimeImage.data = Data(intel.pixmap);
-      
     default:
       break;
   }
