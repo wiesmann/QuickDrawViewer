@@ -111,12 +111,8 @@ class TargaImage : PixMapMetadata {
     }
     // Adjust cmp size
     self.pixelSize = Int(try reader.readUInt8());
-    switch pixelSize  {
-      case 8: cmpSize = 8;
-      case 16: cmpSize = 5
-      case 24: cmpSize = 8;
-      default: cmpSize = 0;
-    }
+    let (_, componentSize) = try expandDepth(self.pixelSize);
+    self.cmpSize = componentSize;
     // TODO: do something about α-channels
     let imageDescriptor = try reader.readUInt8();
     let alphaBits = imageDescriptor & 0x7;

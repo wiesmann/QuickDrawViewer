@@ -297,14 +297,19 @@ func patchQuickTimeBMP(quicktimeImage : inout QuickTimeIdsc) throws {
   quicktimeImage.dataStatus = .patched;
 }
 
+// QuickTime strips the 512 bytes header of SGI files.
+// So this function reconstructs it.
+// Information about the SGI format: https://paulbourke.net/dataformats/sgirgb/sgiversion.html
 func patchQuickTimeSGI(quicktimeImage : inout QuickTimeIdsc) throws {
   guard let data = quicktimeImage.data else {
     throw QuickTimeError.missingQuickTimeData(quicktimeImage: quicktimeImage);
   }
   var patched = Data();
   patched.append(contentsOf: [0x01, 0xDA]);  // SGI header
-  patched.append(contentsOf: [0x01, 0x01]);  // Compressed, 8 bit/channel
-  let numberChannels = UInt16(quicktimeImage.depth / 8);
+  let (channels, componentSize) = try expandDepth(quicktimeImage.depth);
+  let componentBytes = UInt8(componentSize / 8);
+  patched.append(contentsOf: [0x01, componentBytes]);
+  let numberChannels = UInt16(channels);
   // Number of dimensions ~number of channels
   patched.append(contentsOf: byteArrayBE(from: numberChannels));
   let height = UInt16(quicktimeImage.dimensions.dv.rounded);
@@ -393,7 +398,7 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       quicktimeImage.dataStatus = .decoded(decodedMetaData: macPaintImage);
       quicktimeImage.data = Data(macPaintImage.bitmap);
     case "rle ":
-      let animation = AnimationImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth, clut: quicktimeImage.clut);
+      let animation = try AnimationImage(dimensions: quicktimeImage.dimensions, depth: quicktimeImage.depth, clut: quicktimeImage.clut);
       try animation.load(data: data);
       let data = animation.pixmap;
       quicktimeImage.dataStatus = .decoded(decodedMetaData: animation);

@@ -19,25 +19,13 @@ enum AnimationCodecError : Error {
 
 // TODO: depth = 1 bits per pixels does not work.
 class AnimationImage : PixMapMetadata {
-  init(dimensions: QDDelta, depth: Int, clut: QDColorTable?) {
+  init(dimensions: QDDelta, depth: Int, clut: QDColorTable?) throws {
     self.dimensions = dimensions;
     self.depth = depth;
     self.clut =  clut;
     self.pixmap = [];
-  }
-  
-  var cmpSize: Int {
-    switch depth {
-    case 1: return 1;
-    case 2: return 2;
-    case 4: return 4;
-    case 8:return 8;
-    case 16: return 5;
-    case 24: return 8;
-    case 32: return 8;
-    default:
-      return -1;
-    }
+    let (_, componentSize) = try expandDepth(depth);
+    self.cmpSize = componentSize;
   }
   
   var pixelSize: Int {
@@ -137,6 +125,7 @@ class AnimationImage : PixMapMetadata {
   
   let dimensions: QDDelta;
   let depth: Int;
+  let cmpSize : Int;
   let clut: QDColorTable?;
   var pixmap : [UInt8];
   

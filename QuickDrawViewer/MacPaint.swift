@@ -9,11 +9,18 @@
 
 import Foundation
 
+
+
+
 /// MacPaint images are fixed size (720 × 576) PackBit compressed bitmaps.
 class MacPaintImage : PixMapMetadata {
   
+  static let width : Int = 576;
+  static let height : Int = 720;
+  
   func load(data : Data) throws {
-    self.bitmap = try decompressPackBit(data: Array(data), unpackedSize: 720 * 72);
+    self.bitmap = try decompressPackBit(
+      data: Array(data), unpackedSize: MacPaintImage.height * rowBytes);
   }
   
   /// Convert the MacPaint images into an opcode.
@@ -39,10 +46,12 @@ class MacPaintImage : PixMapMetadata {
     return picture;
   }
   
-  let rowBytes: Int = 72; // 576 ÷ 8
+  let rowBytes: Int = MacPaintImage.width / 8;
   var cmpSize: Int = 1;
   var pixelSize: Int = 1;
-  let dimensions = QDDelta(dv: FixedPoint(720), dh: FixedPoint(576));
+  let dimensions = QDDelta(
+      dv: FixedPoint(MacPaintImage.height),
+      dh: FixedPoint(MacPaintImage.width));
   var clut: QDColorTable? = QDColorTable.palette1;
   var bitmap: [UInt8] = [];
   

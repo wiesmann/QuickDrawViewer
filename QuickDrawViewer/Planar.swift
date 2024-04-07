@@ -19,13 +19,11 @@ class PlanarImage : PixMapMetadata {
     self.dimensions = dimensions;
     self.depth = depth;
     self.clut = clut;
-    switch depth {
-      case 8: self.channels = 1;
-      case 24: self.channels = 3;
-    default:
+    let (channels, pixSize) =  try expandDepth(depth);
+    self.channels = channels;
+    if pixSize != 8 {
       throw PlanarImageError.badDepth(depth: depth);
     }
-    
     self.pixmap = [];
   }
   

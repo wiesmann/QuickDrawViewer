@@ -12,6 +12,7 @@ enum BlittingError : Error {
   case invalidBlockNumber(blockNumber: Int, totalBlockNumber: Int);
   case invalidBlockLine(lineNumber: Int, blockSize: Int);
   case badPixMapIndex(index: Int, pixMapSize: Int);
+  case unsupportedDepth(depth : Int);
 }
 
 func roundTo(_ value: FixedPoint, multipleOf: Int) -> Int {
@@ -38,6 +39,23 @@ func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> [UInt8] {
   return yuv2Rgb(y: ny, u: nu, v: nv);
 }
 
+/// Get the number of channels and component size (int bits) associated with a color depth.
+/// - Parameter depth: color depth (in bits)
+/// - Throws: Error in case of unsupported depth.
+/// - Returns: a pair of the form (component numbers, component size in bits).
+func expandDepth(_ depth : Int) throws -> (Int, Int) {
+  switch depth {
+    case let d where d <= 8:
+      return (1, d);
+    case 16:
+      return (3, 5);
+    case 24:
+      return (3, 8);
+    default:
+      throw BlittingError.unsupportedDepth(depth: depth);
+  }
+}
+
 /// Abstract view of a bitmap information
 protocol PixMapMetadata : CustomStringConvertible {
   
@@ -53,7 +71,7 @@ func describePixMap(_ pm: PixMapMetadata) -> String {
   return "\(pm.dimensions) rowBytes: \(pm.rowBytes) pixelSize: \(pm.pixelSize)"
 }
 
-/// Parent class for blocked based pixmap formats.
+/// Parent class for block based pixmap formats.
 class BlockPixMap : PixMapMetadata {
 
   init(dimensions: QDDelta, blockSize: Int, pixelSize: Int, cmpSize: Int, clut: QDColorTable?) {
