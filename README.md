@@ -122,6 +122,7 @@ The library basically parses QuickDraw version 1 and version 2 files
   * Apple Animation (`RLE `) with depths of 2,4,8,16, 24 and 32 bits/pixel
   * Planar Video (`8BPS`)
   * Intel Raw (`YVU9`)
+  * Cinepak (`CVID`)
 
 Some basic comment parsing is used to improve images, in particular:
 
