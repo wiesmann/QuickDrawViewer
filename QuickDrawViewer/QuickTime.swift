@@ -422,6 +422,11 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       try intel.load(data: data);
       quicktimeImage.dataStatus = .decoded(decodedMetaData: intel);
       quicktimeImage.data = Data(intel.pixmap);
+    case "cvid":
+      let cinepak = Cinepak(dimensions: quicktimeImage.dimensions, clut: quicktimeImage.clut);
+      try cinepak.load(data: data);
+      quicktimeImage.dataStatus = .decoded(decodedMetaData: cinepak);
+      quicktimeImage.data = Data(cinepak.pixmap);
     default:
       break;
   }

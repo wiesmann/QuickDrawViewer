@@ -30,7 +30,7 @@ class QuickDrawDataReader {
   
   func peekUInt8() throws -> UInt8 {
     guard position < data.count else {
-      throw QuickDrawError.quickDrawIoError(message:"Read at \(position) beyond \(data.count)");
+      throw QuickDrawError.quickDrawIoError(message:"Peek at \(position) beyond \(data.count)");
     }
     return data[position];
   }

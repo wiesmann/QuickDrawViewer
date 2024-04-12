@@ -86,7 +86,8 @@ class BlockPixMap : PixMapMetadata {
     self.totalBlocks = blocksPerLine * blockLines;
     self.bufferDimensions = QDDelta(dv: FixedPoint(blockLines * blockSize), dh: FixedPoint(blocksPerLine * blockSize));
     let blockBytes = blockSize * blockSize * pixelSize / 8;
-    self.pixmap = [UInt8].init(repeating: 0, count: totalBlocks * blockBytes);
+    // Add one safety block because rounding up happens.
+    self.pixmap = [UInt8].init(repeating: 0, count: (totalBlocks + 1) * blockBytes);
   }
   
   var description: String {
@@ -112,6 +113,12 @@ class BlockPixMap : PixMapMetadata {
       throw BlittingError.badPixMapIndex(index: p, pixMapSize: pixmap.count);
     }
     return p;
+  }
+  
+  func getBlock(_ point: QDPoint) -> Int {
+    return 
+        (point.vertical.rounded / blockSize * blocksPerLine) +
+        (point.horizontal.rounded / blockSize);
   }
   
   let dimensions : QDDelta;

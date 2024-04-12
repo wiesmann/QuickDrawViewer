@@ -31,6 +31,8 @@
 		E53BBF432BBAD1D800D9350A /* Targa.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF412BBAD1D800D9350A /* Targa.swift */; };
 		E53BBF452BBB4E5800D9350A /* IntelRaw.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF442BBB4E5800D9350A /* IntelRaw.swift */; };
 		E53BBF462BBB4E5800D9350A /* IntelRaw.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF442BBB4E5800D9350A /* IntelRaw.swift */; };
+		E53BBF482BC3254200D9350A /* Cinepak.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF472BC3254200D9350A /* Cinepak.swift */; };
+		E53BBF492BC3254200D9350A /* Cinepak.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF472BC3254200D9350A /* Cinepak.swift */; };
 		E553E4DC2B6AED62009B1EC2 /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
 		E553E4DD2B6AED62009B1EC2 /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
 		E553E4DF2B6FD9F5009B1EC2 /* QuickTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */; };
@@ -97,6 +99,7 @@
 		E52FEB042BACC269004E8BB4 /* QuickDrawPort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawPort.swift; sourceTree = "<group>"; };
 		E53BBF412BBAD1D800D9350A /* Targa.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Targa.swift; sourceTree = "<group>"; };
 		E53BBF442BBB4E5800D9350A /* IntelRaw.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelRaw.swift; sourceTree = "<group>"; };
+		E53BBF472BC3254200D9350A /* Cinepak.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cinepak.swift; sourceTree = "<group>"; };
 		E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Yuv2.swift; sourceTree = "<group>"; };
 		E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTime.swift; sourceTree = "<group>"; };
 		E553E4E12B6FFA53009B1EC2 /* TypeCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeCode.swift; sourceTree = "<group>"; };
@@ -201,6 +204,7 @@
 				E59CDFA92B42EE0A00D7BB7B /* QuickDrawReader.swift */,
 				E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */,
 				E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */,
+				E53BBF472BC3254200D9350A /* Cinepak.swift */,
 				E554EE542B9BB4B100D56DF7 /* QuickTimeGraphics.swift */,
 				E508C4F32B764CB2007686AE /* Planar.swift */,
 				E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */,
@@ -342,6 +346,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E508C4FE2B927073007686AE /* QuickDrawColor.swift in Sources */,
+				E53BBF482BC3254200D9350A /* Cinepak.swift in Sources */,
 				E5CDA0272B44155E008DC6D6 /* QuickDrawParser.swift in Sources */,
 				E59CDFAF2B42EE0A00D7BB7B /* PackBit.swift in Sources */,
 				E55E05F72B61A74A00EA1AD8 /* RoadPizza.swift in Sources */,
@@ -397,6 +402,7 @@
 				E59CDFB62B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */,
 				E554EE562B9BB4B100D56DF7 /* QuickTimeGraphics.swift in Sources */,
 				E508C5012B936919007686AE /* QuickDrawRegions.swift in Sources */,
+				E53BBF492BC3254200D9350A /* Cinepak.swift in Sources */,
 				E59CDFB22B42EE0A00D7BB7B /* QuickDrawReader.swift in Sources */,
 				E52FEB032BAB8C53004E8BB4 /* QuickDrawComment.swift in Sources */,
 				E508C4FB2B911FD5007686AE /* MacPaint.swift in Sources */,

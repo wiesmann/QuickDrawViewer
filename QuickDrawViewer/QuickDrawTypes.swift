@@ -121,6 +121,12 @@ struct QDRect : CustomStringConvertible, Equatable {
     return topLeft == bottomRight;
   }
   
+  static func + (rect: QDRect, delta: QDDelta) -> QDRect {
+    let topleft = rect.topLeft + delta;
+    let dimensions = rect.dimensions;
+    return QDRect(topLeft: topleft, dimension: dimensions);
+  }
+  
   static let empty = QDRect(topLeft: QDPoint.zero, bottomRight: QDPoint.zero);
 }
 

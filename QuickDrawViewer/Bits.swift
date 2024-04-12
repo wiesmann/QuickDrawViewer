@@ -14,6 +14,12 @@ extension Data {
     }
 }
 
+extension SIMD4<UInt8> {
+  var bytes: [UInt8] {
+    return [self.x, self.y, self.z, self.w];
+  }
+}
+
 func makeUInt24(bytes: (UInt8, UInt8, UInt8)) -> UInt32 {
   return UInt32(bytes.0) << 16 | UInt32(bytes.1) << 8 | UInt32(bytes.2);
 }
