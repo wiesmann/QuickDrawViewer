@@ -20,6 +20,21 @@ extension SIMD4<UInt8> {
   }
 }
 
+/// Convert some integer type into a sequence of boolean, starting from the most significant bit.
+/// - Parameter from: number to convert
+/// - Returns: an array of boolean
+func boolArray<T>(_ from: T) -> [Bool] where T : FixedWidthInteger {
+  var buffer = from;
+  let mask : T = 1 << (T.bitWidth - 1);
+  var result : [Bool] = [];
+  for _ in 0..<T.bitWidth {
+    let match = buffer & mask != 0;
+    result.append(match);
+    buffer = buffer << 1;
+  }
+  return result;
+}
+
 func makeUInt24(bytes: (UInt8, UInt8, UInt8)) -> UInt32 {
   return UInt32(bytes.0) << 16 | UInt32(bytes.1) << 8 | UInt32(bytes.2);
 }

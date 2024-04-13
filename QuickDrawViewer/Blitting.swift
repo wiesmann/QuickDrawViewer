@@ -115,12 +115,6 @@ class BlockPixMap : PixMapMetadata {
     return p;
   }
   
-  func getBlock(_ point: QDPoint) -> Int {
-    return 
-        (point.vertical.rounded / blockSize * blocksPerLine) +
-        (point.horizontal.rounded / blockSize);
-  }
-  
   let dimensions : QDDelta;
   let bufferDimensions : QDDelta;
   let blockSize : Int;

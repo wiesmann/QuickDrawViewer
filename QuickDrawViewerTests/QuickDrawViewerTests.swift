@@ -7,44 +7,61 @@
 
 import XCTest
 
-// @testable import QuickDrawViewer
 
-final class QuickDrawTests: XCTestCase {
+final class BitTests : XCTestCase {
+  func testboolArray() throws {
+    XCTAssertEqual(
+      boolArray(UInt8(0xff)), [true, true, true, true, true, true, true, true]);
+    XCTAssertEqual(
+      boolArray(UInt8(0x00)), [false, false, false, false, false, false, false, false]);
+    XCTAssertEqual(
+      boolArray(UInt8(0xc0)), [true, true, false, false, false, false, false, false]);
+  }
+}
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    func testFixedPoint() throws {
-      XCTAssertEqual(FixedPoint.zero.rounded, 0);
-      XCTAssertTrue(FixedPoint.zero.isRound);
-      XCTAssertEqual(FixedPoint.zero, FixedPoint.zero);
-      XCTAssertEqual(FixedPoint.one.rounded, 1);
-      XCTAssertTrue(FixedPoint.one.isRound);
-      XCTAssertEqual(FixedPoint.one, FixedPoint.one);
-      XCTAssertLessThan(FixedPoint.zero, FixedPoint.one);
-      let fzero = FixedPoint(0.0);
-      XCTAssertEqual(fzero, FixedPoint.zero);
-      XCTAssertTrue(fzero.isRound);
-      let fone = FixedPoint(1.0);
-      XCTAssertEqual(fone, FixedPoint.one);
-      XCTAssertTrue(fone.isRound);
-      let eight = FixedPoint(3) + FixedPoint(5);
-      XCTAssertTrue(eight.isRound);
-      XCTAssertEqual(eight, FixedPoint(8));
-      XCTAssertEqual(eight - FixedPoint.one, FixedPoint(7));
-      XCTAssertEqual(-eight, FixedPoint(-8));
-      XCTAssertEqual((FixedPoint.one << 3), eight);
-      XCTAssertEqual((FixedPoint(256) >> 4), FixedPoint(16));
-      let half = FixedPoint(0.5);
-      XCTAssertEqual(half, FixedPoint.one >> 1);
-      XCTAssertEqual(half, FixedPoint.one / FixedPoint(2));
-      XCTAssertEqual(half, FixedPoint(100) / FixedPoint(200));
-    }
+final class FixedPointTests : XCTestCase {
+  
+  func testBasic() throws {
+    XCTAssertEqual(FixedPoint.zero.rounded, 0);
+    XCTAssertTrue(FixedPoint.zero.isRound);
+    XCTAssertEqual(FixedPoint.zero, FixedPoint.zero);
+    XCTAssertEqual(FixedPoint.one.rounded, 1);
+    XCTAssertTrue(FixedPoint.one.isRound);
+    XCTAssertEqual(FixedPoint.one, FixedPoint.one);
+    XCTAssertLessThan(FixedPoint.zero, FixedPoint.one);
+    
+  }
+  
+  func testFloag() throws {
+    let fzero = FixedPoint(0.0);
+    XCTAssertEqual(fzero, FixedPoint.zero);
+    XCTAssertTrue(fzero.isRound);
+    let fone = FixedPoint(1.0);
+    XCTAssertEqual(fone, FixedPoint.one);
+    XCTAssertTrue(fone.isRound);
+  }
+  
+  func testFAdd() throws {
+    let eight = FixedPoint(3) + FixedPoint(5);
+    XCTAssertTrue(eight.isRound);
+    XCTAssertEqual(eight, FixedPoint(8));
+    XCTAssertEqual(eight - FixedPoint.one, FixedPoint(7));
+    XCTAssertEqual(-eight, FixedPoint(-8));
+  }
+  
+  func testShift() throws {
+    let eight = FixedPoint(8);
+    XCTAssertEqual((FixedPoint.one << 3), eight);
+    XCTAssertEqual((FixedPoint(256) >> 4), FixedPoint(16));
+    let half = FixedPoint(0.5);
+    XCTAssertEqual(half, FixedPoint.one >> 1);
+  }
+  
+  func testDivide() throws {
+    let half = FixedPoint(0.5);
+    XCTAssertEqual(half, FixedPoint.one / FixedPoint(2));
+    XCTAssertEqual(half, FixedPoint(100) / FixedPoint(200));
+  }
   
   func testFixedPointRaw() throws  {
     XCTAssertEqual(FixedPoint(rawValue: 0), FixedPoint.zero);
@@ -60,6 +77,13 @@ final class QuickDrawTests: XCTestCase {
     // Sixteenths
     XCTAssertEqual(FixedPoint(rawValue: 0x1000), FixedPoint(1) / FixedPoint(16));
   }
+}
+
+// @testable import QuickDrawViewer
+
+final class QuickDrawTests: XCTestCase {
+
+    
   
   func testDelta() throws {
     XCTAssertEqual(QDDelta.zero, QDDelta.zero);

@@ -7,6 +7,8 @@
 
 import Foundation
 
+typealias RGB8 = [UInt8];
+
 /// Quickdraw stores RGB colours in 3 × 16 bit values.
 /// Struct represents them as 64 bit value.
 struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
@@ -54,7 +56,7 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   }
   
   /// Return classical 3 byte RGB representation.
-  var rgb : [UInt8] {
+  var rgb : RGB8 {
     var data : [UInt8] = [];
     data.append(UInt8(red >> 8));
     data.append(UInt8(green >> 8));
@@ -208,7 +210,7 @@ func clutFromRgb(rgb: [UInt8]) -> QDColorTable {
 func makeGrayRamp() -> QDColorTable {
   var clut : [RGBColor] = [];
   for v in 0..<0x100 {
-    let luma = UInt8(0xff - v);
+    let luma = UInt8(v);
     clut.append(RGBColor(red8: luma, green8: luma, blue8: luma));
   }
   return QDColorTable(clut: clut, id: 0x28, clutFlags:0x8000);
@@ -248,6 +250,10 @@ class QDColorTable : CustomStringConvertible {
   let clutFlags : UInt16;
   var clut : [RGBColor] = [];
   var id : Int = 0;
+  
+  func reversed(id: Int) -> QDColorTable {
+    return QDColorTable(clut: self.clut.reversed(), id: id, clutFlags:0);
+  }
   
   // Standard Apple color tables.
   static let palette1 = clutFromRaw(raw: clut1Raw);

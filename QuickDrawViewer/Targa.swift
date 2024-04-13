@@ -70,12 +70,6 @@ class TargaImage : PixMapMetadata {
     }
   }
   
-  private func invert8BitGray() {
-    for i in 0..<pixmap.count {
-      pixmap[i] = 255 - pixmap[i];
-    }
-  }
-  
   func load(data : Data) throws {
     let reader = try QuickDrawDataReader(data: data, position:0);
     let idLength = try reader.readUInt8();
@@ -161,10 +155,8 @@ class TargaImage : PixMapMetadata {
       case .rleGrayScale:
         let slice = imageData[0..<imageData.count];
         pixmap = try decompressTarga(data: slice, maxSize: rowBytes * height, byteNum: 1);
-        invert8BitGray();
       case .grayScale:
         pixmap = imageData;
-        invert8BitGray();
       case .colorMap:
         pixmap = imageData;
       case .trueColor:

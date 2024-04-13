@@ -16,114 +16,138 @@ enum CinepakError : Error {
   case tooManyStrips(strips: UInt16);
   case tooManyCodebookEntries(number: Int);
   case invalidStripId(_ id: UInt16);
-  case invalidChunkId(_ id: UInt16, strip: CinepakStripHeader);
+  case invalidChunkId(_ id: UInt16, strip: CinepakStripeDescriptor);
   case codeBookOutOfRange(_ index: UInt8, max: Int, name: String);
+  case unsupportChunkType(_ type: CinepakChunk.ChunkType);
 }
 
-enum CinepakStripId : UInt16 {
-  case intraCodedStrip = 0x1000;
-  case interCodedStrip = 0x1100;
-}
-
-struct CinepakChunkId : OptionSet, CustomStringConvertible {
-  let rawValue: UInt16;
-  static let codebook = CinepakChunkId(rawValue:0x2000);
-  static let vectors = CinepakChunkId(rawValue: 0x1000);
-  static let eightBpp = CinepakChunkId(rawValue: 0x0400);
-  static let v1 = CinepakChunkId(rawValue: 0x0200);
-  static let update = CinepakChunkId(rawValue: 0x0100);
+/// A cinepak is divided in strips which describe a band of the picture.
+class CinepakStripeDescriptor: CustomStringConvertible {
+  enum StripeType : UInt16 {
+    // Stripe that describes its own codebook entries.
+    case intraCodedStrip = 0x1000;
+    // Stripe that updates codebooks from the previous entries.
+    case interCodedStrip = 0x1100;
+  }
+  
+  init(stripeType : StripeType, stripeSize : UInt16, stripeFrame : QDRect) {
+    self.stripeType = stripeType;
+    self.stripeSize = stripeSize;
+    self.stripeFrame = stripeFrame;
+  }
+  
+  let stripeType : StripeType;
+  let stripeSize : UInt16;
+  let stripeFrame : QDRect;
+  var chunks : [CinepakChunk] = [];
   
   var description: String {
-    var result = String(format:"%X", arguments: [rawValue]);
-    
-    if contains(.vectors) {
-      result += " Vectors";
-      return result;
-    }
-      if contains(.codebook) {
-        result += " Codebook";
-      }
-    
-    if contains(.eightBpp) {
-      result += " 8bpp";
-    } else {
-      result += " 12bpp";
-    }
-    if contains(.v1) {
-      result += " v1";
-    } else {
-      result += " v4";
-    }
-    
-    if contains(.update) {
-      result += " Update";
-    }
-    return result;
-    
+    return "Strip[type: \(stripeType), size: \(stripeSize), frame: \(stripeFrame), chunks: \(chunks)";
   }
 }
 
-struct CinepakChunk {
-  let chunkId : CinepakChunkId;
+struct CinepakChunk : CustomStringConvertible  {
+
+  // Instead of an enum, the chunk type is represented as a kind-of bitset.
+  struct ChunkType : OptionSet, CustomStringConvertible {
+    let rawValue: UInt16;
+    static let codebook = ChunkType(rawValue:0x2000);
+    static let vectors = ChunkType(rawValue: 0x1000);
+    static let eightBpp = ChunkType(rawValue: 0x0400);
+    static let v1 = ChunkType(rawValue: 0x0200);
+    static let update = ChunkType(rawValue: 0x0100);
+    
+    var description: String {
+      var result = String(format:"%X", arguments: [rawValue]);
+      
+      if contains(.vectors) {
+        result += " Vectors";
+        return result;
+      }
+      if contains(.codebook) {
+        result += " Codebook";
+      }
+      
+      if contains(.eightBpp) {
+        result += " 8bpp";
+      } else {
+        result += " 12bpp";
+      }
+      if contains(.v1) {
+        result += " v1";
+      } else {
+        result += " v4";
+      }
+      
+      if contains(.update) {
+        result += " Update";
+      }
+      return result;
+      
+    }
+  }
+  
+  let chunkType : ChunkType;
   let chunkData : Data;
   
   var size : Int {
     return chunkData.count;
   }
-}
-
-class CinepakStripHeader: CustomStringConvertible {
-  
-  init(stripId : CinepakStripId, stripSize : UInt16, stripFrame : QDRect) {
-    self.stripId = stripId;
-    self.stripSize = stripSize;
-    self.stripFrame = stripFrame;
-  }
-  
-  let stripId : CinepakStripId;
-  let stripSize : UInt16;
-  var stripFrame : QDRect;
   
   var description: String {
-    return "Strip[id: \(stripId), size: \(stripSize), frame: \(stripFrame)";
+    return chunkType.description;
   }
   
-  func shiftVertical(dv: FixedPoint) {
-    let delta = QDDelta(dv: dv, dh: FixedPoint.zero);
-    self.stripFrame = self.stripFrame + delta;
-  }
 }
 
 /// Codebook entry, basically stores a 2×2 square of pixels.
 /// The entry can either by just intensity/palette entry (8 bpp) or intensity + common chroma.
+///  Intensities are stored in SIMD format, mostly because I wanted to play around.
 struct CinepakCodeBookEntry {
-  enum CodeBookPayload {
+  
+  private enum CodeBookPayload {
     case eight(y: SIMD4<UInt8>);
     case twelve(y: SIMD4<UInt8>, u: Int8, v: Int8);
+    case uninitialized(rgb: RGB8);  // Should never been seen, for debugging
   }
   
+  /// Initialize an entry with four 4 8-bit values, either intensity, or palette entries.
+  /// - Parameter y4: 4 8-bit values, either intensity, or palette entries.
   init(y4 : [UInt8]) {
     assert(y4.count == 4);
     self.payload = .eight(y: SIMD4<UInt8>(y4[0], y4[1], y4[2], y4[3]))
   }
   
+  private init(uninitialized: RGB8) {
+    self.payload = .uninitialized(rgb: uninitialized);
+  }
+  
+  /// Initialize an entry with four 6 8-bit values, four intensities and two chrominance bytes (u, v).
+  /// - Parameters:
+  ///   - y4: intensities (unsigned)
+  ///   - u: u chrominance value (signed)
+  ///   - v: v chrominance value (signed)
   init(y4 : [UInt8], u : Int8, v: Int8) {
     assert(y4.count == 4);
     let y = SIMD4<UInt8>(y4[0], y4[1], y4[2], y4[3]);
     self.payload = .twelve(y: y, u: u, v: v);
   }
   
+  /// The intensities (or palette indexes) of the entry.
   var y : [UInt8] {
     switch payload {
       case .eight(let y):
         return y.bytes;
       case .twelve(let y, _, _):
         return y.bytes;
+      case .uninitialized:
+        return [0, 0, 0, 0];
     }
   }
   
   /// The four pixels in RGB8 format.
-  var rgb : [[UInt8]] {
+  /// Note that cinepak uses a simplified version of yuv.
+  var rgb : [RGB8] {
     switch payload {
       case .eight(let y):
         return y.bytes.map(){[$0, $0, $0]};
@@ -137,39 +161,40 @@ struct CinepakCodeBookEntry {
         let b = SIMD4<UInt8>(clamping: y4 &+ (u4 &<< one));
         return [
           [r.x, g.x, b.x], [r.y, g.y, b.y], [r.z, g.z, b.z], [r.w, g.w, b.w]];
+      case .uninitialized(let rgb):
+        return [RGB8].init(repeating: rgb, count: 4);
     }
   }
 
-  let payload: CodeBookPayload;
-  
-  static let zero = CinepakCodeBookEntry(y4: [0x00, 0x00, 0x00, 0x00 ]);
+  private let payload: CodeBookPayload;
+  static let uninitialized = CinepakCodeBookEntry(uninitialized: [0xff, 0x00, 0xff]);
 }
 
+/// A code-book is a collection of 2×2 pixel patterns, see the CinepakCodeBookEntry struct .
 class CinepakCodeBook {
   
   init(name: String) {
     self.name = name;
-    entries = [CinepakCodeBookEntry].init(repeating: CinepakCodeBookEntry.zero, count: 256);
+  
+    entries = [CinepakCodeBookEntry].init(repeating: CinepakCodeBookEntry.uninitialized, count: 256);
   }
   
-  func readEntries(n: Int, chunkId: CinepakChunkId, reader : QuickDrawDataReader) throws {
+  func readEntries(n: Int, chunkType: CinepakChunk.ChunkType, reader : QuickDrawDataReader) throws {
     for i in 0..<n {
-      let entry = try reader.readCinepakCodeBookEntry(chunkId: chunkId);
+      let entry = try reader.readCinepakCodeBookEntry(chunkType: chunkType);
       entries[i] = entry;
     }
   }
   
-  func updateEntries(chunkId: CinepakChunkId, reader : QuickDrawDataReader) throws {
+  func updateEntries(chunkType: CinepakChunk.ChunkType, reader : QuickDrawDataReader) throws {
     var pos = 0;
     while reader.remaining > 4 {
-      var flag = try reader.readUInt32();
-      for _ in 0..<32 {
-        if flag & 0x80000000 != 0 {
-          let entry = try reader.readCinepakCodeBookEntry(chunkId: chunkId);
+      for v in boolArray(try reader.readUInt32()) {
+        if v {
+          let entry = try reader.readCinepakCodeBookEntry(chunkType: chunkType);
           entries[pos] = entry;
         }
         pos += 1;
-        flag = flag << 1;
       }
     }
   }
@@ -186,19 +211,20 @@ class CinepakCodeBook {
 }
 
 extension QuickDrawDataReader {
-  func readCinepakStripHeader() throws -> CinepakStripHeader {
+  func readCinepakStripHeader(vOffset : FixedPoint) throws -> CinepakStripeDescriptor {
     let rawId = try readUInt16();
-    guard let stripId = CinepakStripId(rawValue: rawId) else {
+    guard let stripeType = CinepakStripeDescriptor.StripeType(rawValue: rawId) else {
       throw CinepakError.invalidStripId(rawId);
     }
     let size = try readUInt16() - 12;
-    let frame = try readRect();
-    return CinepakStripHeader(stripId: stripId, stripSize: size, stripFrame: frame);
+    var frame = try readRect();
+    frame = frame + QDDelta(dv: vOffset, dh: FixedPoint.zero);
+    return CinepakStripeDescriptor(stripeType: stripeType, stripeSize: size, stripeFrame: frame);
   }
 
-  func readCinepakCodeBookEntry(chunkId: CinepakChunkId) throws -> CinepakCodeBookEntry{
+  func readCinepakCodeBookEntry(chunkType: CinepakChunk.ChunkType) throws -> CinepakCodeBookEntry{
     let y4 = try readUInt8(bytes: 4);
-    if chunkId.contains(.eightBpp) {
+    if chunkType.contains(.eightBpp) {
       return CinepakCodeBookEntry(y4: y4);
     }
     let u = try readInt8();
@@ -207,33 +233,32 @@ extension QuickDrawDataReader {
   }
 }
 
-enum CinepakComponents : Int {
-  case index = 1;
-  case rgb = 3;
-}
 
+/// A cinepak image is composed of 4×4 blocks, which are filled either using one 2×2 codebook entries (doubled),
+/// or 4 2×2 code book entries, each block
 class Cinepak : BlockPixMap {
   init(dimensions: QDDelta, clut: QDColorTable?) {
     components = clut != nil ? CinepakComponents.index : CinepakComponents.rgb;
     super.init(dimensions: dimensions, blockSize: 4, pixelSize: components.rawValue * 8, cmpSize: 8, clut: clut);
   }
   
-  func apply(entry: CinepakCodeBookEntry, range: Range<Int>, offset: Int) throws {
-    let max = offset + components.rawValue + range.upperBound;
-    guard max < pixmap.count else {
+  enum CinepakComponents : Int {
+    case index = 1;
+    case rgb = 3;
+  }
+  
+  func apply(entry: CinepakCodeBookEntry, pos: Int, offset: Int) throws {
+    let max = offset + self.components.rawValue;
+    guard max <= pixmap.count else {
       throw BlittingError.badPixMapIndex(index: max, pixMapSize: pixmap.count);
     }
     switch components {
       case .index:
-        for i in range {
-          pixmap[offset + i - range.lowerBound] = entry.y[i];
-        }
+        pixmap[offset] = entry.y[pos];
       case .rgb:
-        for i in range {
-          let p = offset + i - range.lowerBound;
-          for c in 0..<3 {
-            pixmap[p + c] = entry.rgb[i][c];
-          }
+        let rgb = entry.rgb[pos]
+        for c in 0..<3 {
+          pixmap[offset + c] = rgb[c];
         }
     }
   }
@@ -264,12 +289,13 @@ class Cinepak : BlockPixMap {
     }
     let entry = try v1Codebook.lookup(v1);
     let offset0 = try getOffset(block: self.block, line: 0);
+    let twopixels = 2 * components.rawValue;
     try applyDouble(entry: entry, subEntry: 0, offset: offset0);
-    try applyDouble(entry: entry, subEntry: 1, offset: offset0 + 2 * components.rawValue);
+    try applyDouble(entry: entry, subEntry: 1, offset: offset0 + twopixels);
     let offset1 = try getOffset(block: self.block, line: 2);
     try applyDouble(entry: entry, subEntry: 2, offset: offset1);
-    try applyDouble(entry: entry, subEntry :3, offset: offset1 + 2 * components.rawValue);
-  }
+    try applyDouble(entry: entry, subEntry: 3, offset: offset1 + twopixels);
+     }
 
   func applyV4(block: Int, v4: [UInt8]) throws {
     assert(v4.count == 4);
@@ -278,82 +304,103 @@ class Cinepak : BlockPixMap {
     }
     let entries = try v4.map(){try v4Codebook.lookup($0)};
     let lines = [0, 1, 2, 3];
-    let offsets = try lines.map(){try getOffset(block: block, line: $0);}
-    // First entry -> north-west
-    try apply(entry: entries[0], range: 0..<2, offset: offsets[0])
-    try apply(entry: entries[0], range: 2..<4, offset: offsets[1]);
-    // Second entry -> north-east
-    try apply(entry: entries[1], range: 0..<2, offset: offsets[0] + components.rawValue * 2)
-    try apply(entry: entries[1], range: 2..<4, offset: offsets[1] + components.rawValue * 2);
-    // Third entry -> south-west
-    try apply(entry: entries[2], range: 0..<2, offset: offsets[2])
-    try apply(entry: entries[2], range: 2..<4, offset: offsets[3]);
-    // Fourth entry -> south-east
-    try apply(entry: entries[3], range: 0..<2, offset: offsets[2] + components.rawValue * 2)
-    try apply(entry: entries[3], range: 2..<4, offset: offsets[3] + components.rawValue * 2);
+    let lineOffsets = try lines.map(){try getOffset(block: block, line: $0);}
+    let pixOffset = components.rawValue;
+    // First line, entries 0 and 1.
+    try apply(entry: entries[0], pos: 0, offset: lineOffsets[0]);
+    try apply(entry: entries[0], pos: 1, offset: lineOffsets[0] + pixOffset);
+    try apply(entry: entries[1], pos: 0, offset: lineOffsets[0] + pixOffset * 2);
+    try apply(entry: entries[1], pos: 1, offset: lineOffsets[0] + pixOffset * 3);
+    // Second line, entries 0 and 1.
+    try apply(entry: entries[0], pos: 2, offset: lineOffsets[1]);
+    try apply(entry: entries[0], pos: 3, offset: lineOffsets[1] + pixOffset);
+    try apply(entry: entries[1], pos: 2, offset: lineOffsets[1] + pixOffset * 2);
+    try apply(entry: entries[1], pos: 3, offset: lineOffsets[1] + pixOffset * 3);
+    // Third line, entries 2 and 3.
+    try apply(entry: entries[2], pos: 0, offset: lineOffsets[2]);
+    try apply(entry: entries[2], pos: 1, offset: lineOffsets[2] + pixOffset);
+    try apply(entry: entries[3], pos: 0, offset: lineOffsets[2] + pixOffset * 2);
+    try apply(entry: entries[3], pos: 1, offset: lineOffsets[2] + pixOffset * 3);
+    // Fourth line, entries 2 and 3.
+    try apply(entry: entries[2], pos: 2, offset: lineOffsets[3]);
+    try apply(entry: entries[2], pos: 3, offset: lineOffsets[3] + pixOffset);
+    try apply(entry: entries[3], pos: 2, offset: lineOffsets[3] + pixOffset * 2);
+    try apply(entry: entries[3], pos: 3, offset: lineOffsets[3] + pixOffset * 3);
   }
-    
-  func applyVectors(strip: CinepakStripHeader, reader : QuickDrawDataReader) throws {
-    while reader.remaining > 4 {
-      var flag = Int(try reader.readUInt32());
-      for _ in 0..<32 {
-        if flag & 0x80000000 == 0 {
-          guard reader.remaining > 0 else {
-            return;
-          }
-          let v1 = try reader.readUInt8();
-          try applyV1(block: self.block, v1: v1);
-          self.block += 1;
-        } else {
-          guard reader.remaining >= 4 else {
-            return;
-          }
-          let v4 = try reader.readUInt8(bytes: 4);
-          try applyV4(block: self.block, v4: v4);
-          self.block += 1;
+  
+  func applyVectorBlock(reader : QuickDrawDataReader) throws -> Bool {
+    let mask = try reader.readUInt32();
+    for v in boolArray(mask) {
+      if v {
+        guard reader.remaining >= 4 else {
+          return false;
         }
-        flag = flag << 1;
+        let v4 = try reader.readUInt8(bytes: 4);
+        try applyV4(block: self.block, v4: v4);
+      } else {
+        guard reader.remaining >= 1 else {
+          return false;
+        }
+        let v1 = try reader.readUInt8();
+        try applyV1(block: self.block, v1: v1);
+      }
+      self.block += 1;
+    }
+    return true;
+  }
+  
+  func applyVectors(strip: CinepakStripeDescriptor, reader : QuickDrawDataReader) throws {
+    while true {
+      guard reader.remaining >= 4 else {
+        return;
+      }
+      let fullRead = try applyVectorBlock(reader: reader);
+      guard fullRead else {
+        return;
       }
     }
   }
   
-   
-  func parseChunk(strip: CinepakStripHeader, chunk: CinepakChunk) throws {
+  /// Parse a single chunk
+  func parseChunk(strip: CinepakStripeDescriptor, chunk: CinepakChunk) throws {
     let reader = try QuickDrawDataReader(data: chunk.chunkData, position: 0);
-    switch chunk.chunkId {
+    switch chunk.chunkType {
+      /// The chunk contains vectors, i.e. entry indexes, not exclusively for v1.
       case let c where c.contains(.vectors) && !c.contains(.v1):
         try applyVectors(strip: strip, reader: reader);
-        
+      /// The chunk contains a codebook definition (not update)
       case let c where c.contains(.codebook) && !c.contains(.update):
         let numEntries = c.contains(.eightBpp) ? (chunk.size / 4) : (chunk.size / 6);
         guard numEntries <= 256 else {
           throw CinepakError.tooManyCodebookEntries(number: numEntries);
         }
         if c.contains(.v1) {
-          try v1Codebook.readEntries(n: numEntries, chunkId: chunk.chunkId, reader: reader);
+          try v1Codebook.readEntries(n: numEntries, chunkType: chunk.chunkType, reader: reader);
         } else {
-          try v4Codebook.readEntries(n: numEntries, chunkId: chunk.chunkId, reader: reader);
+          try v4Codebook.readEntries(n: numEntries, chunkType: chunk.chunkType, reader: reader);
         }
+      /// The chunk contains codebook updates.
       case let c where c.contains(.codebook) && c.contains(.update):
         if c.contains(.v1) {
-          try v1Codebook.updateEntries(chunkId: chunk.chunkId, reader: reader);
+          try v1Codebook.updateEntries(chunkType: chunk.chunkType, reader: reader);
         } else {
-          try v1Codebook.updateEntries(chunkId: chunk.chunkId, reader: reader);
+          try v4Codebook.updateEntries(chunkType: chunk.chunkType, reader: reader);
         }
       default:
-        break;
+        throw CinepakError.unsupportChunkType(chunk.chunkType);
     }
   }
     
-  func loadStrip(strip: CinepakStripHeader, reader : QuickDrawDataReader) throws {
-    assert (reader.data.count == strip.stripSize);
+  func loadStripe(stripe: CinepakStripeDescriptor, reader : QuickDrawDataReader) throws {
+    assert (reader.data.count == stripe.stripeSize);
     while reader.remaining >= 16 {
       let rawId = try reader.readUInt16();
-      let chunkId = CinepakChunkId(rawValue: rawId);
+      let chunkType = CinepakChunk.ChunkType(rawValue: rawId);
       let chunkSize = Int(try reader.readUInt16() - 4);
       let data = try reader.readData(bytes: chunkSize);
-      let chunk = CinepakChunk(chunkId: chunkId, chunkData: data);
-      try parseChunk(strip: strip, chunk: chunk);
+      let chunk = CinepakChunk(chunkType: chunkType, chunkData: data);
+      stripe.chunks.append(chunk);
+      try parseChunk(strip: stripe, chunk: chunk);
     }
   }
   
@@ -374,23 +421,31 @@ class Cinepak : BlockPixMap {
     guard Int(height) == self.bufferDimensions.dv.rounded else {
       throw CinepakError.inconsistentHeight(frame:self.bufferDimensions, height:height);
     }
-    let strips = try reader.readUInt16();
-    guard strips <= 32 else {
-      throw CinepakError.tooManyStrips(strips: strips);
+    let stripNumber = try reader.readUInt16();
+    guard stripNumber <= 32 else {
+      throw CinepakError.tooManyStrips(strips: stripNumber);
     }
     var y = FixedPoint.zero;
-    for s in 0..<strips {
-      let stripHeader = try reader.readCinepakStripHeader();
-      stripHeader.shiftVertical(dv:y);
-      let stripReader = try reader.subReader(bytes: Int(stripHeader.stripSize));
-      try loadStrip(strip: stripHeader, reader: stripReader);
-      y += stripHeader.stripFrame.dimensions.dv;
+    for _ in 0..<stripNumber {
+      // Re-sychronize the block numbers.
+      block = (y.rounded / 4) * blocksPerLine;
+      let stripeHeader = try reader.readCinepakStripHeader(vOffset: y);
+      let stripReader = try reader.subReader(bytes: Int(stripeHeader.stripeSize));
+      try loadStripe(stripe: stripeHeader, reader: stripReader);
+      stripes.append(stripeHeader);
+      y += stripeHeader.stripeFrame.dimensions.dv;
     }
+  }
+  
+  override var description: String {
+    let desc = describePixMap(self);
+    return "Cinepack \(desc) \(blockSize)×\(blockSize), \(stripes) flags: \(flags)";
   }
   
   let components : CinepakComponents;
   var v1Codebook = CinepakCodeBook(name: "v1");
   var v4Codebook = CinepakCodeBook(name: "v4");
+  var stripes : [CinepakStripeDescriptor] = [];
   var flags : UInt8 = 0;
   var block : Int = 0;
 }
