@@ -17,6 +17,19 @@ final class BitTests : XCTestCase {
     XCTAssertEqual(
       boolArray(UInt8(0xc0)), [true, true, false, false, false, false, false, false]);
   }
+  
+  func testmakeUInt24() throws {
+    XCTAssertEqual(makeUInt24(bytes: (0xff, 0xff, 0xff)), 0xffffff);
+    XCTAssertEqual(makeUInt24(bytes: (0x00, 0x00, 0x00)), 0x000000);
+    XCTAssertEqual(makeUInt24(bytes: (0x10, 0x00, 0x00)), 0x100000);
+    XCTAssertEqual(makeUInt24(bytes: (0xab, 0xcd, 0xef)), 0xabcdef);
+  }
+  
+  func testRoundTo() throws {
+    XCTAssertEqual(roundTo(FixedPoint.one, multipleOf: 4), 4);
+    XCTAssertEqual(roundTo(FixedPoint(10), multipleOf: 4), 12);
+    XCTAssertEqual(roundTo(FixedPoint(11), multipleOf: 4), 12);
+  }
 }
 
 final class FixedPointTests : XCTestCase {
@@ -79,11 +92,7 @@ final class FixedPointTests : XCTestCase {
   }
 }
 
-// @testable import QuickDrawViewer
-
-final class QuickDrawTests: XCTestCase {
-
-    
+final class QDGeometryTests: XCTestCase {
   
   func testDelta() throws {
     XCTAssertEqual(QDDelta.zero, QDDelta.zero);
@@ -99,7 +108,7 @@ final class QuickDrawTests: XCTestCase {
     XCTAssertEqual(QDDelta(dv: FixedPoint(3), dh: FixedPoint(5)) + one,
                    QDDelta(dv: FixedPoint(4), dh: FixedPoint(6)));
   }
-
+  
   func testPointAndDelta() throws {
     XCTAssertEqual(QDPoint.zero.vertical, FixedPoint.zero);
     XCTAssertEqual(QDPoint.zero.horizontal, FixedPoint.zero);
@@ -140,14 +149,12 @@ final class QuickDrawTests: XCTestCase {
     XCTAssertEqual(deg2rad(270),  -0.0);
   }
   
-  func testmakeUInt24() throws {
-    XCTAssertEqual(makeUInt24(bytes: (0xff, 0xff, 0xff)), 0xffffff);
-    XCTAssertEqual(makeUInt24(bytes: (0x00, 0x00, 0x00)), 0x000000);
-    XCTAssertEqual(makeUInt24(bytes: (0x10, 0x00, 0x00)), 0x100000);
-    XCTAssertEqual(makeUInt24(bytes: (0xab, 0xcd, 0xef)), 0xabcdef);
-  }
-  
-  func testRGBColor() throws {
+}
+
+// @testable import QuickDrawViewer
+
+final class ColorTests : XCTestCase {
+  func testRGB() throws {
     XCTAssertEqual(RGBColor.black.rgb, [0x00, 0x00, 0x00]);
     XCTAssertEqual(RGBColor.red.rgb, [0xff, 0x00, 0x00]);
     XCTAssertEqual(RGBColor.green.rgb, [0x00, 0xff, 0x00]);
@@ -155,13 +162,24 @@ final class QuickDrawTests: XCTestCase {
     XCTAssertEqual(RGBColor.cyan.rawValue, 0x0000ffffffff);
   }
   
-  func testRoundTo() throws {
-    XCTAssertEqual(roundTo(FixedPoint.one, multipleOf: 4), 4);
-    XCTAssertEqual(roundTo(FixedPoint(10), multipleOf: 4), 12);
-    XCTAssertEqual(roundTo(FixedPoint(11), multipleOf: 4), 12);
+  func testRGB555() throws {
+    let black = ARGB555(rawValue: 0x00);
+    XCTAssertEqual(black.red, 0x00);
+    XCTAssertEqual(black.green, 0x00);
+    XCTAssertEqual(black.blue, 0x00);
+    let white = ARGB555(red: 0x1f, green: 0x1f, blue: 0x1f);
+    // Alpha bit will be set.
+    XCTAssertEqual(white.rawValue, 0xffff);
+    let red = ARGB555(red: 0x1f, green: 0x00, blue: 0x00);
+    XCTAssertEqual(red.red, 0x1f);
+    XCTAssertEqual(red.green, 0x00);
+    XCTAssertEqual(red.blue, 0x00);
   }
-  
-  func testPackBit() throws {
+}
+
+final class PackBitTests: XCTestCase {
+
+  func testDecode() throws {
     // Discrete run
     let discreteData : [UInt8] = [0x05, 0x01, 0x02, 0x03, 0x04, 0x5, 0x6];
     XCTAssertEqual(
@@ -173,11 +191,21 @@ final class QuickDrawTests: XCTestCase {
         [0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10]);
   }
 
-  func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+  func testPerformance() throws {
+    var repeatedData : [UInt8] = [];
+    for _ in 0..<10 {
+      repeatedData.append(UInt8(bitPattern: Int8(-99)));
+      repeatedData.append(0x10);
+    }
+    // This is an example of a performance test case.
+    self.measure {
+      do {
+        _ = try decompressPackBit(data: repeatedData, unpackedSize: 1000);
+      }
+      catch {
+        print("Should probably not happen: \(error)")
+      }
+    }
   }
 
 }

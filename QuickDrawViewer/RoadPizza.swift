@@ -7,6 +7,10 @@
 
 import Foundation
 
+func mix⅔(_ a: UInt16, _ b: UInt16) -> UInt8 {
+  return UInt8(((a * 21) + (b * 11)) >> 5);
+}
+
 /// Creates a ARGB555 color that is ⅔ color a and ⅓ color b.
 /// - Parameters:
 ///   - a: color to mix ⅔ from
@@ -14,9 +18,9 @@ import Foundation
 /// - Returns: a color which is on the line in RGB space between a and b.
 func mix⅔(_ a: ARGB555, _ b: ARGB555) -> ARGB555 {
   return ARGB555(
-    red: (a.red * 21 + b.red * 11) >> 5,
-    green: (a.green * 21 + b.green * 11) >> 5,
-    blue: (a.blue * 21 + b.blue * 11) >> 5);
+    red: mix⅔(a.red, b.red),
+    green: mix⅔(a.green, b.green),
+    blue: mix⅔(a.blue, b.blue));
 }
 
 enum RoadPizzaError : Error {
@@ -62,7 +66,7 @@ class RoadPizzaImage : BlockPixMap {
       colorB, mix⅔(colorB, colorA), mix⅔(colorA, colorB), colorA];
     for (line, value) in data.enumerated() {
       var color4 : [ARGB555] = [];
-      var shiftedValue = value;
+      var shiftedValue = Int(value);
       for _ in 0..<blockSize {
         let index = Int((shiftedValue & 0xc0) >> 6);
         color4.append(colorTable[index]);
