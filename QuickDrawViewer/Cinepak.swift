@@ -152,6 +152,7 @@ struct CinepakCodeBookEntry {
       case .eight(let y):
         return y.bytes.map(){[$0, $0, $0]};
       case .twelve(let y, let u, let v):
+        // Decode cinepak YUV
         let u4 = SIMD4<Int16>.init(repeating: Int16(u));
         let v4 = SIMD4<Int16>.init(repeating: Int16(v));
         let one = SIMD4<Int16>.one;
@@ -159,8 +160,7 @@ struct CinepakCodeBookEntry {
         let r = SIMD4<UInt8>(clamping: y4 &+ (v4 &<< one));
         let g = SIMD4<UInt8>(clamping: y4 &- (u4 &>> one) &- v4);
         let b = SIMD4<UInt8>(clamping: y4 &+ (u4 &<< one));
-        return [
-          [r.x, g.x, b.x], [r.y, g.y, b.y], [r.z, g.z, b.z], [r.w, g.w, b.w]];
+        return toRGB8(r: r, g: g, b: b);
       case .uninitialized(let rgb):
         return [RGB8].init(repeating: rgb, count: 4);
     }

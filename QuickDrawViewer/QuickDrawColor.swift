@@ -9,6 +9,11 @@ import Foundation
 
 typealias RGB8 = [UInt8];
 
+func toRGB8(r: SIMD4<UInt8>, g: SIMD4<UInt8>, b: SIMD4<UInt8>) -> [RGB8] {
+  return [
+    [r.x, g.x, b.x], [r.y, g.y, b.y], [r.z, g.z, b.z], [r.w, g.w, b.w]];
+}
+
 /// Quickdraw stores RGB colours in 3 × 16 bit values.
 /// Struct represents them as 64 bit value.
 struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
@@ -68,7 +73,7 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   static func pad16<T : BinaryInteger>(_ value: T) -> UInt16 {
     return UInt16(value & 0xff) << 8 | UInt16(value & 0xff);
   }
-  
+    
   // Constants that represent the colours of QuickDraw 1.
   static let black = RGBColor(red8: 0x00, green8: 0x00, blue8: 0x00);
   static let white = RGBColor(red8: 0xff, green8: 0xff, blue8: 0xff);
@@ -150,19 +155,27 @@ struct ARGB555: RawRepresentable {
     rawValue = UInt16(blue & 0x1F) | UInt16(green & 0x1F) << 5 | UInt16(red & 0x1F) << 10 | 0x8000;
   }
   
-  var red : UInt16 {
-    return UInt16(rawValue >> 10) & 0x1F;
+  init(simd: SIMD3<UInt8>) {
+    self.init(red: simd.x, green: simd.y, blue: simd.z);
   }
   
-  var green : UInt16 {
-    return UInt16(rawValue >> 5) & 0x1F;
+  var red : UInt8 {
+    return UInt8((rawValue >> 10) & 0x1F);
   }
   
-  var blue : UInt16 {
-    return UInt16(rawValue) & 0x1F;
+  var green : UInt8 {
+    return UInt8((rawValue >> 5) & 0x1F);
+  }
+  
+  var blue : UInt8 {
+    return UInt8((rawValue) & 0x1F);
   }
   
   let rawValue : UInt16;
+  
+  var simdValue : SIMD3<UInt8> {
+    return SIMD3<UInt8>(x: red, y: green, z:blue);
+  }
   
   static let zero = ARGB555(rawValue: 0);
   static let pixelSize = 16;

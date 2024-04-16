@@ -7,22 +7,6 @@
 
 import Foundation
 
-func mix⅔(_ a: UInt16, _ b: UInt16) -> UInt8 {
-  return UInt8(((a * 21) + (b * 11)) >> 5);
-}
-
-/// Creates a ARGB555 color that is ⅔ color a and ⅓ color b.
-/// - Parameters:
-///   - a: color to mix ⅔ from
-///   - b: color to mix ⅓ from
-/// - Returns: a color which is on the line in RGB space between a and b.
-func mix⅔(_ a: ARGB555, _ b: ARGB555) -> ARGB555 {
-  return ARGB555(
-    red: mix⅔(a.red, b.red),
-    green: mix⅔(a.green, b.green),
-    blue: mix⅔(a.blue, b.blue));
-}
-
 enum RoadPizzaError : Error {
   case badMagic(magic: UInt8);
   case unknownOpcode(opcode: UInt8);
@@ -53,6 +37,29 @@ class RoadPizzaImage : BlockPixMap {
     }
   }
   
+  private static let m21 = SIMD3<UInt16>.init(repeating: 21);
+  private static let m11 = SIMD3<UInt16>.init(repeating: 11);
+  private static let m5 = SIMD3<UInt16>.init(repeating: 5);
+   
+  /// Creates a ARGB555 color that is ⅔ color a and ⅓ color b.
+  /// - Parameters:
+  ///   - a: color to mix ⅔ from
+  ///   - b: color to mix ⅓ from
+  /// - Returns: a color which is on the line in RGB space between a and b.
+  private func mix⅔(_ a: SIMD3<UInt8>, _ b: SIMD3<UInt8>) -> ARGB555 {
+    let aa = SIMD3<UInt16>.init(clamping: a) &* RoadPizzaImage.m21;
+    let bb = SIMD3<UInt16>.init(clamping: b) &* RoadPizzaImage.m11;
+    let mix = SIMD3<UInt8>(clamping: (aa &+ bb) &>> RoadPizzaImage.m5);
+    return ARGB555(simd: mix);
+  }
+  
+  private func makeColorTable(colorA: ARGB555, colorB: ARGB555) -> [ARGB555] {
+    let simda = colorA.simdValue;
+    let simdb = colorB.simdValue;
+    return  [
+      colorB, mix⅔(simdb, simda), mix⅔(simda, simdb), colorA];
+  }
+  
   func execute1Color(block: Int, color: ARGB555) throws {
     let color4 = [ARGB555].init(repeating: color, count: blockSize);
     for line in 0..<blockSize {
@@ -62,8 +69,7 @@ class RoadPizzaImage : BlockPixMap {
   
   func executeIndexColor(block: Int, colorA: ARGB555, colorB: ARGB555, data: [UInt8]) throws {
     assert(data.count == blockSize, "Invalid index color data size");
-    let colorTable : [ARGB555] = [
-      colorB, mix⅔(colorB, colorA), mix⅔(colorA, colorB), colorA];
+    let colorTable : [ARGB555] = makeColorTable(colorA: colorA, colorB: colorB);
     for (line, value) in data.enumerated() {
       var color4 : [ARGB555] = [];
       var shiftedValue = Int(value);
