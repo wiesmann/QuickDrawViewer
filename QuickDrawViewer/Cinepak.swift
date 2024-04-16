@@ -118,10 +118,6 @@ struct CinepakCodeBookEntry {
     self.payload = .eight(y: SIMD4<UInt8>(y4[0], y4[1], y4[2], y4[3]))
   }
   
-  private init(uninitialized: RGB8) {
-    self.payload = .uninitialized(rgb: uninitialized);
-  }
-  
   /// Initialize an entry with four 6 8-bit values, four intensities and two chrominance bytes (u, v).
   /// - Parameters:
   ///   - y4: intensities (unsigned)
@@ -131,6 +127,20 @@ struct CinepakCodeBookEntry {
     assert(y4.count == 4);
     let y = SIMD4<UInt8>(y4[0], y4[1], y4[2], y4[3]);
     self.payload = .twelve(y: y, u: u, v: v);
+  }
+  
+  private init(y: UInt8, u: Int8, v: Int8) {
+    self.init(y4: [UInt8](repeating: y, count: 4), u:u, v:v);
+  }
+  
+  private init(y: UInt8) {
+    self.init(y4: [UInt8](repeating: y, count: 4));
+  }
+  
+  /// Create an uninitialized entry, used for debugging.
+  /// - Parameter uninitialized: rgb value to makr unitialized entry.
+  private init(uninitialized: RGB8) {
+    self.payload = .uninitialized(rgb: uninitialized);
   }
   
   /// The intensities (or palette indexes) of the entry.
@@ -163,6 +173,18 @@ struct CinepakCodeBookEntry {
         return toRGB8(r: r, g: g, b: b);
       case .uninitialized(let rgb):
         return [RGB8].init(repeating: rgb, count: 4);
+    }
+  }
+  
+  /// Return 4 codebook entries corresponding to this one.
+  var doubled : [CinepakCodeBookEntry] {
+    switch payload {
+      case .eight(let y):
+        return y.bytes.map(){CinepakCodeBookEntry(y:$0)};
+      case .twelve(let y, let u, let v):
+        return y.bytes.map(){CinepakCodeBookEntry(y:$0, u: u, v: v)};
+      case .uninitialized:
+        return [CinepakCodeBookEntry](repeating: self, count: 4);
     }
   }
 
@@ -263,46 +285,7 @@ class Cinepak : BlockPixMap {
     }
   }
   
-  func applyDouble(entry: CinepakCodeBookEntry, subEntry: Int, offset: Int) throws {
-    switch components {
-      case .index:
-        let y = entry.y[subEntry];
-        pixmap[offset] = y;
-        pixmap[offset + 1] = y;
-        pixmap[offset + rowBytes] = y;
-        pixmap[offset + rowBytes + 1] = y;
-      case .rgb:
-        let rgb = entry.rgb[subEntry];
-        for c in 0..<3 {
-          let v = rgb[c]
-          pixmap[offset + c] = v;
-          pixmap[offset + 3 + c] = v;
-          pixmap[offset + rowBytes + c ] = v;
-          pixmap[offset + rowBytes + 3 + c ] = v;
-        }
-    }
-  }
-  
-  func applyV1(block: Int, v1: UInt8) throws {
-    guard block < totalBlocks else {
-      return;
-    }
-    let entry = try v1Codebook.lookup(v1);
-    let offset0 = try getOffset(block: self.block, line: 0);
-    let twopixels = 2 * components.rawValue;
-    try applyDouble(entry: entry, subEntry: 0, offset: offset0);
-    try applyDouble(entry: entry, subEntry: 1, offset: offset0 + twopixels);
-    let offset1 = try getOffset(block: self.block, line: 2);
-    try applyDouble(entry: entry, subEntry: 2, offset: offset1);
-    try applyDouble(entry: entry, subEntry: 3, offset: offset1 + twopixels);
-     }
-
-  func applyV4(block: Int, v4: [UInt8]) throws {
-    assert(v4.count == 4);
-    guard block < totalBlocks else {
-      return;
-    }
-    let entries = try v4.map(){try v4Codebook.lookup($0)};
+  func applyEntries(block: Int, entries : [CinepakCodeBookEntry]) throws {
     let lines = [0, 1, 2, 3];
     let lineOffsets = try lines.map(){try getOffset(block: block, line: $0);}
     let pixOffset = components.rawValue;
@@ -326,6 +309,24 @@ class Cinepak : BlockPixMap {
     try apply(entry: entries[2], pos: 3, offset: lineOffsets[3] + pixOffset);
     try apply(entry: entries[3], pos: 2, offset: lineOffsets[3] + pixOffset * 2);
     try apply(entry: entries[3], pos: 3, offset: lineOffsets[3] + pixOffset * 3);
+  }
+
+  func applyV4(block: Int, v4: [UInt8]) throws {
+    assert(v4.count == 4);
+    guard block < totalBlocks else {
+      return;
+    }
+    let entries = try v4.map(){try v4Codebook.lookup($0)};
+    try applyEntries(block: block, entries: entries)
+  }
+  
+  func applyV1(block: Int, v1: UInt8) throws {
+    guard block < totalBlocks else {
+      return;
+    }
+    let entry = try v1Codebook.lookup(v1);
+    let entries = entry.doubled;
+    try applyEntries(block: block, entries: entries)
   }
   
   func applyVectorBlock(reader : QuickDrawDataReader) throws -> Bool {
