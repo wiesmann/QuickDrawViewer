@@ -107,10 +107,10 @@ struct CMKYColor : RawRepresentable {
   var magenta: UInt16 {
     return UInt16((rawValue >> 32) & 0xffff);
   }
-  var  yellow: UInt16 {
+  var yellow: UInt16 {
     return UInt16((rawValue >> 16) & 0xffff);
   }
-  var  black: UInt16 {
+  var black: UInt16 {
     return UInt16((rawValue) & 0xffff);
   }
   

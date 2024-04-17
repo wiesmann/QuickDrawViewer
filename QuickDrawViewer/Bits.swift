@@ -9,9 +9,9 @@
 import Foundation
 
 extension Data {
-    var bytes: [UInt8] {
-        return [UInt8](self)
-    }
+  var bytes: [UInt8] {
+    return [UInt8](self)
+  }
 }
 
 extension SIMD4<UInt8> {
@@ -33,6 +33,10 @@ func boolArray<T>(_ from: T) -> [Bool] where T : FixedWidthInteger {
     buffer = buffer << 1;
   }
   return result;
+}
+
+func toScalar<T>(bytes : ArraySlice<UInt8>) -> T where T: FixedWidthInteger {
+  return bytes.reduce(0) { T($0) << 8 + T($1) }
 }
 
 func makeUInt24(bytes: (UInt8, UInt8, UInt8)) -> UInt32 {

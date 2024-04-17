@@ -51,6 +51,13 @@ class QuickDrawDataReader {
     return subdata.bytes;
   }
   
+  func readSlice(bytes: Data.Index) throws -> ArraySlice<UInt8> {
+    let start = self.position;
+    self.position += bytes;
+    let end = self.position;
+    return data.bytes[start..<end];
+  }
+  
   func readData(bytes: Data.Index) throws -> Data {
     guard bytes >= 0 else {
       throw QuickDrawError.quickDrawIoError(message: "Negative amount of bytes \(bytes)");
@@ -83,11 +90,6 @@ class QuickDrawDataReader {
     return str;
   }
   
-  func readType() throws -> MacTypeCode {
-    let data = try readUInt32();
-    return MacTypeCode(rawValue:data);
-  }
-  
   /// Read a fixed length (31 bytes) pascal string
   /// - Returns: a string , with a maximum 31 characters.
   func readStr31() throws -> String {
@@ -113,18 +115,19 @@ class QuickDrawDataReader {
   }
   
   func readUInt16() throws -> UInt16 {
-    let bytes = try readUInt8(bytes: 2);
-    return UInt16(bytes[0]) << 8 | UInt16(bytes[1]);
+    let bytes = try readSlice(bytes: 2);
+    return toScalar(bytes: bytes);
   }
   
   func readUInt16(bytes: Data.Index) throws -> [UInt16] {
     let num = bytes / 2;
-    let raw = try readUInt8(bytes: num * 2);
+    let raw = try readSlice(bytes: num * 2);
     var result :[UInt16] = [];
     result.reserveCapacity(num);
     for index in 0..<(num) {
-      let p = index * 2;
-      let v = UInt16(raw[p]) << 8 | UInt16(raw[p+1]);
+      let p = index * 2 + raw.startIndex;
+      let s = raw[p..<p + 2];
+      let v : UInt16 = toScalar(bytes: s);
       result.append(v);
     }
     return result;
@@ -145,9 +148,8 @@ class QuickDrawDataReader {
   }
   
   func readUInt32() throws  -> UInt32 {
-    let high = try readUInt16();
-    let low = try readUInt16();
-    return UInt32(high) << 16 | UInt32(low);
+    let bytes = try readSlice(bytes: 4);
+    return toScalar(bytes: bytes);
   }
   
   func readInt32() throws -> Int32 {
@@ -155,9 +157,8 @@ class QuickDrawDataReader {
   }
   
   func readUInt64() throws -> UInt64 {
-    let high = try readUInt32();
-    let low = try readUInt32();
-    return UInt64(high) << 32 | UInt64(low);
+    let bytes = try readSlice(bytes: 8);
+    return toScalar(bytes: bytes);
   }
   
   func readFixed() throws -> FixedPoint {

@@ -30,6 +30,12 @@ final class BitTests : XCTestCase {
     XCTAssertEqual(roundTo(FixedPoint(10), multipleOf: 4), 12);
     XCTAssertEqual(roundTo(FixedPoint(11), multipleOf: 4), 12);
   }
+  
+  func testToScalar() throws {
+    let bytes : [UInt8] = [0xff, 0xf0, 0x00, 0x0f];
+    let value : UInt32 = toScalar(bytes: bytes);
+    XCTAssertEqual(value, UInt32(0xfff0000f));
+  }
 }
 
 final class FixedPointTests : XCTestCase {

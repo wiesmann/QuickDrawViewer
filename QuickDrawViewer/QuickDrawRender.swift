@@ -13,12 +13,7 @@ import ImageIO
 import AppKit
 import os
 
-let cgRed = CGColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0);
-let cgGreen = CGColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0);
-let cgBlue = CGColor(red: 0.0, green: 0.0, blue: 1.0, alpha: 1.0);
-let cgCyan = CGColor(genericCMYKCyan: 1.0, magenta: 0.0, yellow: 0.0, black: 0.0, alpha: 1.0);
-let cgMagenta = CGColor(genericCMYKCyan: 0.0, magenta: 1.0, yellow: 0.0, black: 0.0, alpha: 1.0);
-let cgYellow = CGColor(genericCMYKCyan: 0.0, magenta: 0.0, yellow: 1.0, black: 0.0, alpha: 1.0);
+
 
 // Shortcut to the RGB color space
 let rgbSpace = CGColorSpaceCreateDeviceRGB();
@@ -96,6 +91,13 @@ extension CGAffineTransform {
 }
 
 extension CGColor {
+  static let red = CGColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0);
+  static let green = CGColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0);
+  static let blue = CGColor(red: 0.0, green: 0.0, blue: 1.0, alpha: 1.0);
+  static let cyan = CGColor(genericCMYKCyan: 1.0, magenta: 0.0, yellow: 0.0, black: 0.0, alpha: 1.0);
+  static let magenta = CGColor(genericCMYKCyan: 0.0, magenta: 1.0, yellow: 0.0, black: 0.0, alpha: 1.0);
+  static let yellow = CGColor(genericCMYKCyan: 0.0, magenta: 0.0, yellow: 1.0, black: 0.0, alpha: 1.0);
+  
   /// Force a color into RGB space
   var rgb : CGColor {
     get throws {
@@ -169,12 +171,12 @@ extension QDColor {
           switch qd1 {
             case .black: return CGColor.black;
             case .white: return CGColor.white;
-            case .red: return cgRed;
-            case .green: return cgGreen;
-            case .blue: return cgBlue;
-            case .cyan: return cgCyan;
-            case .magenta: return cgMagenta;
-            case .yellow: return cgYellow;
+            case .red: return CGColor.red;
+            case .green: return CGColor.green;
+            case .blue: return CGColor.blue;
+            case .cyan: return CGColor.cyan;
+            case .magenta: return CGColor.magenta;
+            case .yellow: return CGColor.yellow;
           }
         case .cmyk(cmyk: let cmyk, name: _):
           let c = toFloat(cmyk.cyan);
