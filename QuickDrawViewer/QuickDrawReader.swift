@@ -10,7 +10,8 @@ import Foundation
 
 
 /// Class that handles reading from the data object.
-/// Handles deserialisation of various QuickDraw types.
+/// Handles deserialisation of basic QuickDraw types.
+/// Reading of high-level objects (points, rectangles, regions), is handled in extensions along the type definitions.
 class QuickDrawDataReader {
   
   ///  Initializes a reader from a data object.
@@ -55,6 +56,9 @@ class QuickDrawDataReader {
     let start = self.position;
     self.position += bytes;
     let end = self.position;
+    guard end <= data.count else {
+      throw QuickDrawError.quickDrawIoError(message:"ReadSlice \(bytes):\(end) beyond \(data.count)");
+    }
     return data.bytes[start..<end];
   }
   
@@ -165,43 +169,11 @@ class QuickDrawDataReader {
     let v = try readInt32();
     return FixedPoint(rawValue: Int(v));
   }
-  
-  func readPoint() throws -> QDPoint {
-    let v = FixedPoint(try readInt16());
-    let h = FixedPoint(try readInt16());
-    return QDPoint(vertical: v, horizontal: h);
-  }
-  
-  func readDelta() throws -> QDDelta {
-    let h = try readInt16();
-    let v = try readInt16();
-    return QDDelta(dv:v, dh:h);
-  }
-  
-  func readRect() throws -> QDRect  {
-    let tl = try readPoint();
-    let br = try readPoint();
-    return QDRect(topLeft: tl, bottomRight: br);
-  }
-  
+ 
   func readResolution() throws -> QDResolution {
     let hRes = try readFixed();
     let vRes = try readFixed();
     return QDResolution(hRes: hRes, vRes: vRes);
-  }
-  
-  func readPoly() throws -> QDPolygon {
-    let raw_size = try readUInt16();
-    let boundingBox = try readRect();
-    
-    let pointNumber = (raw_size - 10) / 4;
-    var points : [QDPoint]  = [];
-    if pointNumber > 0 {
-      for  _ in 1...pointNumber {
-        points.append(try readPoint());
-      }
-    }
-    return QDPolygon(boundingBox: boundingBox, points: points);
   }
   
   func readOpcode(version: Int) throws -> UInt16 {
