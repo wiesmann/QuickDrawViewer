@@ -23,7 +23,7 @@ protocol PictureOperation {
 
 /// opcodes that affect the pen-state can be execute independently of the target graphic system.
 protocol PenStateOperation {
-  func execute(penState : inout PenState) -> Void;
+  func execute(penState : inout PenState) throws -> Void;
 }
 
 /// opcodes that affect the font state (size, font-name, etc).
@@ -130,12 +130,10 @@ struct Version2HeaderOp : OpCode, PictureOperation {
 }
 
 struct OriginOp : OpCode {
-  
   mutating func load(reader: QuickDrawDataReader) throws -> Void {
-    let dh = try reader.readInt16();
-    let dv = try reader.readInt16();
-    delta = QDDelta(dv: dv, dh: dh);
+    delta = try reader.readDelta();
   }
+  
   var delta : QDDelta = QDDelta.zero;
 }
 
@@ -349,11 +347,7 @@ struct ColorOp : OpCode, PenStateOperation, CustomStringConvertible {
     if rgb {
       color = try .rgb(rgb: reader.readRGB());
     } else {
-      let code = try reader.readUInt32();
-      guard let qd1 = QD1Color(rawValue: code) else {
-        throw QuickDrawError.unsupportedQD1Color(colorCode: code);
-      }
-      color = .qd1(qd1: qd1);
+      color = try .qd1(qd1: reader.readQD1Color());
     }
   }
   
@@ -377,16 +371,16 @@ struct ColorOp : OpCode, PenStateOperation, CustomStringConvertible {
 
 
 // Pen operations
-
+// --------------
 struct PatternOp : OpCode, PenStateOperation  {
-  func execute(penState: inout PenState) {
+  func execute(penState: inout PenState) throws {
     switch verb {
       case .fill, .paint:
         penState.fillPattern = pattern;
       case .frame:
         penState.drawPattern = pattern;
       default:
-        print("Unsupported pattern verb in \(self)");
+        throw QuickDrawError.unsupportedVerb(verb: verb);
     }
   }
   
@@ -542,7 +536,7 @@ struct SpaceExtraOp : OpCode, FontStateOperation {
 struct PnLocHFracOp : OpCode, PenStateOperation {
   mutating func load(reader: QuickDrawDataReader) throws {
     let f = try reader.readUInt16();
-    penFraction = FixedPoint(rawValue: Int(f ));
+    penFraction = FixedPoint(rawValue: Int(f));
   }
   
   func execute(penState: inout PenState) {
@@ -565,7 +559,7 @@ struct FontStyleOp : OpCode, FontStateOperation {
     fontStyle = QDFontStyle(rawValue: try reader.readUInt8());
   }
   
-  var fontStyle = QDFontStyle(rawValue:0);
+  var fontStyle = QDFontStyle.defaultStyle;
 }
 
 struct DHDVTextOp : OpCode, PortOperation {
@@ -617,22 +611,6 @@ struct LongTextOp : OpCode, PortOperation {
 /// Bitmap op-codes
 /// ---------------
 
-func readPixMapInfo(reader: QuickDrawDataReader) throws -> QDPixMapInfo {
-  let pixMapInfo = QDPixMapInfo();
-  pixMapInfo.version = Int(try reader.readUInt16());
-  pixMapInfo.packType = QDPackType(rawValue:try reader.readUInt16())!;
-  pixMapInfo.packSize = Int(try reader.readUInt32());
-  pixMapInfo.resolution = try reader.readResolution();
-  pixMapInfo.pixelType = Int(try reader.readUInt16());
-  pixMapInfo.pixelSize = Int(try reader.readUInt16());
-  pixMapInfo.cmpCount = Int(try reader.readUInt16());
-  pixMapInfo.cmpSize = Int(try reader.readUInt16());
-  pixMapInfo.planeByte = Int64(try reader.readUInt32());
-  pixMapInfo.clutId = try reader.readInt32();
-  pixMapInfo.clutSeed = try reader.readType();
-  return pixMapInfo;
-}
-
 struct BitRectOpcode : OpCode {
   init(isPacked : Bool) {
     self.bitmapInfo = QDBitMapInfo(isPacked: isPacked);
@@ -647,7 +625,7 @@ struct BitRectOpcode : OpCode {
     bitmapInfo.rowBytes = Int(masked);
     bitmapInfo.bounds = try reader.readRect();
     if isPixMap {
-      let pixMapInfo = try readPixMapInfo(reader:reader);
+      let pixMapInfo = try reader.readPixMapInfo();
       pixMapInfo.clut = try reader.readClut();
       bitmapInfo.pixMapInfo = pixMapInfo;
     }
@@ -688,7 +666,7 @@ struct DirectBitOpcode : OpCode {
     }
     bitmapInfo.rowBytes = Int(masked);
     bitmapInfo.bounds = try reader.readRect();
-    bitmapInfo.pixMapInfo = try readPixMapInfo(reader:reader);
+    bitmapInfo.pixMapInfo = try reader.readPixMapInfo();
     bitmapInfo.srcRect = try reader.readRect();
     bitmapInfo.dstRect = try reader.readRect();
     bitmapInfo.mode = try QuickDrawMode(rawValue: reader.readUInt16());
@@ -767,7 +745,6 @@ struct DirectBitOpcode : OpCode {
         bitmapInfo.data.append(decompressed[i + w]);
         bitmapInfo.data.append(decompressed[i + (2 * w)]);
       }
-      
     }
     /// Update the pixel information to reflect reality. There is no alpha.
     bitmapInfo.rowBytes = rowBytes ;

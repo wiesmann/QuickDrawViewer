@@ -152,3 +152,11 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
     return FixedPoint(a.value / b.value);
   }
 }
+
+extension QuickDrawDataReader {
+  
+  func readFixed() throws -> FixedPoint {
+    let v = try readInt32();
+    return FixedPoint(rawValue: Int(v));
+  }
+}

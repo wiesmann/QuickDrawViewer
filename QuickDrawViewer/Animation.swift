@@ -108,8 +108,8 @@ class AnimationImage : PixMapMetadata {
       y = Int(try reader.readInt16());
       reader.skip(bytes: 6);
     }
-    let encoded = try reader.readUInt8(bytes: reader.remaining);
-    var index = 0;
+    let encoded = try reader.readSlice(bytes: reader.remaining);
+    var index = encoded.startIndex;
     
     while (index < encoded.count - 1) {
       let skip = Int(encoded[index]);

@@ -25,14 +25,14 @@ func roundTo(_ value: FixedPoint, multipleOf: Int) -> Int {
 ///   - u: u chrominance in the -127 - 128 range
 ///   - v: v chrominance in the -127 - 128 range
 /// - Returns: rgb bytes
-func yuv2Rgb(y : Double, u: Double, v: Double) -> [UInt8] {
+func yuv2Rgb(y : Double, u: Double, v: Double) -> RGB8 {
   let r = Int(y + (1.370705 * v));
   let g = Int(y - (0.698001 * v) - 0.337633 * u);
   let b = Int(y + (1.732446 * u));
   return [UInt8(clamping: r), UInt8(clamping: g), UInt8(clamping: b)];
 }
 
-func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> [UInt8] {
+func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> RGB8 {
   let nu = Double(u) - 128;
   let nv = Double(v) - 128;
   let ny = Double(y);
@@ -50,6 +50,8 @@ func expandDepth(_ depth : Int) throws -> (Int, Int) {
     case 16:
       return (3, 5);
     case 24:
+      return (3, 8);
+    case 32:
       return (3, 8);
     default:
       throw BlittingError.unsupportedDepth(depth: depth);

@@ -7,11 +7,6 @@
 
 import Foundation
 
-
-
-
-
-
 enum QDVerb : UInt16, CustomStringConvertible {
   var description: String {
     switch self {
@@ -41,18 +36,6 @@ enum QDColorSelection : UInt8 {
   case highlight = 3;
 }
 
-struct QDFontStyle : OptionSet {
-  let rawValue: UInt8;
-  static let boldBit = QDFontStyle(rawValue: 1 << 0);
-  static let italicBit = QDFontStyle(rawValue: 1 << 1);
-  static let ulineBit = QDFontStyle(rawValue: 1 << 2);
-  static let outlineBit = QDFontStyle(rawValue: 1 << 3);
-  static let shadowBit = QDFontStyle(rawValue: 1 << 4);
-  static let condenseBit = QDFontStyle(rawValue: 1 << 5);
-  static let extendBit = QDFontStyle(rawValue: 1 << 6);
-  
-  static let defaultStyle = QDFontStyle([]);
-}
 
 // the 8 first transfer modes from QuickDraw.p
 // Patterns operation is bit 5.
@@ -127,42 +110,6 @@ precedencegroup ComparisonPrecedence {
 infix operator ⨴ : MultiplicationPrecedence
 
 
-/// Quickdraw picture resolution, in DPI.
-struct QDResolution : Equatable, CustomStringConvertible {
-  let hRes : FixedPoint;
-  let vRes : FixedPoint;
-  
-  public var description: String {
-    return "\(hRes)×\(vRes)";
-  }
-  
-  /// Scale a delta as a function of the resolution, relative to the standard (72 DPI).
-  /// - Parameters:
-  ///   - dim: dimension to scale
-  ///   - resolution: resolution description
-  /// - Returns: scales dimension
-  public static func ⨴ (dim : QDDelta, resolution: QDResolution) -> QDDelta {
-    let h = dim.dh.value * defaultScalarResolution.value / resolution.hRes.value;
-    let v = dim.dv.value * defaultScalarResolution.value / resolution.vRes.value;
-    return QDDelta(dv: FixedPoint(v), dh: FixedPoint(h));
-  }
-  
-  /// Return a rectangle scaled for a given resolution
-  /// - Parameters:
-  ///   - rect: rectangle to scale
-  ///   - resolution: resolution to use for scaling
-  /// - Returns: a scaled rectangle.
-  public static func ⨴ (rect: QDRect, resolution: QDResolution) -> QDRect {
-    let d = rect.dimensions ⨴ resolution;
-    return QDRect(topLeft: rect.topLeft, dimension: d);
-  }
-  
-  static let defaultScalarResolution = FixedPoint(72);
-  static let defaultResolution = QDResolution(
-    hRes: defaultScalarResolution, vRes: defaultScalarResolution);
-  static let zeroResolution = QDResolution(hRes: FixedPoint.zero, vRes: FixedPoint.zero);
-}
-
 /// All the state associated with drawing
 class PenState {
   var location : QDPoint = QDPoint.zero;
@@ -202,204 +149,8 @@ class PenState {
   static let defaultPen = QDPoint(vertical: defautPenWidth, horizontal: defautPenWidth);
 }
 
-/// Text rendering options
-struct QDGlyphState : OptionSet {
-  let rawValue: UInt8;
-  static let outlinePreferred = QDGlyphState(rawValue: 1 << 0);
-  static let preserveGlyphs = QDGlyphState(rawValue: 1 << 1);
-  static let fractionalWidths = QDGlyphState(rawValue: 1 << 2);
-  static let scalingDisabled = QDGlyphState(rawValue: 1 << 3);
-  static let defaultState = QDGlyphState([]);
-}
-
-/// Various text related properties.
-class QDFontState {
-  func getFontName() -> String? {
-    if let name = self.fontName {
-      return name;
-    }
-    /// List of classic fonts with their canonical IDs.
-    switch fontId {
-    case 2: return "New York";
-    case 3: return "Geneva";
-    case 4: return "Monaco";
-    case 5: return "Venice";
-    case 6: return "Venice";
-    case 7: return "Athens";
-    case 8: return "San Francisco";
-    case 9: return "Toronto";
-    case 11: return "Cairo";
-    case 12: return "Los Angeles";
-    case 20: return "Times";
-    case 21: return "Helvetica";
-    case 22: return "Courrier";
-    case 23: return "Symbol";
-    case 24: return "Mobile";
-    default:
-      return nil;
-    }  // Switch
-  }
-  var fontId : Int = 0;
-  var fontName : String?;
-  var fontSize = FixedPoint(12);
-  var fontMode : QuickDrawMode = QuickDrawMode.defaultMode;
-  var location : QDPoint = QDPoint.zero;
-  var fontStyle : QDFontStyle = QDFontStyle.defaultStyle;
-  var glyphState : QDGlyphState = QDGlyphState.defaultState;
-  var xRatio : FixedPoint = FixedPoint.one;
-  var yRatio : FixedPoint = FixedPoint.one;
-  var textCenter: QDDelta?;
-  var textPictRecord : QDTextPictRecord?;
-  var extraSpace : FixedPoint = FixedPoint.zero;
-}
-
-enum QDTextJustification : UInt8 {
-  case justificationNone = 0;
-  case justificationLeft = 1;
-  case justificationCenter = 2;
-  case justificationRight = 3;
-  case justificationFull = 4;
-  case justification5 = 5;  // Found in MacDraw 1
-  case justification6 = 6;  // Found in MacDraw 1
-}
-
-enum QDTextFlip : UInt8 {
-  case textFlipNone = 0;
-  case textFlipHorizontal = 1;
-  case textFlipVertical = 2;
-}
-
-enum QDTextLineHeight : UInt8 {
-  case unknown = 0;
-  case single = 1;
-  case oneAndHalf = 2;
-  case double = 3;
-  case double2 = 4;
-}
-
-// Text annotation for text comments
-struct QDTextPictRecord {
-  let justification : QDTextJustification;
-  let flip : QDTextFlip;
-  let angle : FixedPoint;
-  let lineHeight : QDTextLineHeight;
-}
-
-enum QDPackType : UInt16 {
-  case defaultPack = 0;
-  case noPack = 1;
-  case removePadByte = 2;
-  case pixelRunLength = 3;
-  case componentRunLength = 4;
-}
-
-// Confusingly, this is called `PixMap` record in Inside Quickdraw,.
-// even though there is no actual pixel data.
-class QDPixMapInfo : CustomStringConvertible {
-  init() {}
-  
-  public var description: String {
-    var result = "PixMapInfo version: \(version) pack-size: \(packSize) ";
-    result += "pack-type: \(packType) ";
-    if resolution != nil {
-      result += "resolution: \(resolution!) ";
-    }
-    result += "pixel type: \(pixelType) ";
-    result += "pixel size: \(pixelSize) ";
-    result += "composant count: \(cmpCount) ";
-    result += "composant size: \(cmpSize) ";
-    result += "plane byte: \(planeByte) ";
-    result += "clut Id: \(clutId) ";
-    if clut != nil {
-      result += "clut: \(clut!)";
-    }
-    return result;
-  }
-
-  var version : Int = 0;
-  var packType : QDPackType = QDPackType.defaultPack;
-  var packSize : Int = 0;
-  var resolution : QDResolution?;
-  var pixelType : Int = 0;
-  var pixelSize : Int = 0;
-  var cmpCount : Int = 0;
-  var cmpSize : Int = 0;
-  var planeByte : Int64 = 0;
-  var clutId : Int32 = 0;
-  var clutSeed : MacTypeCode = MacTypeCode.zero;
-  var clut : QDColorTable?;
-}
 
 
-class QDBitMapInfo : CustomStringConvertible, PixMapMetadata {
-  
-  init(isPacked: Bool) {
-    self.isPacked = isPacked;
-  }
-  
-  var hasShortRows : Bool {
-    return rowBytes < 250;
-  }
-  
-  let isPacked : Bool;
-  var rowBytes : Int = 0;
-  var bounds : QDRect = QDRect.empty;
-  var srcRect : QDRect?;
-  var dstRect : QDRect?;
-  var mode : QuickDrawMode = QuickDrawMode.defaultMode;
-  var data : [UInt8] = [UInt8]();
-  var pixMapInfo : QDPixMapInfo?;
-  
-  var destinationRect : QDRect {
-    return dstRect!;
-  }
-  
-  var dimensions: QDDelta {
-    return bounds.dimensions;
-  }
-  
-  var height : Int {
-    return bounds.dimensions.dv.rounded;
-  }
-  
-  var cmpSize : Int {
-    if let pix_info = pixMapInfo {
-      return pix_info.cmpSize;
-    }
-    return 1;
-  }
-  
-  var pixelSize : Int {
-    if let pix_info = pixMapInfo {
-      return pix_info.pixelSize;
-    }
-    return 1;
-  }
-  
-  var clut : QDColorTable? {
-    if let pix_info = pixMapInfo {
-      return pix_info.clut!;
-    }
-    return QDColorTable.palette1;
-  }
-  
-  public var description : String {
-    let pm = describePixMap(self);
-    var result = "Bitmap info [\(pm) packed: \(isPacked) ";
-    result += "Bounds \(bounds) "
-    if srcRect != nil {
-      result += "src: \(srcRect!) ";
-    }
-    if dstRect != nil {
-      result += "dst: \(dstRect!) ";
-    }
-    result += "Mode: \(mode)]";
-    if let pixmap = pixMapInfo {
-      result += "Pixmap: \(pixmap)]";
-    }
-    return result;
-  }
-}
 
 public class QDPicture : CustomStringConvertible {
   init(size: Int, frame:QDRect, filename: String?) {

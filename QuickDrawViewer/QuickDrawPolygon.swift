@@ -7,13 +7,30 @@
 
 import Foundation
 
+struct PolygonOptions : OptionSet, CustomStringConvertible {
+  var rawValue: UInt8;
+  static let frame = PolygonOptions(rawValue: 1 << 0);
+  static let fill = PolygonOptions(rawValue: 1 << 1);
+  static let close = PolygonOptions(rawValue: 1 << 2);
+  static let smooth = PolygonOptions(rawValue: 1 << 3);
+  static let empty = PolygonOptions([]);
+  
+  var description: String {
+    var result : String = "PolySmoothVerb "
+    if contains(.frame) {result += " frame"}
+    if contains(.fill) {result += " fill"}
+    if contains(.close) {result += " close"}
+    if contains(.smooth) {result += " smooth"}
+    return result;
+  }
+}
+
 class QDPolygon {
   
   init(boundingBox: QDRect?, points: [QDPoint]) {
     self.boundingBox = boundingBox;
     self.points = points;
-    self.closed = false;
-    self.smooth = false;
+    self.options = PolygonOptions.empty;
   }
   
   convenience init() {
@@ -22,8 +39,7 @@ class QDPolygon {
   
   var boundingBox : QDRect?;
   var points : [QDPoint];
-  var closed : Bool;
-  var smooth : Bool;
+  var options : PolygonOptions;
   
   func AddLine(line : [QDPoint]) {
     if points.isEmpty {

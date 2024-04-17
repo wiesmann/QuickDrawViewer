@@ -342,6 +342,14 @@ extension QuickDrawDataReader {
     return ARGB555(rawValue: raw);
   }
   
+  func readQD1Color() throws -> QD1Color {
+    let code = try readUInt32();
+    guard let qd1 = QD1Color(rawValue: code) else {
+      throw QuickDrawError.unsupportedQD1Color(colorCode: code);
+    }
+    return qd1;
+  }
+  
   func readClut() throws -> QDColorTable {
     skip(bytes: 4);
     let clutFlags = try readUInt16();

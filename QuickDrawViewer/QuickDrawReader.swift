@@ -165,17 +165,6 @@ class QuickDrawDataReader {
     return toScalar(bytes: bytes);
   }
   
-  func readFixed() throws -> FixedPoint {
-    let v = try readInt32();
-    return FixedPoint(rawValue: Int(v));
-  }
- 
-  func readResolution() throws -> QDResolution {
-    let hRes = try readFixed();
-    let vRes = try readFixed();
-    return QDResolution(hRes: hRes, vRes: vRes);
-  }
-  
   func readOpcode(version: Int) throws -> UInt16 {
     switch version {
       case 1:

@@ -379,7 +379,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       let cg_points = polygon.points.map({ CGPoint(qd_point:$0)});
       context!.beginPath();
       context!.addLines(between: cg_points);
-      if polygon.closed {
+      if polygon.options.contains(.close) {
         context!.closePath();
       }
       try applyVerbToPath(verb: verb);
@@ -572,15 +572,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
           throw CoreGraphicRenderError.inconsistentPoly(
             message: String(localized: "Closing non existing polygon."));
         }
-        poly.closed = true;
+        poly.options.insert(.close);
       case (.polySmooth, .polySmoothPayload(let polyVerb)):
         guard let poly = polyAccumulator else {
           throw CoreGraphicRenderError.inconsistentPoly(
             message: String(localized: "Ending non existing polygon."));
-        }
-        poly.smooth = true;
-        if polyVerb.contains(.polyClose) {
-          poly.closed = true;
         }
         self.polyVerb = polyVerb;
       case (.polyIgnore, _):
@@ -596,9 +592,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         // Do something with polyverb?
         try stdPoly(polygon: poly, verb: QDVerb.frame);
         polyAccumulator = nil;
-        polyVerb = nil;
+        polyVerb = PolygonOptions.empty;
       case (_, .penStatePayload(let penOp)):
-        penOp.execute(penState: &penState);
+        try penOp.execute(penState: &penState);
       case (_, .fontStatePayload(let fontOp)):
         fontOp.execute(fontState: &fontState);
       case (_, .colorPayload(_, let color)):
@@ -766,7 +762,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   func execute(opcode: OpCode) throws {
     switch opcode {
       case let penOp as PenStateOperation:
-        penOp.execute(penState: &penState);
+        try penOp.execute(penState: &penState);
       case let fontOp as FontStateOperation:
         fontOp.execute(fontState: &fontState);
       case let portOp as PortOperation:
@@ -831,7 +827,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   var lastRegion :QDRegion = QDRegion.empty;
   // Polygon for reconstruction.
   var polyAccumulator : QDPolygon?;
-  var polyVerb : PolySmoothVerb?;
+  var polyVerb = PolygonOptions.empty;
   
   // Logger
   let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "render");

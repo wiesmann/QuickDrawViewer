@@ -40,6 +40,12 @@
 		E53BBF542BCFD39D00D9350A /* QuickDrawRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF522BCFD39D00D9350A /* QuickDrawRect.swift */; };
 		E53BBF562BCFD41600D9350A /* QuickDrawPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF552BCFD41600D9350A /* QuickDrawPolygon.swift */; };
 		E53BBF572BCFD41600D9350A /* QuickDrawPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF552BCFD41600D9350A /* QuickDrawPolygon.swift */; };
+		E53BBF592BD05EFB00D9350A /* QuickDrawText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF582BD05EFB00D9350A /* QuickDrawText.swift */; };
+		E53BBF5A2BD05EFB00D9350A /* QuickDrawText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF582BD05EFB00D9350A /* QuickDrawText.swift */; };
+		E53BBF5C2BD060CE00D9350A /* QuickDrawResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5B2BD060CE00D9350A /* QuickDrawResolution.swift */; };
+		E53BBF5D2BD060CE00D9350A /* QuickDrawResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5B2BD060CE00D9350A /* QuickDrawResolution.swift */; };
+		E53BBF5F2BD0639700D9350A /* QuickDrawBitMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */; };
+		E53BBF602BD0639700D9350A /* QuickDrawBitMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */; };
 		E553E4DC2B6AED62009B1EC2 /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
 		E553E4DD2B6AED62009B1EC2 /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
 		E553E4DF2B6FD9F5009B1EC2 /* QuickTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */; };
@@ -112,6 +118,9 @@
 		E53BBF4F2BCFD30F00D9350A /* QuickDrawPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawPoint.swift; sourceTree = "<group>"; };
 		E53BBF522BCFD39D00D9350A /* QuickDrawRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawRect.swift; sourceTree = "<group>"; };
 		E53BBF552BCFD41600D9350A /* QuickDrawPolygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawPolygon.swift; sourceTree = "<group>"; };
+		E53BBF582BD05EFB00D9350A /* QuickDrawText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawText.swift; sourceTree = "<group>"; };
+		E53BBF5B2BD060CE00D9350A /* QuickDrawResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawResolution.swift; sourceTree = "<group>"; };
+		E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawBitMap.swift; sourceTree = "<group>"; };
 		E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Yuv2.swift; sourceTree = "<group>"; };
 		E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTime.swift; sourceTree = "<group>"; };
 		E553E4E12B6FFA53009B1EC2 /* TypeCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeCode.swift; sourceTree = "<group>"; };
@@ -205,9 +214,12 @@
 				E553E4E12B6FFA53009B1EC2 /* TypeCode.swift */,
 				E59CDFA82B42EE0A00D7BB7B /* PackBit.swift */,
 				E53BBF4F2BCFD30F00D9350A /* QuickDrawPoint.swift */,
+				E53BBF582BD05EFB00D9350A /* QuickDrawText.swift */,
 				E53BBF522BCFD39D00D9350A /* QuickDrawRect.swift */,
 				E53BBF552BCFD41600D9350A /* QuickDrawPolygon.swift */,
 				E59CDFAA2B42EE0A00D7BB7B /* QuickDrawTypes.swift */,
+				E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */,
+				E53BBF5B2BD060CE00D9350A /* QuickDrawResolution.swift */,
 				E554EE5D2B9DF68800D56DF7 /* QuickDrawPattern.swift */,
 				E508C4F62B8E9575007686AE /* QuickDrawColor.swift */,
 				E508C4FF2B936919007686AE /* QuickDrawRegions.swift */,
@@ -363,9 +375,12 @@
 				E53BBF482BC3254200D9350A /* Cinepak.swift in Sources */,
 				E5CDA0272B44155E008DC6D6 /* QuickDrawParser.swift in Sources */,
 				E59CDFAF2B42EE0A00D7BB7B /* PackBit.swift in Sources */,
+				E53BBF5F2BD0639700D9350A /* QuickDrawBitMap.swift in Sources */,
 				E55E05F72B61A74A00EA1AD8 /* RoadPizza.swift in Sources */,
 				E52FEB052BACC269004E8BB4 /* QuickDrawPort.swift in Sources */,
+				E53BBF592BD05EFB00D9350A /* QuickDrawText.swift in Sources */,
 				E553E4DC2B6AED62009B1EC2 /* Yuv2.swift in Sources */,
+				E53BBF5C2BD060CE00D9350A /* QuickDrawResolution.swift in Sources */,
 				E53BBF532BCFD39D00D9350A /* QuickDrawRect.swift in Sources */,
 				E5CDA02D2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */,
 				E59CDF6E2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift in Sources */,
@@ -406,6 +421,7 @@
 				E53BBF462BBB4E5800D9350A /* IntelRaw.swift in Sources */,
 				E53BBF512BCFD30F00D9350A /* QuickDrawPoint.swift in Sources */,
 				E5CDA0252B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
+				E53BBF5D2BD060CE00D9350A /* QuickDrawResolution.swift in Sources */,
 				E508C4F52B764CB2007686AE /* Planar.swift in Sources */,
 				E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */,
 				E59CDF812B42C0E600D7BB7B /* QuickDrawViewerTests.swift in Sources */,
@@ -419,8 +435,10 @@
 				E50ADB982B599CE1009EA7AF /* QuickDrawViewerApp.swift in Sources */,
 				E5CDA02E2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */,
 				E59CDFB62B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */,
+				E53BBF5A2BD05EFB00D9350A /* QuickDrawText.swift in Sources */,
 				E554EE562B9BB4B100D56DF7 /* QuickTimeGraphics.swift in Sources */,
 				E508C5012B936919007686AE /* QuickDrawRegions.swift in Sources */,
+				E53BBF602BD0639700D9350A /* QuickDrawBitMap.swift in Sources */,
 				E53BBF492BC3254200D9350A /* Cinepak.swift in Sources */,
 				E59CDFB22B42EE0A00D7BB7B /* QuickDrawReader.swift in Sources */,
 				E52FEB032BAB8C53004E8BB4 /* QuickDrawComment.swift in Sources */,
