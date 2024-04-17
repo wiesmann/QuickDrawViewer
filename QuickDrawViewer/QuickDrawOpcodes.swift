@@ -669,7 +669,7 @@ struct BitRectOpcode : OpCode {
       } else {
         lineLength = Data.Index(try reader.readUInt16());
       }
-      let rowData = try reader.readUInt8(bytes: lineLength);
+      let rowData = try reader.readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(data: rowData, unpackedSize: bitmapInfo.rowBytes);
       bitmapInfo.data.append(contentsOf: decompressed);
     }
@@ -735,7 +735,7 @@ struct DirectBitOpcode : OpCode {
       } else {
         lineLength = Data.Index(try reader.readUInt16());
       }
-      let line_data = try reader.readUInt8(bytes: lineLength);
+      let line_data = try reader.readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(
         data: line_data, unpackedSize: bitmapInfo.rowBytes, byteNum: 2);
       
@@ -759,7 +759,7 @@ struct DirectBitOpcode : OpCode {
       } else {
         lineLength = Data.Index(try reader.readUInt16());
       }
-      let line_data = try reader.readUInt8(bytes: lineLength);
+      let line_data = try reader.readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(data: line_data, unpackedSize: rowBytes, byteNum: 1);
       let w = decompressed.count  / 3;
       for i in 0..<w  {

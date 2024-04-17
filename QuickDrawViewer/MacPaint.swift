@@ -19,8 +19,9 @@ class MacPaintImage : PixMapMetadata {
   static let height : Int = 720;
   
   func load(data : Data) throws {
+    let a = Array(data);
     self.bitmap = try decompressPackBit(
-      data: Array(data), unpackedSize: MacPaintImage.height * rowBytes);
+      data: a[0..<a.count], unpackedSize: MacPaintImage.height * rowBytes);
   }
   
   /// Convert the MacPaint images into an opcode.

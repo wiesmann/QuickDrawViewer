@@ -66,15 +66,15 @@ func copyDiscrete(length: Int, src : ArraySlice<UInt8>, destination : inout [UIn
 ///   - unpackedSize: size of the unpacked data
 ///   - byteNum: number of bytes in a chunk (default 1)
 /// - Returns: decompressed data
-func decompressPackBit(data : [UInt8], unpackedSize: Int, byteNum : Int = 1) throws -> [UInt8] {
+func decompressPackBit(data : ArraySlice<UInt8>, unpackedSize: Int, byteNum : Int = 1) throws -> [UInt8] {
   var decompressed : [UInt8] = [];
   decompressed.reserveCapacity(unpackedSize);
-  var index = 0;
-  while index < data.count - 1 {
+  var index = data.startIndex
+  while index < data.endIndex  {
     let tag = Int8(bitPattern: data[index]);
     index += 1;
-    guard index < data.count else {
-      throw PackbitError.outOfBoundRunStart(start: index, dataSize: data.count);
+    guard index < data.endIndex else {
+      throw PackbitError.outOfBoundRunStart(start: index, dataSize: data.endIndex);
     }
     if (tag < 0) {
       let length = (Int(tag) * -1) + 1;

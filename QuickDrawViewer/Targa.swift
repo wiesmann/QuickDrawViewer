@@ -34,6 +34,13 @@ enum TargaImageType : UInt8 {
   case rleGrayScale = 11;
 }
 
+/// Targa has its own variant of Packbit.
+/// - Parameters:
+///   - data: slice of bytes to decompress
+///   - maxSize: maximum size of the decompressed data
+///   - byteNum: bytes to decompress.
+/// - Throws: packbit errors.
+/// - Returns: decompressed bytes
 func decompressTarga(data : ArraySlice<UInt8>, maxSize : Int, byteNum: Int) throws -> [UInt8] {
   var result : [UInt8] = [];
   var p = data.startIndex;
@@ -140,27 +147,24 @@ class TargaImage : PixMapMetadata {
      */
     // Decoding
     self.rowBytes = width * pixelSize / 8;
-    let imageData = try reader.readUInt8(bytes: reader.remaining);
+    let imageData = try reader.readSlice(bytes: reader.remaining);
     
     switch imageType {
       case .rleColorMap:
-        let slice = imageData[0..<imageData.count];
-        pixmap = try decompressTarga(data: slice, maxSize: rowBytes * height, byteNum: 1);
+        pixmap = try decompressTarga(data: imageData, maxSize: rowBytes * height, byteNum: 1);
       case .rleTrueColor:
-        let slice = imageData[0..<imageData.count];
-        pixmap = try decompressTarga(data: slice, maxSize: rowBytes * height, byteNum: pixelSize / 8);
+        pixmap = try decompressTarga(data: imageData, maxSize: rowBytes * height, byteNum: pixelSize / 8);
         if pixelSize == 16 {
           swap16BitColor();
         }
       case .rleGrayScale:
-        let slice = imageData[0..<imageData.count];
-        pixmap = try decompressTarga(data: slice, maxSize: rowBytes * height, byteNum: 1);
+        pixmap = try decompressTarga(data: imageData, maxSize: rowBytes * height, byteNum: 1);
       case .grayScale:
-        pixmap = imageData;
+        pixmap = Array(imageData);
       case .colorMap:
-        pixmap = imageData;
+        pixmap = Array(imageData);
       case .trueColor:
-        pixmap = imageData;
+        pixmap = Array(imageData);
         if pixelSize == 16 {
           swap16BitColor();
         }

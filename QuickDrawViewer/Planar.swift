@@ -39,7 +39,7 @@ class PlanarImage : PixMapMetadata {
     var raw : [UInt8] = [];
     for (number, length) in lineLengths.enumerated() {
       do {
-        let compressed = try reader.readUInt8(bytes: length);
+        let compressed = try reader.readSlice(bytes: length);
         let decompressed = try decompressPackBit(data: compressed, unpackedSize: width);
         raw.append(contentsOf: decompressed);
       } catch let error as PackbitError {
