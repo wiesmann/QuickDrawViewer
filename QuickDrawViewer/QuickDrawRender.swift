@@ -578,7 +578,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
           throw CoreGraphicRenderError.inconsistentPoly(
             message: String(localized: "Ending non existing polygon."));
         }
-        self.polyVerb = polyVerb;
+        poly.options = poly.options.union(polyVerb);
       case (.polyIgnore, _):
         // Disabling the poly operations and executing it later (with polyClose)
         // Causes problems with patterns, which are converted to shades.
