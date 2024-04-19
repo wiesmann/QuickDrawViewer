@@ -46,6 +46,7 @@
 		E53BBF5D2BD060CE00D9350A /* QuickDrawResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5B2BD060CE00D9350A /* QuickDrawResolution.swift */; };
 		E53BBF5F2BD0639700D9350A /* QuickDrawBitMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */; };
 		E53BBF602BD0639700D9350A /* QuickDrawBitMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */; };
+		E53BBF622BD2884900D9350A /* ColorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF612BD2884900D9350A /* ColorTests.swift */; };
 		E553E4DC2B6AED62009B1EC2 /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
 		E553E4DD2B6AED62009B1EC2 /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
 		E553E4DF2B6FD9F5009B1EC2 /* QuickTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */; };
@@ -121,6 +122,7 @@
 		E53BBF582BD05EFB00D9350A /* QuickDrawText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawText.swift; sourceTree = "<group>"; };
 		E53BBF5B2BD060CE00D9350A /* QuickDrawResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawResolution.swift; sourceTree = "<group>"; };
 		E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawBitMap.swift; sourceTree = "<group>"; };
+		E53BBF612BD2884900D9350A /* ColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTests.swift; sourceTree = "<group>"; };
 		E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Yuv2.swift; sourceTree = "<group>"; };
 		E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTime.swift; sourceTree = "<group>"; };
 		E553E4E12B6FFA53009B1EC2 /* TypeCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeCode.swift; sourceTree = "<group>"; };
@@ -261,6 +263,7 @@
 			isa = PBXGroup;
 			children = (
 				E59CDF802B42C0E600D7BB7B /* QuickDrawViewerTests.swift */,
+				E53BBF612BD2884900D9350A /* ColorTests.swift */,
 			);
 			path = QuickDrawViewerTests;
 			sourceTree = "<group>";
@@ -421,6 +424,7 @@
 				E53BBF462BBB4E5800D9350A /* IntelRaw.swift in Sources */,
 				E53BBF512BCFD30F00D9350A /* QuickDrawPoint.swift in Sources */,
 				E5CDA0252B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
+				E53BBF622BD2884900D9350A /* ColorTests.swift in Sources */,
 				E53BBF5D2BD060CE00D9350A /* QuickDrawResolution.swift in Sources */,
 				E508C4F52B764CB2007686AE /* Planar.swift in Sources */,
 				E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */,
