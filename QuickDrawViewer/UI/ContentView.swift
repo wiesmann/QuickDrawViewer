@@ -18,7 +18,8 @@ struct ContentView: View {
   @State private var isExporting = false;
   @State private var isAlerting = false;
   @State private var alertMessage : Alert? = nil;
-  
+  @GestureState private var zoom = 1.0;
+
   let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "view");
   
   func renderCG(context : CGContext) -> Void {
@@ -79,7 +80,13 @@ struct ContentView: View {
           Label(String(localized: "Print"), systemImage: "printer")
         }
       }
-    }.alert(isPresented:$isAlerting){return $alertMessage.wrappedValue!})
+    }.alert(isPresented:$isAlerting){return $alertMessage.wrappedValue!}).scaleEffect(zoom)
+      .gesture(
+        MagnifyGesture()
+          .updating($zoom) { value, gestureState, transaction in
+            gestureState = value.magnification
+          }
+      )
   }
 
   var body: some View {

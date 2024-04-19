@@ -13,8 +13,6 @@ import ImageIO
 import AppKit
 import os
 
-
-
 // Shortcut to the RGB color space
 let rgbSpace = CGColorSpaceCreateDeviceRGB();
 
@@ -33,6 +31,7 @@ enum CoreGraphicRenderError : LocalizedError {
   case unsupportedMode(mode: QuickDrawTransferMode);
 }
 
+/// Make CGImageSourceStatus return some usable information.
 extension CGImageSourceStatus : CustomStringConvertible {
   public var description: String {
     switch self {
