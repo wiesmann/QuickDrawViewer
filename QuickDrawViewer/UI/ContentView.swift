@@ -93,4 +93,7 @@ struct ContentView: View {
     ScrollView([.horizontal, .vertical]){QDView()};
   }
 }
-  
+
+#Preview {
+  ContentView(document: QuickDrawViewerDocument(testMessage: "TestView"));
+}

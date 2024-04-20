@@ -47,6 +47,8 @@
 		E53BBF5F2BD0639700D9350A /* QuickDrawBitMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */; };
 		E53BBF602BD0639700D9350A /* QuickDrawBitMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */; };
 		E53BBF622BD2884900D9350A /* ColorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF612BD2884900D9350A /* ColorTests.swift */; };
+		E53BBF642BD30EE600D9350A /* PackBitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF632BD30EE600D9350A /* PackBitTests.swift */; };
+		E53BBF662BD3108D00D9350A /* demo.pict in Resources */ = {isa = PBXBuildFile; fileRef = E53BBF652BD3108D00D9350A /* demo.pict */; };
 		E553E4DC2B6AED62009B1EC2 /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
 		E553E4DD2B6AED62009B1EC2 /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
 		E553E4DF2B6FD9F5009B1EC2 /* QuickTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */; };
@@ -123,6 +125,8 @@
 		E53BBF5B2BD060CE00D9350A /* QuickDrawResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawResolution.swift; sourceTree = "<group>"; };
 		E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawBitMap.swift; sourceTree = "<group>"; };
 		E53BBF612BD2884900D9350A /* ColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTests.swift; sourceTree = "<group>"; };
+		E53BBF632BD30EE600D9350A /* PackBitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackBitTests.swift; sourceTree = "<group>"; };
+		E53BBF652BD3108D00D9350A /* demo.pict */ = {isa = PBXFileReference; lastKnownFileType = image.pict; path = demo.pict; sourceTree = "<group>"; };
 		E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Yuv2.swift; sourceTree = "<group>"; };
 		E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTime.swift; sourceTree = "<group>"; };
 		E553E4E12B6FFA53009B1EC2 /* TypeCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeCode.swift; sourceTree = "<group>"; };
@@ -254,6 +258,7 @@
 		E59CDF732B42C0E600D7BB7B /* Preview Content */ = {
 			isa = PBXGroup;
 			children = (
+				E53BBF652BD3108D00D9350A /* demo.pict */,
 				E59CDF742B42C0E600D7BB7B /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
@@ -263,6 +268,7 @@
 			isa = PBXGroup;
 			children = (
 				E59CDF802B42C0E600D7BB7B /* QuickDrawViewerTests.swift */,
+				E53BBF632BD30EE600D9350A /* PackBitTests.swift */,
 				E53BBF612BD2884900D9350A /* ColorTests.swift */,
 			);
 			path = QuickDrawViewerTests;
@@ -357,6 +363,7 @@
 				E59CDF752B42C0E600D7BB7B /* Preview Assets.xcassets in Resources */,
 				E53BBF4C2BCB3D4900D9350A /* Credits.rtf in Resources */,
 				E59CDF722B42C0E600D7BB7B /* Assets.xcassets in Resources */,
+				E53BBF662BD3108D00D9350A /* demo.pict in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -439,6 +446,7 @@
 				E50ADB982B599CE1009EA7AF /* QuickDrawViewerApp.swift in Sources */,
 				E5CDA02E2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */,
 				E59CDFB62B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */,
+				E53BBF642BD30EE600D9350A /* PackBitTests.swift in Sources */,
 				E53BBF5A2BD05EFB00D9350A /* QuickDrawText.swift in Sources */,
 				E554EE562B9BB4B100D56DF7 /* QuickTimeGraphics.swift in Sources */,
 				E508C5012B936919007686AE /* QuickDrawRegions.swift in Sources */,

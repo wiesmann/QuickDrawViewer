@@ -149,9 +149,6 @@ class PenState {
   static let defaultPen = QDPoint(vertical: defautPenWidth, horizontal: defautPenWidth);
 }
 
-
-
-
 public class QDPicture : CustomStringConvertible {
   init(size: Int, frame:QDRect, filename: String?) {
     self.size = size;

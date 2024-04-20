@@ -8,14 +8,14 @@
 import XCTest
 
 final class ColorTests : XCTestCase {
-  func testRGB() throws {
+  func testRGBFields() throws {
     XCTAssertEqual(RGBColor.black.rgb, [0x00, 0x00, 0x00]);
     XCTAssertEqual(RGBColor.red.rgb, [0xff, 0x00, 0x00]);
     XCTAssertEqual(RGBColor.green.rgb, [0x00, 0xff, 0x00]);
     XCTAssertEqual(RGBColor.blue.rgb, [0x00, 0x00, 0xff]);
     XCTAssertEqual(RGBColor.cyan.rawValue, 0x0000ffffffff);
   }
-
+  
   func testRGB555() throws {
     let black = ARGB555(rawValue: 0x00);
     XCTAssertEqual(black.red, 0x00);
