@@ -39,6 +39,19 @@ func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> RGB8 {
   return yuv2Rgb(y: ny, u: nu, v: nv);
 }
 
+func interleaveRgb(planar : ArraySlice<UInt8>) -> [UInt8] {
+  var result : [UInt8] = [];
+  let w = planar.count  / 3;
+  let w2 = 2 * w ;
+  for i in 0..<w {
+    let index = i + planar.startIndex;
+    result.append(planar[index]);
+    result.append(planar[index + w]);
+    result.append(planar[index + w2]);
+  }
+  return result;
+}
+
 /// Get the number of channels and component size (int bits) associated with a color depth.
 /// - Parameter depth: color depth (in bits)
 /// - Throws: Error in case of unsupported depth.

@@ -64,6 +64,7 @@ struct ContentView: View {
   
   func QDView() -> some View {
     let picture = $document.picture.wrappedValue;
+    
     let width = picture.frame.dimensions.dh.value * renderZoom;
     let height = picture.frame.dimensions.dv.value * renderZoom;
     let canvas = Canvas(opaque: true, colorMode: ColorRenderingMode.linear, rendersAsynchronously: true, renderer: self.render).frame(width: width, height: height);

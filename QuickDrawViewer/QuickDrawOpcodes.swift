@@ -121,6 +121,7 @@ struct Version2HeaderOp : OpCode, PictureOperation {
     if resolution != QDResolution.zeroResolution {
       picture.resolution = resolution;
       picture.srcRect = srcRect;
+      picture.frame = srcRect;
     }
   }
   
@@ -739,12 +740,7 @@ struct DirectBitOpcode : OpCode {
       }
       let line_data = try reader.readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(data: line_data, unpackedSize: rowBytes, byteNum: 1);
-      let w = decompressed.count  / 3;
-      for i in 0..<w  {
-        bitmapInfo.data.append(decompressed[i]);
-        bitmapInfo.data.append(decompressed[i + w]);
-        bitmapInfo.data.append(decompressed[i + (2 * w)]);
-      }
+      bitmapInfo.data.append(contentsOf: interleaveRgb(planar: decompressed[...]));
     }
     /// Update the pixel information to reflect reality. There is no alpha.
     bitmapInfo.rowBytes = rowBytes ;
