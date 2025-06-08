@@ -8,7 +8,7 @@
 import Foundation
 
 /// Rectangle
-struct QDRect : CustomStringConvertible, Equatable {
+struct QDRect : CustomStringConvertible, Equatable, Sendable {
   
   init(topLeft: QDPoint, bottomRight: QDPoint) {
     self.topLeft = topLeft;

@@ -22,7 +22,7 @@ extension UTType {
 }
 
 /// Document wrapper for QuickDraw file types (also QuickTime and MacPaint).
-class QuickDrawViewerDocument: ReferenceFileDocument {
+final class QuickDrawViewerDocument: ReferenceFileDocument {
 
   typealias Snapshot = Data;
   @Published var picture: QDPicture;

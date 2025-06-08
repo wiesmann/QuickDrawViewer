@@ -12,30 +12,30 @@ import Foundation
 /// -------
 
 /// Minimal interface: be able to load.
-protocol OpCode {
+protocol OpCode : Sendable  {
   mutating func load(reader: QuickDrawDataReader) throws -> Void
 }
 
 /// opcodes that affect the picture meta-data, typically execute at load time.
-protocol PictureOperation {
+protocol PictureOperation : Sendable {
   func execute(picture : inout QDPicture) -> Void;
 }
 
 /// opcodes that affect the pen-state can be execute independently of the target graphic system.
-protocol PenStateOperation {
+protocol PenStateOperation : Sendable {
   func execute(penState : inout PenState) throws -> Void;
 }
 
 /// opcodes that affect the font state (size, font-name, etc).
-protocol FontStateOperation {
+protocol FontStateOperation : Sendable {
   func execute(fontState : inout QDFontState) -> Void;
 }
 
-protocol PortOperation {
+protocol PortOperation : Sendable {
   func execute(port: inout QuickDrawPort) throws -> Void;
 }
 
-protocol CullableOpcode {
+protocol CullableOpcode : Sendable {
   var canCull : Bool {
     get
   }
@@ -248,8 +248,8 @@ struct ArcOp : OpCode, PortOperation {
 
 
 /// Polygon operation
-struct PolygonOp : OpCode, PortOperation {
-  
+struct PolygonOp : OpCode, PortOperation, @unchecked Sendable {
+
   mutating func load(reader: QuickDrawDataReader) throws {
     poly = try reader.readPoly();
   }

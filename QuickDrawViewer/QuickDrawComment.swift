@@ -95,7 +95,7 @@ struct PostScript : CustomStringConvertible {
   let source : String;
 }
 
-enum CommentPayload {
+enum CommentPayload : Sendable {
   case noPayload;
   case dataPayload(creator: MacTypeCode, data: Data);
   case postScriptPayLoad(postscript: PostScript);

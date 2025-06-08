@@ -61,8 +61,8 @@ func decompressTarga(data : ArraySlice<UInt8>, maxSize : Int, byteNum: Int) thro
 }
 
 /// We need a special Targa decoder because the color-table can be external.
-class TargaImage : PixMapMetadata {
-  
+class TargaImage : PixMapMetadata, @unchecked Sendable {
+
   init(dimensions: QDDelta, clut: QDColorTable?) {
     self.dimensions = dimensions;
     self.clut = clut;

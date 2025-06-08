@@ -16,8 +16,8 @@ enum RoadPizzaError : Error {
 /// Image compressed with the RPZA (RoadPizza) compression.
 /// Decode the sequence of opcodes into a ARGB555 buffer.
 /// Skipped blocks will have transparent pixels.
-class RoadPizzaImage : BlockPixMap {
-  
+class RoadPizzaImage : BlockPixMap, @unchecked Sendable {
+
   init(dimensions: QDDelta) {
     super.init(dimensions: dimensions, blockSize: 4, pixelSize: ARGB555.pixelSize, cmpSize: ARGB555.componentSize, clut: nil);
   }

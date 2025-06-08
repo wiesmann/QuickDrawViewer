@@ -72,8 +72,8 @@ func expandDepth(_ depth : Int) throws -> (Int, Int) {
 }
 
 /// Abstract view of a bitmap information
-protocol PixMapMetadata : CustomStringConvertible {
-  
+protocol PixMapMetadata : CustomStringConvertible, Sendable {
+
   var dimensions : QDDelta {get};
   var rowBytes : Int {get};
   var cmpSize : Int {get};
@@ -87,7 +87,7 @@ func describePixMap(_ pm: PixMapMetadata) -> String {
 }
 
 /// Parent class for block based pixmap formats.
-class BlockPixMap : PixMapMetadata {
+class BlockPixMap : PixMapMetadata, @unchecked Sendable {
 
   init(dimensions: QDDelta, blockSize: Int, pixelSize: Int, cmpSize: Int, clut: QDColorTable?) {
     self.dimensions = dimensions;

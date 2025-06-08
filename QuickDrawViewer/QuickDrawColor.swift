@@ -262,18 +262,14 @@ func makeGrayRamp() -> QDColorTable {
 }
 
 /// ColorTable, typically called  `CLUT`.
-class QDColorTable : CustomStringConvertible {
+final class QDColorTable : CustomStringConvertible, Sendable {
   public var description: String {
     let string_flag = String(format: "%0X ", clutFlags);
     var result = "flags: \(string_flag) "
     result += "clut \(clut.count) entries";
     return result;
   }
-  
-  init(clutFlags: UInt16) {
-    self.clutFlags = clutFlags;
-  }
-  
+
   init(clut : [RGBColor], id: Int, clutFlags : UInt16) {
     self.id = id;
     self.clutFlags = clutFlags;
@@ -283,6 +279,7 @@ class QDColorTable : CustomStringConvertible {
   init(raw: [UInt32], id: Int) {
     self.id = id;
     self.clutFlags = 0;
+    var clut : [RGBColor] = [];
     for v in raw {
       let r = RGBColor.pad16(v >> 16)
       let g = RGBColor.pad16(v >> 8);
@@ -290,12 +287,13 @@ class QDColorTable : CustomStringConvertible {
       let color = RGBColor(red: r, green: g, blue: b);
       clut.append(color)
     }
+    self.clut = clut;
   }
   
   let clutFlags : UInt16;
-  var clut : [RGBColor] = [];
-  var id : Int = 0;
-  
+  let clut : [RGBColor];
+  let id : Int;
+
   func reversed(id: Int) -> QDColorTable {
     return QDColorTable(clut: self.clut.reversed(), id: id, clutFlags:0);
   }
@@ -321,8 +319,6 @@ class QDColorTable : CustomStringConvertible {
     }
   }
 }
-
-
 
 extension QuickDrawDataReader {
   func readRGB() throws -> RGBColor {
@@ -353,8 +349,9 @@ extension QuickDrawDataReader {
   func readClut() throws -> QDColorTable {
     skip(bytes: 4);
     let clutFlags = try readUInt16();
-    let colorTable = QDColorTable(clutFlags: clutFlags);
     let clutSize = try readUInt16();
+    var clut : [RGBColor] = [];
+
     for index in 0...clutSize {
       let r_index = try readUInt16();
       // DeskDraw produces index with value 0x8000
@@ -362,8 +359,8 @@ extension QuickDrawDataReader {
         print("Inconsistent index: \(r_index)≠\(index)");
       }
       let color = try readRGB();
-      colorTable.clut.append(color)
+      clut.append(color);
     }
-    return colorTable;
+    return QDColorTable(clut: clut, id: 0,  clutFlags: clutFlags);
   }
 }

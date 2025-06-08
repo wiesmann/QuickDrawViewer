@@ -18,7 +18,7 @@ enum AnimationCodecError : Error {
 
 
 // TODO: depth = 1 bits per pixels does not work.
-class AnimationImage : PixMapMetadata {
+class AnimationImage : PixMapMetadata, @unchecked Sendable {
   init(dimensions: QDDelta, depth: Int, clut: QDColorTable?) throws {
     self.dimensions = dimensions;
     self.depth = depth;

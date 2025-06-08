@@ -9,8 +9,8 @@ import Foundation
 
 /// The YVU9 is a planar format, in which U and V are sampled every 4 pixels horizontally
 /// and vertically (sometimes referred to as 16:1:1). The V plane appears before the U plane.
-class IntelRawImage : PixMapMetadata {
-  
+class IntelRawImage : PixMapMetadata, @unchecked Sendable {
+
   init(dimensions : QDDelta) {
     let h = roundTo(dimensions.dh, multipleOf: 4);
     let v = roundTo(dimensions.dv, multipleOf: 4);

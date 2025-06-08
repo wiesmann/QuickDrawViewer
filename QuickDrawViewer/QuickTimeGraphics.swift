@@ -42,7 +42,7 @@ class QuickTimeGraphicsColorCache {
 }
 
 /// QuickTime `Graphics` codec.
-class QuickTimeGraphicsImage : BlockPixMap {
+class QuickTimeGraphicsImage : BlockPixMap, @unchecked Sendable {
   
   init(dimensions: QDDelta, clut: QDColorTable) {
     super.init(dimensions: dimensions, blockSize: 4, pixelSize: 8, cmpSize: 8, clut: clut);

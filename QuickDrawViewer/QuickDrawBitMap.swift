@@ -53,7 +53,7 @@ class QDPixMapInfo : CustomStringConvertible {
 }
 
 
-class QDBitMapInfo : CustomStringConvertible, PixMapMetadata {
+class QDBitMapInfo : CustomStringConvertible, PixMapMetadata, @unchecked Sendable {
   
   init(isPacked: Bool) {
     self.isPacked = isPacked;

@@ -170,7 +170,7 @@ struct QuickTimeQuality : RawRepresentable, CustomStringConvertible {
   private static let kDepthMask : UInt32 = 0b111111;
 }
 
-class QuickTimeIdsc : CustomStringConvertible {
+class QuickTimeIdsc : CustomStringConvertible, @unchecked Sendable {
   var description: String {
     var result = "'\(compressionName)' ";
     result += "codec: '\(codecType)' (\(compressorDevelopper))";
@@ -456,7 +456,7 @@ func codecToContentType(qtImage : QuickTimeIdsc) -> String {
   }
 }
 
-struct QuickTimeOpcode : OpCode {
+struct QuickTimeOpcode : OpCode, @unchecked Sendable {
   mutating func load(reader: QuickDrawDataReader) throws {
     let dataSize = Int(try reader.readInt32());
     let subReader = try reader.subReader(bytes: dataSize);

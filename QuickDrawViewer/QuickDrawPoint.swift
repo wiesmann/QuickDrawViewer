@@ -8,8 +8,8 @@
 import Foundation
 
 /// Point in  QuickDraw space.
-struct QDPoint : CustomStringConvertible, Equatable {
-  
+struct QDPoint : CustomStringConvertible, Equatable, Sendable {
+
   init (vertical: FixedPoint, horizontal: FixedPoint) {
     self.vertical = vertical;
     self.horizontal = horizontal;

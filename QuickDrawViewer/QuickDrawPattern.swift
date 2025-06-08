@@ -8,7 +8,7 @@
 import Foundation
 
 /// Black and white pattern (8×8 pixels)
-struct QDPattern : Equatable, PixMapMetadata, RawRepresentable {
+struct QDPattern : Equatable, PixMapMetadata, RawRepresentable, Sendable {
   
   init(rawValue: UInt64) {
     self.rawValue = rawValue;

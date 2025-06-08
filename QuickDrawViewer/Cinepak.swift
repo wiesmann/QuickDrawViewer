@@ -22,7 +22,7 @@ enum CinepakError : Error {
 }
 
 /// A cinepak is divided in strips which describe a band of the picture.
-class CinepakStripeDescriptor: CustomStringConvertible {
+class CinepakStripeDescriptor: CustomStringConvertible, @unchecked Sendable {
   enum StripeType : UInt16 {
     // Stripe that describes its own codebook entries.
     case intraCodedStrip = 0x1000;
@@ -258,7 +258,7 @@ extension QuickDrawDataReader {
 
 /// A cinepak image is composed of 4×4 blocks, which are filled either using one 2×2 codebook entries (doubled),
 /// or 4 2×2 code book entries, each block
-class Cinepak : BlockPixMap {
+class Cinepak : BlockPixMap, @unchecked Sendable{
   init(dimensions: QDDelta, clut: QDColorTable?) {
     components = clut != nil ? CinepakComponents.index : CinepakComponents.rgb;
     super.init(dimensions: dimensions, blockSize: 4, pixelSize: components.rawValue * 8, cmpSize: 8, clut: clut);

@@ -13,7 +13,7 @@ import Foundation
 ///  This type supports math operations that could be done quickly on a 68000 processor:
 ///  - addition, substraction
 ///  - shifts
-public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmetic, Hashable {
+public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmetic, Hashable, Sendable {
   
   public typealias Magnitude = Self;
   
