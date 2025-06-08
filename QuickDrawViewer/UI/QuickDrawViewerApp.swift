@@ -7,11 +7,13 @@
 
 import SwiftUI
 
+let gitHubUrl = URL(string: "https://github.com/wiesmann/QuickDrawViewer");
+
+
 struct HelpMenu: View {
   var body: some View {
     Group {
-      Link(String(localized: "QuickDraw Viewer Project"), destination: URL(
-        string: "https://github.com/wiesmann/QuickDrawViewer")!);
+      Link(String(localized: "QuickDraw Viewer Project"), destination: gitHubUrl!);
       Link(String(localized: "License"), destination: URL(
         string: "https://www.apache.org/licenses/LICENSE-2.0")!);
     }

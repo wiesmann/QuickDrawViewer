@@ -32,7 +32,7 @@ enum CoreGraphicRenderError : LocalizedError {
 }
 
 /// Make CGImageSourceStatus return some usable information.
-extension CGImageSourceStatus : CustomStringConvertible {
+extension CGImageSourceStatus : @retroactive CustomStringConvertible {
   public var description: String {
     switch self {
       case .statusUnexpectedEOF: return String(localized: "Unexpected end-of-file");

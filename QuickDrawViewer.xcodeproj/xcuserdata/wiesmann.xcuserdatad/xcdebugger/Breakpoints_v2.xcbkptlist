@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bucket
+   uuid = "DABDD1DB-25CB-4BE5-B802-75904D80B2E5"
+   type = "1"
+   version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "2553A434-3815-481B-8249-2B77B3265C8B"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "QuickDrawViewer/UI/ContentView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "71"
+            endingLineNumber = "71"
+            landmarkName = "QDView()"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "2553A434-3815-481B-8249-2B77B3265C8B - 337a319d0938b368"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "QuickDrawViewer.ContentView.QDView() -&gt; some"
+                  moduleName = "QuickDrawViewer"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/wiesmann/Projects/personal/QuickDrawViewer/QuickDrawViewer/UI/ContentView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "71"
+                  endingLineNumber = "71">
+               </Location>
+               <Location
+                  uuid = "2553A434-3815-481B-8249-2B77B3265C8B - da3ac77f066c260f"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "implicit closure #2 (inout SwiftUI.GraphicsContext, __C.CGSize) -&gt; () in implicit closure #1 (QuickDrawViewer.ContentView) -&gt; (inout SwiftUI.GraphicsContext, __C.CGSize) -&gt; () in QuickDrawViewer.ContentView.QDView() -&gt; some"
+                  moduleName = "QuickDrawViewer"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/wiesmann/Projects/personal/QuickDrawViewer/QuickDrawViewer/UI/ContentView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "71"
+                  endingLineNumber = "71">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
+</Bucket>
