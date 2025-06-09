@@ -23,7 +23,7 @@ Instructions meant for printers (QuickDraw _comments_) are also used in the tran
 ## QuickDraw 
 
 QuickDraw was the graphical language of the original Macintosh, the original interpreter was written in Motorola 68K
-by the late (Bill Atkinson)[https://en.wikipedia.org/wiki/Bill_Atkinson]. 
+by the late [Bill Atkinson](https://en.wikipedia.org/wiki/Bill_Atkinson).
 
 
 ## Original Pict Example
