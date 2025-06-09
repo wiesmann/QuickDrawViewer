@@ -727,11 +727,12 @@ struct DirectBitOpcode : OpCode {
   /// Packbit algorithm on 8 bit quantities, for each row, first the red values, then the green, blue.
   mutating func loadComponentRunLength(reader: QuickDrawDataReader) throws {
     let rows = bitmapInfo.height;
-    guard bitmapInfo.pixMapInfo?.cmpCount == 3 else {
+    let cmpCount = bitmapInfo.pixMapInfo?.cmpCount
+    guard cmpCount == 3 || cmpCount == 4 else {
       throw QuickDrawError.wrongComponentNumber(componentNumber: bitmapInfo.cmpSize);
     }
     
-    let rowBytes = bitmapInfo.rowBytes * 3 / 4;
+    let rowBytes = bitmapInfo.rowBytes * cmpCount! / 4;
     for _ in 0..<rows {
       var lineLength : Data.Index;
       if bitmapInfo.hasShortRows {
@@ -741,11 +742,17 @@ struct DirectBitOpcode : OpCode {
       }
       let line_data = try reader.readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(data: line_data, unpackedSize: rowBytes, byteNum: 1);
-      bitmapInfo.data.append(contentsOf: interleaveRgb(planar: decompressed[...]));
+      var interleaved = interleave(planar: decompressed[...], components: cmpCount!);
+      /// Even if there is an alpha channel, it is actually meaningless, so we blank it. 
+      if (cmpCount! == 4) {
+        interleaved = makeAlphaOpaque(argb: interleaved);
+      }
+
+      bitmapInfo.data.append(contentsOf: interleaved);
     }
     /// Update the pixel information to reflect reality. There is no alpha.
     bitmapInfo.rowBytes = rowBytes ;
-    bitmapInfo.pixMapInfo?.pixelSize = 24;
+    bitmapInfo.pixMapInfo?.pixelSize = cmpCount! * 8;
   }
   
   var bitmapInfo : QDBitMapInfo = QDBitMapInfo(isPacked: false);

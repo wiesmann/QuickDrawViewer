@@ -39,15 +39,25 @@ func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> RGB8 {
   return yuv2Rgb(y: ny, u: nu, v: nv);
 }
 
-func interleaveRgb(planar : ArraySlice<UInt8>) -> [UInt8] {
+/// Interleave a buffer of the form AAAABBBBCCCC to ABCABCABCABC
+func interleave(planar : ArraySlice<UInt8>, components: Int) -> [UInt8] {
   var result : [UInt8] = [];
-  let w = planar.count  / 3;
-  let w2 = 2 * w ;
+  let w = planar.count / components;
   for i in 0..<w {
     let index = i + planar.startIndex;
-    result.append(planar[index]);
-    result.append(planar[index + w]);
-    result.append(planar[index + w2]);
+    for j in 0..<components {
+      result.append(planar[index + w * j]);
+    }
+  }
+  return result;
+}
+
+func makeAlphaOpaque(argb : [UInt8]) -> [UInt8] {
+  var result : [UInt8] = argb;
+  for i in 0..<result.count {
+    if (i % 4) == 0 {
+      result[i] = 0xff;
+    }
   }
   return result;
 }
