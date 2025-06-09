@@ -65,7 +65,7 @@ $"00FF"     /* OpEndPic opcode; end of picture */
 ```
 
 You can [download the compiled Pict file](docs/inside_macintosh.pict).
-he rendering in the book looks like this:
+the rendering in the book looks like this:
 
 ![Example Pict](docs/inside_macintosh_listing_A5.png)
 
