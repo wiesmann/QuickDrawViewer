@@ -145,7 +145,8 @@ Currently, the following QuickDraw features don't work:
 
 The application is currently very simple, you can view pictures, copy-paste them to Preview. 
 There is an export icon in the toolbar that allows you to export to PDF files. 
-There is some primitive drag-drop that works when the target is Notes or Pages, but not when the target expects a file, like the Finder or Mail.
+There is some primitive drag-drop that as of Mac OS X 15.5 seems to work with most targets I could test with. 
+
 
 ## License 
 

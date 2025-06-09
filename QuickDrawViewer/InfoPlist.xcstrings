@@ -11,7 +11,8 @@
             "value" : "QuickDraw Viewer"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "CFBundleName" : {
       "comment" : "Bundle name",
@@ -23,10 +24,34 @@
             "value" : "QuickDrawViewer"
           }
         }
+      },
+      "shouldTranslate" : false
+    },
+    "CFBundleShortVersionString" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1.5"
+          }
+        }
       }
     },
     "MacPaint Picture" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MacPaint Bild"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mac Paint Picture"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -39,9 +64,21 @@
       "comment" : "Copyright (human-readable)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© Matthias Wiesmann – Apache 2.0 License."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "© Matthias Wiesmann – Apache 2.0 License."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "© Matthias Wiesmann – Apache 2.0 License."
           }
         }
@@ -49,6 +86,18 @@
     },
     "Quickdraw Picture" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QuickDraw Bild"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QuickDraw Picture"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -59,6 +108,18 @@
     },
     "QuickTime Picture" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QuickTime Bild"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QuickTime Picture"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",

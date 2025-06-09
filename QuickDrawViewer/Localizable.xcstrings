@@ -23,6 +23,12 @@
     },
     "Could not create palette image." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palettenbild könnte nicht erstellt werden"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,6 +39,12 @@
     },
     "Could not create RGB bitmap." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RGB bild könnte nicht erstellt werden"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -63,6 +75,12 @@
     },
     "Failed build print operation" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Druck operation gescheitert"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -153,6 +171,12 @@
     },
     "Print" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Druck"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",

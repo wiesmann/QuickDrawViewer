@@ -12,6 +12,7 @@ import Foundation
 /// -------
 
 /// Minimal interface: be able to load.
+/// Technically, opcodes are mutables, but they are only mutated once after construction.
 protocol OpCode : Sendable  {
   mutating func load(reader: QuickDrawDataReader) throws -> Void
 }
