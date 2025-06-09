@@ -66,8 +66,13 @@ struct ContentView: View {
   func QDView() -> some View {
     let picture = $document.picture.wrappedValue;
     
-    let width = picture.frame.dimensions.dh.value * renderZoom;
-    let height = picture.frame.dimensions.dv.value * renderZoom;
+    var width = picture.frame.dimensions.dh.value * renderZoom;
+    var height = picture.frame.dimensions.dv.value * renderZoom;
+    if width < 0 || height <= 0  {
+      logger.log(level: .error, "Invalid picture dimensions \(picture)")
+      width = 512;
+      height = 512;
+    }
     let canvas = Canvas(opaque: true, colorMode: ColorRenderingMode.linear, rendersAsynchronously: true, renderer: self.render).frame(width: width, height: height);
     return AnyView(canvas.focusable().copyable([picture]).draggable(picture).fileExporter(isPresented: $isExporting, item: picture, contentTypes: [.pdf], defaultFilename: MakePdfFilename(picture:picture), onCompletion: exportDone).toolbar {
       ToolbarItemGroup() {
