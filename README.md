@@ -20,6 +20,12 @@ The rendering engine of Mac OS X is also closer to a PostScript printer than the
 So this program mostly translates QuickDraw instructions and delegates most of the actual rendering to Core Graphics.
 Instructions meant for printers (QuickDraw _comments_) are also used in the translation.
 
+## QuickDraw 
+
+QuickDraw was the graphical language of the original Macintosh, the original interpreter was written in Motorola 68K
+by the late (Bill Atkinson)[https://en.wikipedia.org/wiki/Bill_Atkinson]. 
+
+
 ## Original Pict Example
 
 The decoder is mostly based on `Inside Macintosh - Imaging With QuickDraw` published in 1994.
