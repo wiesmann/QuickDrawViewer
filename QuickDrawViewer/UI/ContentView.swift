@@ -69,7 +69,7 @@ struct ContentView: View {
     var width = picture.frame.dimensions.dh.value * renderZoom;
     var height = picture.frame.dimensions.dv.value * renderZoom;
     if width < 0 || height <= 0  {
-      logger.log(level: .error, "Invalid picture dimensions \(picture)")
+      logger.log(level: .error, "Invalid picture dimensions \(picture)");
       width = 512;
       height = 512;
     }

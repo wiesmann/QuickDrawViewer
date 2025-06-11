@@ -673,7 +673,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   func executeRGBImage(metadata: PixMapMetadata, destination: QDRect, mode: QuickDrawTransferMode, data: [UInt8]) throws {
     let bitmapInfo = getBitmapInfo(metadata: metadata);
     let cfData = CFDataCreate(nil, data, data.count)!;
-    let provider = CGDataProvider(data: cfData)!;
+    guard let provider = CGDataProvider(data: cfData) else {
+      throw CoreGraphicRenderError.imageFailure(
+        message: String(localized:"Could not create Provider for data: \(data.count) bytes."),
+        metadata: metadata);
+    }
     guard let image = CGImage(
       width: metadata.dimensions.dh.rounded,
       height: metadata.dimensions.dv.rounded,
@@ -686,7 +690,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(
-        message: String(localized:"Could not create RGB bitmap."),
+        message: String(localized:"Could not create RGB bitmap from \(data.count) bytes."),
         metadata: metadata);
     }
     try applyMode(mode: mode);

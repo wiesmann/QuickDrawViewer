@@ -149,7 +149,9 @@ class PenState {
   static let defaultPen = QDPoint(vertical: defautPenWidth, horizontal: defautPenWidth);
 }
 
+// Fix the frame using the first clip operation.
 public class QDPicture : CustomStringConvertible {
+
   init(size: Int, frame:QDRect, filename: String?) {
     self.size = size;
     self.frame = frame;
@@ -178,6 +180,27 @@ public class QDPicture : CustomStringConvertible {
     result += "===========================\n";
     return result;
   }
+
+  func firstClip() -> QDRect? {
+    for opcode in opcodes {
+      if let clip = opcode as? ClipOpcode {
+        return clip.clipRect;
+      }
+    }
+    return nil;
+  }
+
+  /// The frame of QuickDraw pictures is often wrong, if it is obviously broken (zero dimension),
+  /// fall back to the first clip operation.
+  func fixFrame() {
+    if frame.dimensions.dh == .zero || frame.dimensions.dv == .zero {
+      if let clipRect = firstClip() {
+        frame = clipRect;
+      }
+    }
+  }
+
+
 }
 
 

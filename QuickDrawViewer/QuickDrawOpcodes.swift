@@ -42,6 +42,10 @@ protocol CullableOpcode : Sendable {
   }
 }
 
+protocol ClipOpcode  {
+  var clipRect : QDRect? { get }
+}
+
 /// -----------------
 /// Simple control opcodes
 /// -----------------
@@ -143,8 +147,10 @@ struct OriginOp : OpCode {
 /// Shape opcodes
 /// ---------------------
 
-struct RegionOp : OpCode, PortOperation {
-  
+struct RegionOp : OpCode, PortOperation, ClipOpcode {
+
+
+
   mutating func load(reader: QuickDrawDataReader) throws {
     try region = reader.readRegion();
   }
@@ -157,10 +163,17 @@ struct RegionOp : OpCode, PortOperation {
   let same : Bool;
   let verb : QDVerb
   var region: QDRegion?;
+
+  var clipRect: QDRect? {
+    if verb == .clip {
+      return region?.boundingBox;
+    }
+    return nil;
+  }
 }
 
 /// Rectangle operation
-struct RectOp : OpCode, PortOperation {
+struct RectOp : OpCode, PortOperation, ClipOpcode {
   mutating func load(reader: QuickDrawDataReader) throws {
     if !same {
       rect = try reader.readRect();
@@ -175,6 +188,13 @@ struct RectOp : OpCode, PortOperation {
   let same: Bool;
   let verb: QDVerb;
   var rect: QDRect?;
+
+  var clipRect: QDRect? {
+    if verb == .clip {
+      return rect;
+    }
+    return nil;
+  }
 }
 
 /// Oval operation
@@ -226,7 +246,7 @@ struct OvalSizeOp : OpCode, PenStateOperation {
 
 /// Arc operation
 struct ArcOp : OpCode, PortOperation {
-  
+
   mutating func load(reader: QuickDrawDataReader) throws {
     if !same {
       rect = try reader.readRect();
@@ -689,7 +709,7 @@ struct DirectBitOpcode : OpCode {
     let rows = bitmapInfo.height;
     let rowBytes = bitmapInfo.rowBytes;
     let byteNum = rows * rowBytes;
-    data = try reader.readUInt8(bytes: byteNum);
+    bitmapInfo.data = try reader.readUInt8(bytes: byteNum);
   }
   
   /// Pack 2
@@ -700,7 +720,8 @@ struct DirectBitOpcode : OpCode {
     let rowBytes = bitmapInfo.rowBytes * 3 / 4;
     let byteNum = rows * rowBytes;
     bitmapInfo.rowBytes = rowBytes;
-    data = try reader.readUInt8(bytes: byteNum);
+    bitmapInfo.pixMapInfo!.pixelSize = 24;
+    bitmapInfo.data = try reader.readUInt8(bytes: byteNum);
   }
   
   /// Pack 3
@@ -756,5 +777,4 @@ struct DirectBitOpcode : OpCode {
   }
   
   var bitmapInfo : QDBitMapInfo = QDBitMapInfo(isPacked: false);
-  var data : [UInt8] = [];
 }

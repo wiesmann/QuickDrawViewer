@@ -171,6 +171,7 @@ class QDParser {
     let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime;
     let name = picture.filename ?? ""
     logger.log(level: .debug, "Picture \(name) parsed in : \(timeElapsed) seconds");
+    picture.fixFrame();
     return picture
   }
   

@@ -37,7 +37,14 @@
         }
       }
     },
+    "Could not create Provider for data: %lld bytes." : {
+
+    },
+    "Could not create RGB bitmap from %lld bytes." : {
+
+    },
     "Could not create RGB bitmap." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
