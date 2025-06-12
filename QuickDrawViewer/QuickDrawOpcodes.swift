@@ -24,7 +24,7 @@ protocol PictureOperation : Sendable {
 
 /// opcodes that affect the pen-state can be execute independently of the target graphic system.
 protocol PenStateOperation : Sendable {
-  func execute(penState : inout PenState) throws -> Void;
+  func execute(penState : inout QDPenState) throws -> Void;
 }
 
 /// opcodes that affect the font state (size, font-name, etc).
@@ -233,7 +233,7 @@ struct RoundRectOp : OpCode, PortOperation {
 }
 
 struct OvalSizeOp : OpCode, PenStateOperation {
-  func execute(penState: inout PenState) {
+  func execute(penState: inout QDPenState) {
     penState.ovalSize = size;
   }
   
@@ -373,7 +373,7 @@ struct ColorOp : OpCode, PenStateOperation, CustomStringConvertible {
     }
   }
   
-  func execute(penState: inout PenState) {
+  func execute(penState: inout QDPenState) {
     switch selection {
       case QDColorSelection.foreground: penState.fgColor = color;
       case QDColorSelection.background: penState.bgColor = color;
@@ -395,7 +395,7 @@ struct ColorOp : OpCode, PenStateOperation, CustomStringConvertible {
 // Pen operations
 // --------------
 struct PatternOp : OpCode, PenStateOperation  {
-  func execute(penState: inout PenState) throws {
+  func execute(penState: inout QDPenState) throws {
     switch verb {
       case .fill, .paint:
         penState.fillPattern = pattern;
@@ -415,7 +415,7 @@ struct PatternOp : OpCode, PenStateOperation  {
 }
 
 struct PenSizeOp : OpCode, PenStateOperation {
-  func execute(penState: inout PenState) {
+  func execute(penState: inout QDPenState) {
     penState.penSize = penSize;
   }
   
@@ -431,7 +431,7 @@ struct PenModeOp : OpCode, PenStateOperation {
     mode = QuickDrawMode(rawValue: try reader.readUInt16());
   }
   
-  func execute(penState: inout PenState) {
+  func execute(penState: inout QDPenState) {
     penState.mode = mode;
   }
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
@@ -561,7 +561,7 @@ struct PnLocHFracOp : OpCode, PenStateOperation {
     penFraction = FixedPoint(rawValue: Int(f));
   }
   
-  func execute(penState: inout PenState) {
+  func execute(penState: inout QDPenState) {
     let v = penState.location.vertical;
     let h = penState.location.horizontal + penFraction;
     

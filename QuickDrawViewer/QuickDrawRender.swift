@@ -29,6 +29,8 @@ enum CoreGraphicRenderError : LocalizedError {
   case unsupportedOpcode(opcode: OpCode);
   case inconsistentPoly(message: String);
   case unsupportedMode(mode: QuickDrawTransferMode);
+  case emptyIccData(message: String);
+  case invalidIccData(data: Data);
 }
 
 /// Make CGImageSourceStatus return some usable information.
@@ -97,7 +99,7 @@ extension CGColor {
   static let magenta = CGColor(genericCMYKCyan: 0.0, magenta: 1.0, yellow: 0.0, black: 0.0, alpha: 1.0);
   static let yellow = CGColor(genericCMYKCyan: 0.0, magenta: 0.0, yellow: 1.0, black: 0.0, alpha: 1.0);
   
-  /// Force a color into RGB space
+  /// Force a color into Device RGB space
   var rgb : CGColor {
     get throws {
       if self.colorSpace == rgbSpace {
@@ -128,6 +130,18 @@ extension CGColor {
   }
 }
 
+extension PixMapMetadata {
+  var bitmapInfo : CGBitmapInfo {
+    switch pixelSize {
+      case 16:
+        return CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
+      case 32:
+        return CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
+      default:
+        return CGBitmapInfo();
+    }
+  }
+}
 
 func floatToUInt8(_ value: CGFloat) -> UInt8 {
   return UInt8(value * 0xff);
@@ -157,7 +171,11 @@ func Blend(a : CGColor,  b : CGColor, weight : Double) throws -> CGColor {
   return blended.cgColor;
 }
 
+/// Glue extensions for Color classes.
 extension QDColor {
+
+  // Get the equivalent CGColor in relevant generic color-space.
+  // The color can be defined either in RGB or CMYK.
   var cgColor : CGColor {
     get throws {
       switch self {
@@ -184,7 +202,6 @@ extension QDColor {
           let k = toFloat(cmyk.black);
           return CGColor(genericCMYKCyan: c, magenta: m , yellow:  y, black: k, alpha: 1.0);
           
-          
         case .blend(colorA: let colorA, colorB: let colorB, weight: let weight):
           let a = try colorA.cgColor;
           let b = try colorB.cgColor;
@@ -193,6 +210,28 @@ extension QDColor {
     }
   }
 }
+
+/// Glue extension for Color-tables.
+extension QDColorTable {
+  /// Convert a QuickDraw CLUT (color-table) to a Core-Graphic Color-Space
+  /// - Parameter base: The reference RGB color-space.
+  /// - Returns: A Core Graphics color-space
+  func ToColorSpace(base: CGColorSpace) throws -> CGColorSpace {
+    var data : [UInt8] = [];
+    for color in clut {
+      data.append(contentsOf: color.rgb);
+    }
+    guard data.count <= 256 * 8 else {
+      throw QuickDrawError.invalidClutError(clut:self);
+    }
+    let result = CGColorSpace(indexedBaseSpace: base, last: clut.count - 1, colorTable: &data);
+    guard result != nil else {
+      throw QuickDrawError.renderingError(message: "CGColorSpace creation failed");
+    }
+    return result!;
+  }
+}
+
 /// Convert a font name from the classic mac universe ino a corresponding one on Mac OS X.
 /// - Parameter fontName: Font name
 /// - Returns: A font-name that probably exists on Mac OS X.
@@ -226,28 +265,10 @@ func deg2rad<T: BinaryInteger>(_ angle: T) -> Double {
 class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   init(context : CGContext?) {
     self.context = context;
-    penState = PenState();
+    penState = QDPenState();
     fontState = QDFontState();
   }
-  
-  /// Convert a QuickDraw CLUT (color-table) to a Core-Graphic Color-Space
-  /// - Parameter clut: A Quickdraw color-table with a most 256 entries.
-  /// - Returns: A Core Graphics color-space
-  func ToColorSpace(clut: QDColorTable) throws -> CGColorSpace {
-    var data : [UInt8] = [];
-    for color in clut.clut {
-      data.append(contentsOf: color.rgb);
-    }
-    guard data.count <= 256 * 8 else {
-      throw QuickDrawError.invalidClutError(clut:clut);
-    }
-    let result = CGColorSpace(indexedBaseSpace: rgbSpace, last: clut.clut.count - 1, colorTable: &data);
-    guard result != nil else {
-      throw QuickDrawError.renderingError(message: "CGColorSpace creation failed");
-    }
-    return result!;
-  }
-  
+
   /// Build a color space to paint using the a 1 bit pattern.
   /// - Returns: A 1 bit color-space with the background color (0) and the foreground color (1).
   func paintColorSpace() throws -> CGColorSpace {
@@ -256,7 +277,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     var data : [UInt8] = [];
     data.append(contentsOf: color0);
     data.append(contentsOf: color1);
-    return CGColorSpace(indexedBaseSpace: rgbSpace, last: 1, colorTable: &data)!;
+    return CGColorSpace(indexedBaseSpace: colorSpace, last: 1, colorTable: &data)!;
   }
   
   /// Paint the current path using the current pattern.
@@ -486,16 +507,20 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     }
     return traits;
   }
-  
+
+  /// Draw text at the current pen location.
+  /// Sounds easy, it is far from trivial.
   func stdText(text : String) throws {
     guard portBits.contains(QDPortBits.textEnable) else {
       return;
     }
-    
+    /// Get the font attributes.
     let fontName = SubstituteFontName(fontName: fontState.getFontName()) as CFString;
     let fontSize = CGFloat(fontState.fontSize.value);
-    let fgColor = try penState.fgColor.cgColor;
-    let bgColor = try penState.bgColor.cgColor;
+    /// Make sure the colors are in the current color-space.
+    let fgColor = try penState.fgColor.cgColor.converted(to: colorSpace, intent: .defaultIntent, options: nil);
+    let bgColor = try penState.bgColor.cgColor.converted(to: colorSpace, intent: .defaultIntent, options: nil);
+    /// Compute the font.
     let parentFont = CTFontCreateWithName(fontName, fontSize, nil);
     let mask : CTFontSymbolicTraits = [.traitItalic, .traitBold];
     let font = CTFontCreateCopyWithSymbolicTraits(
@@ -508,23 +533,23 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       lineText.addAttribute(
         kCTUnderlineStyleAttributeName as NSAttributedString.Key , value: CTUnderlineStyle.single.rawValue, range: range);
     }
-    // Start work
+    /// Start work
     context!.saveGState();
     try applyMode(mode: fontState.fontMode.mode);
-    // Use the ratios, but invert the y axis
+    /// Use the ratios, but invert the y axis
     context!.textMatrix = CGAffineTransform(scaleX: fontState.xRatio.value, y: -fontState.yRatio.value);
     if fontState.fontStyle.contains(.outlineBit) {
       lineText.addAttribute(
-        kCTForegroundColorAttributeName as NSAttributedString.Key, value: bgColor, range: range);
+        kCTForegroundColorAttributeName as NSAttributedString.Key, value: bgColor!, range: range);
       lineText.addAttribute(
-        kCTStrokeColorAttributeName as NSAttributedString.Key, value: fgColor, range: range);
+        kCTStrokeColorAttributeName as NSAttributedString.Key, value: fgColor!, range: range);
       context!.setTextDrawingMode(.fillStroke);
     } else {
       lineText.addAttribute(
-        kCTForegroundColorAttributeName as NSAttributedString.Key, value: fgColor, range: range);
+        kCTForegroundColorAttributeName as NSAttributedString.Key, value: fgColor!, range: range);
       context!.setTextDrawingMode(.fill);
     }
-    
+    /// Handle extra-space between the chars.
     if fontState.extraSpace != FixedPoint.zero {
       let extraSpace = NSNumber(value: fontState.extraSpace.value);
       lineText.addAttribute(kCTKernAttributeName as NSAttributedString.Key, value: extraSpace, range: range);
@@ -556,7 +581,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     context!.restoreGState();
     fontState.textCenter = nil;
   }
-  
+
+  /// Set the ICC profile for the renderer.
+  func setIccProfile(iccProfileData: Data) throws {
+    guard let iccSpace = CGColorSpace(iccData: iccProfileData as CFData) else {
+      throw CoreGraphicRenderError.invalidIccData(data: iccProfileData);
+    }
+    colorSpace = iccSpace;
+  }
+
   func executeComment(commentOp: CommentOp) throws {
     switch (commentOp.kind, commentOp.payload) {
       case (.textBegin, .fontStatePayload(let fontOp)):
@@ -592,6 +625,22 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         try stdPoly(polygon: poly, verb: QDVerb.frame);
         polyAccumulator = nil;
         polyVerb = PolygonOptions.empty;
+      case (.iccColorProfile, .iccColorProfilePayload(let selector, let data)) where selector == .iccBegin:
+            guard let d = data else {
+              throw CoreGraphicRenderError.emptyIccData(message: String(localized: "No ICC data for iccBegin"));
+            }
+            iccData = d;
+            break;
+      case (.iccColorProfile, .iccColorProfilePayload(let selector, let data)) where selector == .iccContinuation:
+            guard let d = data else {
+              throw CoreGraphicRenderError.emptyIccData(message: String(localized: "No ICC data for iccContinuation"));
+            }
+            iccData!.append(contentsOf: d);
+            break;
+      case (.iccColorProfile, .iccColorProfilePayload(let selector, _)) where selector == .iccEnd:
+            try setIccProfile(iccProfileData: iccData!);
+            iccData = nil;
+            break;
       case (_, .penStatePayload(let penOp)):
         try penOp.execute(penState: &penState);
       case (_, .fontStatePayload(let fontOp)):
@@ -611,7 +660,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   ///   - data: pixel data
   ///   - clut: color table to use for lookups
   func executePaletteImage(metadata: PixMapMetadata, destination: QDRect, mode: QuickDrawTransferMode, data: [UInt8], clut: QDColorTable) throws {
-    let colorSpace = try ToColorSpace(clut: clut);
+    let colorSpace = try clut.ToColorSpace(base: self.colorSpace);
     let bitmapInfo = CGBitmapInfo();
     let cfData = CFDataCreate(nil, data, data.count)!;
     let provider = CGDataProvider(data: cfData)!;
@@ -653,17 +702,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       clut: clut);
   }
   
-  func getBitmapInfo(metadata: PixMapMetadata) -> CGBitmapInfo {
-    switch metadata.pixelSize {
-      case 16:
-        return CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue);
-      case 32:
-        return CGBitmapInfo(rawValue: CGImageAlphaInfo.first.rawValue);
-      default:
-        return CGBitmapInfo();
-    }
-  }
-  
   /// Render an RGB (direct) image
   /// - Parameters:
   ///   - metadata: header information with the dimension, rowBytees, depth etc.
@@ -671,7 +709,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   ///   - mode: QuickDraw rendering mode.
   ///   - data: raw data to render.
   func executeRGBImage(metadata: PixMapMetadata, destination: QDRect, mode: QuickDrawTransferMode, data: [UInt8]) throws {
-    let bitmapInfo = getBitmapInfo(metadata: metadata);
     let cfData = CFDataCreate(nil, data, data.count)!;
     guard let provider = CGDataProvider(data: cfData) else {
       throw CoreGraphicRenderError.imageFailure(
@@ -684,7 +721,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       bitsPerComponent: metadata.cmpSize,
       bitsPerPixel: metadata.pixelSize,
       bytesPerRow: metadata.rowBytes,
-      space: rgbSpace, bitmapInfo: bitmapInfo,
+      space: colorSpace, bitmapInfo: metadata.bitmapInfo,
       provider: provider,
       decode: nil,
       shouldInterpolate: false,
@@ -737,6 +774,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         break;
     }
     /// Second option, the image is something CoreGraphics can handle, like JPEG.
+    /// Note that in this case, we cannot apply the color-space.
     let options : NSDictionary = [ kCGImageSourceTypeIdentifierHint: codecToContentType(qtImage:qtImage)];
     guard let imageSource = CGImageSourceCreateWithData(payload as CFData, options) else {
       throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateWithData", quicktimeOpcode: quicktimeOp);
@@ -821,7 +859,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   // Picture being rendered.
   var picture : QDPicture?;
   // Quickdraw state
-  var penState : PenState;
+  var penState : QDPenState;
   var fontState : QDFontState;
   var portBits = QDPortBits.defaultState ;
   // Last shapes, used by the SameXXX operations.
@@ -831,7 +869,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   // Polygon for reconstruction.
   var polyAccumulator : QDPolygon?;
   var polyVerb = PolygonOptions.empty;
-  
+
+  // ColorSpace
+  var colorSpace : CGColorSpace = CGColorSpaceCreateDeviceRGB();
+  // Accumulator for ICC color profile.
+  var iccData : Data?;
+
   // Logger
   let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "render");
 }

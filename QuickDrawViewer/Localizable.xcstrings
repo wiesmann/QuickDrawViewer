@@ -176,6 +176,12 @@
         }
       }
     },
+    "No ICC data for iccBegin" : {
+
+    },
+    "No ICC data for iccContinuation" : {
+
+    },
     "Print" : {
       "localizations" : {
         "de" : {

@@ -41,7 +41,7 @@ protocol QuickDrawPort {
   func stdArc(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws -> Void;
 
   // Port state
-  var penState : PenState {get  set };
+  var penState : QDPenState {get  set };
   var fontState : QDFontState {get set};
   var portBits : QDPortBits {get set};
   // Last values

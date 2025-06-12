@@ -60,7 +60,7 @@ enum CommentType : UInt16, CaseIterable {
   case scale = 499;
   case bitmapThinBegin = 1000;
   case bitmapThinEnd = 1001;
-  case picLasso = 12345;
+  case picLasso = 12345;  // Internal to MacPaint code
   case unknown = 0xffff;
 }
 
@@ -68,7 +68,7 @@ enum CommentType : UInt16, CaseIterable {
 /// This allows some generic processing on the renderer code.
 
 struct LineWidthPayload : PenStateOperation {
-  func execute(penState: inout PenState) {
+  func execute(penState: inout QDPenState) {
     penState.penWidth = width;
   }
   let width: FixedPoint;
@@ -95,6 +95,17 @@ struct PostScript : CustomStringConvertible {
   let source : String;
 }
 
+enum IccProfileSelector : UInt32 {
+  case iccBegin = 0;
+  case iccContinuation = 1;
+  case iccEnd = 2;
+}
+
+struct IccProfile {
+  let selector : IccProfileSelector;
+  let data : Data?;
+}
+
 enum CommentPayload : Sendable {
   case noPayload;
   case dataPayload(creator: MacTypeCode, data: Data);
@@ -103,8 +114,10 @@ enum CommentPayload : Sendable {
   case penStatePayload(penOperation: PenStateOperation);
   case polySmoothPayload(verb: PolygonOptions);
   case canvasPayload(canvas: CanvasPayload);
+  case creatorPayload(creator: MacTypeCode, data: Data);
   case colorPayload(creator: MacTypeCode, color: QDColor);
   case unknownPayload(rawType: Int, data: Data);
+  case iccColorProfilePayload(selector: IccProfileSelector, data: Data?);
 }
 
 /// See Technote 091: Optimizing for the LaserWriter—Picture Comments
@@ -141,6 +154,7 @@ enum CanvasPayload {
 func parseCanvasPayload(creator: MacTypeCode, data: Data) throws -> CommentPayload {
   let reader = try QuickDrawDataReader(data: data, position: 0);
   let code = try reader.readUInt16();
+  // code 9 always precedes a setLineWidth comment.
   switch code {
     case 0x44:
       return .canvasPayload(canvas: .canvasEnd);
@@ -170,48 +184,59 @@ struct CommentOp : OpCode, CustomStringConvertible, CullableOpcode {
     kind = CommentType(rawValue: value) ?? .unknown;
     let size = long_comment ? Data.Index(try reader.readUInt16()) : Data.Index(0);
     switch (kind, size) {
-    case (.proprietary, let size) where size > 4:
-      let creator = try reader.readType();
-      let data = try reader.readData(bytes: size - 4);
-      payload = try parseProprietaryPayload(creator: creator, data: data);
-    case (.postscriptBeginNoSave, _),
-      (.postscriptStart, _),
-      (.postscriptFile, _),
-      (.postscriptHandle, _):
+      case (.proprietary, let size) where size > 4:
+        let creator = try reader.readType();
+        let data = try reader.readData(bytes: size - 4);
+        payload = try parseProprietaryPayload(creator: creator, data: data);
+      case (.postscriptBeginNoSave, _),
+        (.postscriptStart, _),
+        (.postscriptFile, _),
+        (.postscriptHandle, _):
         let postscript = try reader.readPostScript(bytes: size);
         payload = .postScriptPayLoad(postscript : postscript);
-    case (.textBegin, let size) where size > 0:
-      let subreader = try reader.subReader(bytes: size);
-      let fontOp = TextPictPayload(textPictRecord: try readTextPictRecord(reader: subreader));
-      payload = .fontStatePayload(fontOperation: fontOp);
-    case (.setLineWidth, let size) where size > 0:
-      let subreader = try reader.subReader(bytes: size);
-      let point = try subreader.readPoint();
-      let penOp = LineWidthPayload(width: point.vertical / point.horizontal);
-      payload = .penStatePayload(penOperation: penOp);
-    case (.textCenter, let size) where size > 0:
-      let subreader = try reader.subReader(bytes: size);
-      // readDelta assumes integer, here we want to read fixed points.
-      let v = try subreader.readFixed();
-      let h = try subreader.readFixed();
-      let fontOp = TextCenterPayload(center: QDDelta(dv: v, dh: h));
-      payload = .fontStatePayload(fontOperation: fontOp);
-    case (.polySmooth, 1):
-      var verb = PolygonOptions(rawValue: try reader.readUInt8());
+      case (.textBegin, let size) where size > 0:
+        let subreader = try reader.subReader(bytes: size);
+        let fontOp = TextPictPayload(textPictRecord: try readTextPictRecord(reader: subreader));
+        payload = .fontStatePayload(fontOperation: fontOp);
+      case (.setLineWidth, let size) where size > 0:
+        let subreader = try reader.subReader(bytes: size);
+        let point = try subreader.readPoint();
+        let penOp = LineWidthPayload(width: point.vertical / point.horizontal);
+        payload = .penStatePayload(penOperation: penOp);
+      case (.textCenter, let size) where size > 0:
+        let subreader = try reader.subReader(bytes: size);
+        // readDelta assumes integer, here we want to read fixed points.
+        let v = try subreader.readFixed();
+        let h = try subreader.readFixed();
+        let fontOp = TextCenterPayload(center: QDDelta(dv: v, dh: h));
+        payload = .fontStatePayload(fontOperation: fontOp);
+      case (.polySmooth, 1):
+        var verb = PolygonOptions(rawValue: try reader.readUInt8());
         verb.insert(.smooth);
-      payload = .polySmoothPayload(verb: verb);
-    case (_, 0):
-      payload = .noPayload;
-    case (.unknown, let size) where size > 0:
-      payload = .unknownPayload(rawType: Int(value), data: try reader.readData(bytes: size));
-    case (_, let size) where size > 0:
-      let creator = try MacTypeCode(fromString: "APPL");
-      payload = .dataPayload(creator: creator, data: try reader.readData(bytes: size));
-    default:
-      payload = .unknownPayload(rawType: Int(value), data: try reader.readData(bytes: size));
+        payload = .polySmoothPayload(verb: verb);
+      case (.iccColorProfile, size) where size > 4:
+        let selector = IccProfileSelector(rawValue: try reader.readUInt32());
+        let data = try reader.readData(bytes: size - 4);
+        payload = .iccColorProfilePayload(selector: selector!, data: data);
+      case (.iccColorProfile, size) where size == 4:
+        let selector = IccProfileSelector(rawValue: try reader.readUInt32());
+        payload = .iccColorProfilePayload(selector: selector!, data: nil);
+      case (.creator, size):
+        let creator = try reader.readType();
+        let data = try reader.readData(bytes: size - 4);
+        payload = .creatorPayload(creator: creator, data: data);
+      case (_, 0):
+        payload = .noPayload;
+      case (.unknown, let size) where size > 0:
+        payload = .unknownPayload(rawType: Int(value), data: try reader.readData(bytes: size));
+      case (_, let size) where size > 0:
+        let creator = try MacTypeCode(fromString: "APPL");
+        payload = .dataPayload(creator: creator, data: try reader.readData(bytes: size));
+      default:
+        payload = .unknownPayload(rawType: Int(value), data: try reader.readData(bytes: size));
     }
   }
-  
+
   var description: String {
     return "CommentOp \(kind): [\(payload)]"
   }

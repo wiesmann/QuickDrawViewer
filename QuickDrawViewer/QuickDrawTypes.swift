@@ -111,7 +111,7 @@ infix operator ⨴ : MultiplicationPrecedence
 
 
 /// All the state associated with drawing
-class PenState {
+class QDPenState {
   var location : QDPoint = QDPoint.zero;
   var penSize: QDPoint = defaultPen;
   var mode: QuickDrawMode = QuickDrawMode.defaultMode;
