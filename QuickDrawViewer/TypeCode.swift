@@ -12,7 +12,9 @@ enum MacTypeError: Error {
   case invalidLength(length: Int);
 }
 
-struct MacTypeCode : RawRepresentable, CustomStringConvertible {
+/// Types on the classic mac were identified using four letter codes.
+/// These were stored as 4 bytes inside an 32 bit integer.
+struct MacTypeCode : RawRepresentable, CustomStringConvertible, Sendable {
   init(rawValue: UInt32) {
     self.rawValue = rawValue;
   }

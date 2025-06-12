@@ -193,7 +193,7 @@ public class QDPicture : CustomStringConvertible {
   /// The frame of QuickDraw pictures is often wrong, if it is obviously broken (zero dimension),
   /// fall back to the first clip operation.
   func fixFrame() {
-    if frame.dimensions.dh == .zero || frame.dimensions.dv == .zero {
+    if frame.isEmpty {
       if let clipRect = firstClip() {
         frame = clipRect;
       }

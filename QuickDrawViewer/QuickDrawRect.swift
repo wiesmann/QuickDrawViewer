@@ -42,7 +42,7 @@ struct QDRect : CustomStringConvertible, Equatable, Sendable {
   }
   
   var isEmpty : Bool {
-    return topLeft == bottomRight;
+    return dimensions.dh == .zero || dimensions.dv == .zero;
   }
   
   static func + (rect: QDRect, delta: QDDelta) -> QDRect {

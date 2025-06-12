@@ -38,24 +38,21 @@
       }
     },
     "Could not create Provider for data: %lld bytes." : {
-
-    },
-    "Could not create RGB bitmap from %lld bytes." : {
-
-    },
-    "Could not create RGB bitmap." : {
-      "extractionState" : "stale",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RGB bild könnte nicht erstellt werden"
-          }
-        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Échec de création d'image RGB."
+            "value" : "Erreur de création de “Provider” pour %lld octets de donnée."
+          }
+        }
+      }
+    },
+    "Could not create RGB bitmap from %lld bytes." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error création de bitmap RGB pour %lld octets de données."
           }
         }
       }
@@ -177,10 +174,24 @@
       }
     },
     "No ICC data for iccBegin" : {
-
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune donnée pour commentaire iccBegin"
+          }
+        }
+      }
     },
     "No ICC data for iccContinuation" : {
-
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune donnée pour commentaire iccContinuation"
+          }
+        }
+      }
     },
     "Print" : {
       "localizations" : {
