@@ -219,6 +219,16 @@
         }
       }
     },
+    "QuickDrawCGRenderer" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QuickDrawCGRenderer"
+          }
+        }
+      }
+    },
     "Reading header" : {
       "localizations" : {
         "fr" : {

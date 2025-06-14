@@ -14,7 +14,7 @@ import AppKit
 import os
 
 // Shortcut to the RGB color space
-let rgbSpace = CGColorSpaceCreateDeviceRGB();
+let rgbDeviceSpace = CGColorSpaceCreateDeviceRGB();
 
 enum CoreGraphicRenderError : LocalizedError {
   case noContext(message: String);
@@ -48,6 +48,7 @@ extension CGImageSourceStatus : @retroactive CustomStringConvertible {
     }
   }
 }
+
 
 extension CGPoint {
   init(qd_point : QDPoint) {
@@ -102,10 +103,10 @@ extension CGColor {
   /// Force a color into Device RGB space
   var rgb : CGColor {
     get throws {
-      if self.colorSpace == rgbSpace {
+      if self.colorSpace == rgbDeviceSpace {
         return self;
       }
-      guard let rgb = self.converted(to: rgbSpace, intent: .defaultIntent, options: nil) else {
+      guard let rgb = self.converted(to: rgbDeviceSpace, intent: .defaultIntent, options: nil) else {
         throw CoreGraphicRenderError.notRgbConvertible(color: self);
       }
       return rgb;
@@ -117,11 +118,12 @@ extension CGColor {
       guard let c : [CGFloat] = try rgb.components else {
         throw CoreGraphicRenderError.notRgbConvertible(color: self);
       }
-      return c[0...2].map({floatToUInt8($0)});
+      return c[0...2].map({$0.uInt8});
     }
   }
   
   /// Convert a core graphics color back into a QuickDraw color.
+  ///  TODO: Avoid converting CMYK colors into RGB.
   var qdColor : QDColor {
     get throws {
       let rgb = try self.rgbBytes;
@@ -143,10 +145,13 @@ extension PixMapMetadata {
   }
 }
 
-func floatToUInt8(_ value: CGFloat) -> UInt8 {
-  return UInt8(value * 0xff);
+extension CGFloat {
+  var uInt8: UInt8 {
+    return UInt8(self * 0xff);
+  }
 }
 
+// Convert float to
 func toFloat(_ value: UInt16) -> CGFloat {
   return CGFloat(value) / 0x10000;
 }
@@ -171,7 +176,7 @@ func Blend(a : CGColor,  b : CGColor, weight : Double) throws -> CGColor {
   return blended.cgColor;
 }
 
-/// Glue extensions for Color classes.
+/// Glue extensions for QuickDraw colour.
 extension QDColor {
 
   // Get the equivalent CGColor in relevant generic color-space.
@@ -226,7 +231,7 @@ extension QDColorTable {
     }
     let result = CGColorSpace(indexedBaseSpace: base, last: clut.count - 1, colorTable: &data);
     guard result != nil else {
-      throw QuickDrawError.renderingError(message: "CGColorSpace creation failed");
+      throw QuickDrawError.renderingError(message: "CGColorSpace creation failed for \(self)");
     }
     return result!;
   }
@@ -592,11 +597,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
 
   func executeComment(commentOp: CommentOp) throws {
     switch (commentOp.kind, commentOp.payload) {
+      // Text comment handling
+
       case (.textBegin, .fontStatePayload(let fontOp)):
         fontOp.execute(fontState: &fontState);
         portBits = [.textEnable];
       case (.textEnd, _):
         portBits = QDPortBits.defaultState;
+
+      /// Polygon comment handling
       case (.polyBegin, _):
         polyAccumulator = QDPolygon();
       case (.polyClose, _):
@@ -625,6 +634,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         try stdPoly(polygon: poly, verb: QDVerb.frame);
         polyAccumulator = nil;
         polyVerb = PolygonOptions.empty;
+
+      /// ICC Profile comment handling
       case (.iccColorProfile, .iccColorProfilePayload(let selector, let data)) where selector == .iccBegin:
             guard let d = data else {
               throw CoreGraphicRenderError.emptyIccData(message: String(localized: "No ICC data for iccBegin"));
@@ -641,6 +652,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
             try setIccProfile(iccProfileData: iccData!);
             iccData = nil;
             break;
+      /// Generic dispatch for comments that implement some operation interface,
       case (_, .penStatePayload(let penOp)):
         try penOp.execute(penState: &penState);
       case (_, .fontStatePayload(let fontOp)):
@@ -894,7 +906,7 @@ class PDFRenderer : QuickdrawCGRenderer {
   
   override func execute(picture: QDPicture, zoom: Double) throws {
     var mediabox = CGRect(qdrect: picture.frame);
-    var meta  = [kCGPDFContextCreator: "QuickDrawCFRenderer"];
+    var meta  = [kCGPDFContextCreator: String(localized:"QuickDrawCGRenderer")];
     if let filename = picture.filename {
       meta[kCGPDFContextTitle] = filename;
     }
