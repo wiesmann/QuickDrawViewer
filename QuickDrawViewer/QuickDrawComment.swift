@@ -10,6 +10,7 @@ import Foundation
 /// ----------------
 /// Comment operations
 /// ----------------
+/// https://developer.apple.com/library/archive/documentation/mac/pdf/Imaging_With_QuickDraw/Appendix_B.pdf
 
 enum CommentType : UInt16, CaseIterable {
   case groupBegin = 0;
@@ -56,7 +57,7 @@ enum CommentType : UInt16, CaseIterable {
   case formsPrinting = 210;
   case endFormsPrinting = 211;
   case iccColorProfile = 224;  // https://www.color.org/icc32.pdf
-  case creator = 498 ;
+  case creator = 498 ;  // Seems to be set by Photoshop
   case scale = 499;
   case bitmapThinBegin = 1000;
   case bitmapThinEnd = 1001;
@@ -114,7 +115,7 @@ enum CommentPayload : Sendable {
   case penStatePayload(penOperation: PenStateOperation);
   case polySmoothPayload(verb: PolygonOptions);
   case canvasPayload(canvas: CanvasPayload);
-  case creatorPayload(creator: MacTypeCode, data: Data);
+  case creatorPayload(creator: MacTypeCode, frame: QDRect);
   case colorPayload(creator: MacTypeCode, color: QDColor);
   case unknownPayload(rawType: Int, data: Data);
   case iccColorProfilePayload(selector: IccProfileSelector, data: Data?);
@@ -222,9 +223,11 @@ struct CommentOp : OpCode, CustomStringConvertible, CullableOpcode {
         let selector = IccProfileSelector(rawValue: try reader.readUInt32());
         payload = .iccColorProfilePayload(selector: selector!, data: nil);
       case (.creator, size):
-        let creator = try reader.readType();
-        let data = try reader.readData(bytes: size - 4);
-        payload = .creatorPayload(creator: creator, data: data);
+        let subreader = try reader.subReader(bytes: size);
+        let creator = try subreader.readType();
+        subreader.skip(bytes: 2);
+        let frame = try subreader.readRect();
+        payload = .creatorPayload(creator: creator, frame: frame);
       case (_, 0):
         payload = .noPayload;
       case (.unknown, let size) where size > 0:
