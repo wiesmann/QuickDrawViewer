@@ -153,6 +153,7 @@
 		E59CDFA92B42EE0A00D7BB7B /* QuickDrawReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickDrawReader.swift; sourceTree = "<group>"; };
 		E59CDFAA2B42EE0A00D7BB7B /* QuickDrawTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickDrawTypes.swift; sourceTree = "<group>"; };
 		E59CDFAB2B42EE0A00D7BB7B /* QuickDrawRender.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickDrawRender.swift; sourceTree = "<group>"; };
+		E5C396BB2E05F92E00B3FD18 /* pict_de_rez.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = pict_de_rez.py; sourceTree = "<group>"; };
 		E5CDA0232B441536008DC6D6 /* QuickDrawErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawErrors.swift; sourceTree = "<group>"; };
 		E5CDA0262B44155E008DC6D6 /* QuickDrawParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawParser.swift; sourceTree = "<group>"; };
 		E5CDA02C2B4450FB008DC6D6 /* ImageWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageWrapper.swift; sourceTree = "<group>"; };
@@ -210,6 +211,7 @@
 		E59CDF6A2B42C0E500D7BB7B /* QuickDrawViewer */ = {
 			isa = PBXGroup;
 			children = (
+				E5C396BB2E05F92E00B3FD18 /* pict_de_rez.py */,
 				E52FEAFD2BA46D99004E8BB4 /* InfoPlist.xcstrings */,
 				E52FEAFF2BA46D99004E8BB4 /* Localizable.xcstrings */,
 				E508C5022B94F457007686AE /* QuickDrawViewerRelease.entitlements */,
