@@ -7,19 +7,28 @@ import os
 import re
 import sys
 
-START_RE = r"data\s*'(....)'\s*\((\d+)\)\s*{"
+START_RE = r"(....)\s*'(....)'\s*\((\d+)\s*([^)]*)\)\s*{"
 DATA_RE = r"\s*\$\"([0-9A-Z\s]+)\""
 END_RE = r"\s*};"
-  
+NAME_RE = r'\"([^\"]+)\"'
 
 def derez_pict(f_handle, out_dir):
+  """Extract all the PICT resources in `f_handle` into files writen into `out_dir`"""
   file_type = None
   resource_number = None
+  file_name = None
   data = b""
   for line in f_handle:
     match = re.match(START_RE, line) 
     if match:
-      file_type, resource_number = match.groups()
+      rsrc_type, data_type, resource_number, rest = match.groups()
+      # If we wind a resource name, use this for the file-name.
+      name_match = re.search(NAME_RE, rest)
+      if name_match:
+        file_name = name_match.group(1)
+      else:
+        # Fallback to resource number
+        file_name = str(resource_number)
       continue
     match = re.match(DATA_RE, line)
     if match:
@@ -28,8 +37,8 @@ def derez_pict(f_handle, out_dir):
       continue
     match = re.match(END_RE, line)
     if match:
-      out_name = str(resource_number) + "." + file_type
-      if file_type == 'PICT':
+      out_name = file_name + "." + data_type
+      if data_type == 'PICT':
         data = b"\x00" * 512 + data
         with open(os.path.join(out_dir, out_name), 'wb') as out_handle:
           out_handle.write(data)
