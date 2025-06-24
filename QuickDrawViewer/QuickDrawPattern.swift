@@ -69,3 +69,35 @@ struct QDPattern : Equatable, PixMapMetadata, RawRepresentable, Sendable {
   static let lightGray = QDPattern(bytes:[0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77, 0xdd, 0x77]);
   static let batmanGray = QDPattern(bytes: [0x88, 0x00, 0x22, 0x88, 0x00, 0x22]);
 }
+
+
+enum QDPixPattern  {
+  case bw(pattern: QDPattern);
+  case color(pattern: QDPattern, color: QDColor);
+  case pattern(pattern: QDPattern, bitmap: QDBitMapInfo);
+
+  func blendColors(fg: QDColor, bg: QDColor) throws -> QDColor {
+    switch self {
+      case .bw(pattern: let p): return try p.blendColors(fg: fg, bg: bg);
+      case .color(pattern: _, color: let c): return c;
+      case .pattern(pattern: _, bitmap: _):
+        throw QuickDrawError.cannotBlend(message: "blend Color called with pixpattern");
+    }
+  }
+
+  public var isShade : Bool {
+    switch self {
+      case .bw(pattern: let p): return p.isShade;
+      case .color: return true;
+      case .pattern: return false;
+    }
+  }
+
+}
+
+extension QuickDrawDataReader {
+  func readPattern() throws -> QDPattern {
+    return QDPattern(bytes:try readUInt8(bytes: 8));
+  }
+}
+

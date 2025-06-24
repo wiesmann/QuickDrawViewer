@@ -5,6 +5,7 @@
 //  Created by Matthias Wiesmann on 21.11.2023.
 //
 
+import os
 import Foundation
 
 /// -------
@@ -87,7 +88,8 @@ struct ReservedOp : OpCode, PictureOperation, CullableOpcode {
     }
     reader.skip(bytes: length)
   }
-  
+
+  let code : UInt16;
   let canCull = true;
   let reservedType : ReservedOpType ;
   var length : Data.Index = 0;
@@ -398,20 +400,49 @@ struct PatternOp : OpCode, PenStateOperation  {
   func execute(penState: inout QDPenState) throws {
     switch verb {
       case .fill, .paint:
-        penState.fillPattern = pattern;
+        penState.fillPattern = .bw(pattern: pattern);
       case .frame:
-        penState.drawPattern = pattern;
+        penState.drawPattern = .bw(pattern: pattern);
       default:
         throw QuickDrawError.unsupportedVerb(verb: verb);
     }
   }
   
   mutating func load(reader: QuickDrawDataReader) throws {
-    pattern = QDPattern(bytes:try reader.readUInt8(bytes: 8));
+    pattern = try reader.readPattern()
   }
   
   let verb : QDVerb;
   var pattern : QDPattern = QDPattern.black;
+}
+
+struct PixPatternOp : OpCode, PenStateOperation  {
+  
+  mutating func load(reader: QuickDrawDataReader) throws {
+    let patternSelector = try reader.readUInt16();
+    let pattern = try reader.readPattern();
+    if (patternSelector == 2) {
+      let color : QDColor = try .rgb(rgb: reader.readRGB());
+      patternType = .color(pattern: pattern, color: color);
+    } else {
+      var bitmapInfo = try reader.readQDBitMapInfoStart(isPacked: true);
+      bitmapInfo = try reader.readQDBitMapInfoData(bitmapInfo: bitmapInfo);
+      patternType = .pattern(pattern: pattern, bitmap: bitmapInfo);
+    }
+  }
+
+  func execute(penState: inout QDPenState) throws {
+    switch verb {
+      case .fill: penState.fillPattern = patternType; return;
+      case .frame: penState.drawPattern = patternType; return;
+      default:
+        break;
+    }
+  }
+
+  let verb : QDVerb;
+  var patternType : QDPixPattern = .bw(pattern: QDPattern.black);
+
 }
 
 struct PenSizeOp : OpCode, PenStateOperation {
@@ -634,50 +665,65 @@ struct LongTextOp : OpCode, PortOperation {
 /// ---------------
 
 struct BitRectOpcode : OpCode {
-  init(isPacked : Bool) {
-    self.bitmapInfo = QDBitMapInfo(isPacked: isPacked);
-  }
   
   mutating func load(reader: QuickDrawDataReader) throws {
-    var masked = try reader.readUInt16();
+    bitmapInfo = try reader.readQDBitMapInfo(isPacked: isPacked);
+  }
+
+  let isPacked : Bool;
+  var bitmapInfo : QDBitMapInfo?;
+}
+
+extension QuickDrawDataReader {
+
+  func readQDBitMapInfoStart(isPacked: Bool) throws -> QDBitMapInfo {
+    var masked = try readUInt16();
+    var isPixMap = false;
     if masked & 0x8000 != 0 {
       isPixMap = true;
       masked = masked ^ 0x8000;
     }
+    let bitmapInfo = QDBitMapInfo(isPacked: isPacked);
     bitmapInfo.rowBytes = Int(masked);
-    bitmapInfo.bounds = try reader.readRect();
+    bitmapInfo.bounds = try readRect();
     if isPixMap {
-      let pixMapInfo = try reader.readPixMapInfo();
-      pixMapInfo.clut = try reader.readClut();
+      let pixMapInfo = try readPixMapInfo();
+      pixMapInfo.clut = try readClut();
       bitmapInfo.pixMapInfo = pixMapInfo;
     }
-    
-    bitmapInfo.srcRect = try reader.readRect();
-    bitmapInfo.dstRect = try reader.readRect();
-    bitmapInfo.mode = try QuickDrawMode(rawValue: reader.readUInt16());
-    
+    return bitmapInfo;
+  }
+
+  func readQDBitMapInfoData(bitmapInfo : QDBitMapInfo) throws -> QDBitMapInfo {
     let rows = bitmapInfo.bounds.dimensions.dv.rounded;
     for _ in 0 ..< rows {
       if !bitmapInfo.isPacked {
-        let line_data = try reader.readUInt8(bytes: Data.Index(bitmapInfo.rowBytes));
+        let line_data = try readUInt8(bytes: Data.Index(bitmapInfo.rowBytes));
         bitmapInfo.data.append(contentsOf: line_data);
         continue;
       }
       var lineLength : Data.Index;
       if bitmapInfo.hasShortRows {
-        lineLength = Data.Index(try reader.readUInt8());
+        lineLength = Data.Index(try readUInt8());
       } else {
-        lineLength = Data.Index(try reader.readUInt16());
+        lineLength = Data.Index(try readUInt16());
       }
-      let rowData = try reader.readSlice(bytes: lineLength);
+      let rowData = try readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(data: rowData, unpackedSize: bitmapInfo.rowBytes);
       bitmapInfo.data.append(contentsOf: decompressed);
     }
+    return bitmapInfo;
   }
-  
-  var isPixMap : Bool = false;
-  var bitmapInfo : QDBitMapInfo;
+
+  func readQDBitMapInfo(isPacked: Bool) throws -> QDBitMapInfo {
+    let bitmapInfo = try readQDBitMapInfoStart(isPacked: isPacked);
+    bitmapInfo.srcRect = try readRect();
+    bitmapInfo.dstRect = try readRect();
+    bitmapInfo.mode = try QuickDrawMode(rawValue: readUInt16());
+    return try readQDBitMapInfoData(bitmapInfo: bitmapInfo);
+  }
 }
+
 
 struct DirectBitOpcode : OpCode {
   mutating func load(reader: QuickDrawDataReader) throws {
@@ -778,3 +824,6 @@ struct DirectBitOpcode : OpCode {
   
   var bitmapInfo : QDBitMapInfo = QDBitMapInfo(isPacked: false);
 }
+
+
+

@@ -265,8 +265,9 @@ func makeGrayRamp() -> QDColorTable {
 final class QDColorTable : CustomStringConvertible, Sendable {
   public var description: String {
     let string_flag = String(format: "%0X ", clutFlags);
-    var result = "flags: \(string_flag) "
-    result += "clut \(clut.count) entries";
+    var result = "CLUT \(id) [flags: \(string_flag)"
+    result += " \(clut.count) entries";
+    result += "]";
     return result;
   }
 

@@ -284,30 +284,41 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     data.append(contentsOf: color1);
     return CGColorSpace(indexedBaseSpace: colorSpace, last: 1, colorTable: &data)!;
   }
-  
-  /// Paint the current path using the current pattern.
+
+  func paintPath(pix_pattern: QDPixPattern) throws {
+    switch pix_pattern {
+      case .bw(pattern: let p): return try paintPath(pattern: p);
+      case .color(pattern: _,  color: let c):
+        try context!.setFillColor(c.cgColor);
+        context!.fillPath();
+        return;
+      case .pattern(pattern: _, bitmap: let bitmap):
+        return try paintPath(bitmap: bitmap);
+    }  // switch
+  }
+
+  /// Paint the current path using a b/w pattern
   func paintPath(pattern: QDPattern) throws {
     // Check if the pattern can be replaced with a color.
-    if penState.drawPattern.isShade {
+    if pattern.isShade {
       let color = try penState.drawColor;
       try context!.setFillColor(color.cgColor);
       context!.fillPath();
       return;
     }
-    
-    let area = CGRect(x: 0, y: 0, width: 8, height: 8);
+    let area = CGRect(qdrect: QDRect(topLeft: .zero, dimension: pattern.dimensions));
     context!.saveGState();
     context!.clip();
-    let data = penState.drawPattern.bytes;
+    let data = pattern.bytes;
     let cfData = CFDataCreate(nil, data, data.count)!;
     let provider = CGDataProvider(data: cfData)!;
     let bitmapInfo = CGBitmapInfo();
     let patternImage = CGImage(
-      width: penState.drawPattern.dimensions.dh.rounded,
-      height: penState.drawPattern.dimensions.dv.rounded,
-      bitsPerComponent: penState.drawPattern.cmpSize,
-      bitsPerPixel: penState.drawPattern.pixelSize,
-      bytesPerRow: penState.drawPattern.rowBytes,
+      width: pattern.dimensions.dh.rounded,
+      height: pattern.dimensions.dv.rounded,
+      bitsPerComponent: pattern.cmpSize,
+      bitsPerPixel: pattern.pixelSize,
+      bytesPerRow: pattern.rowBytes,
       space: try paintColorSpace(),
       bitmapInfo: bitmapInfo,
       provider: provider,
@@ -317,7 +328,37 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     context!.drawFlipped(patternImage, in: area, byTiling: true);
     context!.restoreGState();
   }
-  
+
+  func paintPath(bitmap: QDBitMapInfo) throws {
+    guard let clut = bitmap.clut else {
+      throw QuickDrawError.missingColorTableError;
+    }
+    let area = CGRect(qdrect: bitmap.bounds);
+    let colorSpace = try clut.ToColorSpace(base: self.colorSpace);
+    let bitmapInfo = CGBitmapInfo();
+    let cfData = CFDataCreate(nil, bitmap.data, bitmap.data.count)!;
+    let provider = CGDataProvider(data: cfData)!;
+    context!.saveGState();
+    context!.clip();
+    guard let patternImage = CGImage(
+      width: bitmap.dimensions.dh.rounded,
+      height: bitmap.dimensions.dv.rounded,
+      bitsPerComponent: bitmap.cmpSize,
+      bitsPerPixel: bitmap.pixelSize,
+      bytesPerRow: bitmap.rowBytes,
+      space: colorSpace, bitmapInfo: bitmapInfo,
+      provider: provider,
+      decode: nil,
+      shouldInterpolate: false,
+      intent: CGColorRenderingIntent.defaultIntent) else {
+      throw CoreGraphicRenderError.imageFailure(
+        message: String(localized:"Could not create palette image."),
+        metadata: bitmap);
+    }
+    context!.drawFlipped(patternImage, in: area, byTiling: true);
+    context!.restoreGState();
+  }
+
   func applyMode(mode: QuickDrawTransferMode) throws {
     switch mode {
       case .copyMode:
@@ -346,7 +387,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         // The difference between paint and fill verbs is that paint uses the
         // pen (frame) color.
       case QDVerb.paint:
-        try paintPath(pattern: penState.drawPattern);
+        try paintPath(pix_pattern: penState.drawPattern);
       case QDVerb.fill:
         try context!.setFillColor(penState.fillColor.cgColor);
         context!.fillPath();
@@ -355,7 +396,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         let width = penState.penWidth.value
         context!.setLineWidth(width);
         context!.replacePathWithStrokedPath();
-        try paintPath(pattern: penState.drawPattern);
+        try paintPath(pix_pattern: penState.drawPattern);
         context!.restoreGState();
       case QDVerb.erase:
         try context!.setFillColor(penState.bgColor.cgColor);
@@ -700,17 +741,17 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   /// Execute palette bitmap operations
   /// - Parameter bitRectOp: the opcode to execute
   func executeBitRect(bitRectOp: BitRectOpcode) throws {
-    guard let clut = bitRectOp.bitmapInfo.clut else {
+    guard let clut = bitRectOp.bitmapInfo?.clut else {
       throw QuickDrawError.missingColorTableError;
     }
     guard portBits.contains(.bitsEnable) else {
       return;
     }
     return try executePaletteImage(
-      metadata: bitRectOp.bitmapInfo,
-      destination: bitRectOp.bitmapInfo.destinationRect,
-      mode: bitRectOp.bitmapInfo.mode.mode,
-      data: bitRectOp.bitmapInfo.data,
+      metadata: bitRectOp.bitmapInfo!,
+      destination: bitRectOp.bitmapInfo!.destinationRect,
+      mode: bitRectOp.bitmapInfo!.mode.mode,
+      data: bitRectOp.bitmapInfo!.data,
       clut: clut);
   }
   

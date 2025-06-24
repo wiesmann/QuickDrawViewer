@@ -4,7 +4,7 @@
 
 I wanted to teach myself Swift programming, and needed something a bit more involved than just _Hello World_, so I decided the write a program that would decode QuickDraw image files and display them. This was basically a rewrite of the [Java Quickdraw](https://github.com/wiesmann/JavaQuickDraw) code I wrote, many years back.
 
-This program is far from finished, but I decided to release it for the 40th anniversary of the original Macintosh computer: QuickDraw was the graphical language of the original Macintosh, and the format used to store and exchange images on the computer. Support for these files has been slowly decaying with newer versions of Mac OS X, and on my M1 PowerBook, Preview can only open a small subset of the files I have.
+This program is far from finished, but I decided to release it for the 40th anniversary of the original Macintosh computer.
 
 ## Philosophy
 
@@ -22,8 +22,11 @@ Instructions meant for printers (QuickDraw _comments_) are also used in the tran
 
 ## QuickDraw 
 
-QuickDraw was the graphical language of the original Macintosh, the original interpreter was written in Motorola 68K
+QuickDraw was the graphical language of the original Macintosh, and the format used to store and exchange images on the computer. 
+The original interpreter was written in Motorola 68K
 by the late [Bill Atkinson](https://en.wikipedia.org/wiki/Bill_Atkinson).
+Support for these files has been slowly decaying with newer versions of Mac OS X, and on my M1 PowerBook, Preview can only open a small subset of the files I have.
+
 
 
 ## Original Pict Example
@@ -132,9 +135,10 @@ The library basically parses QuickDraw version 1 and version 2 files
 
 Some basic comment parsing is used to improve images, in particular:
 
-* Polygon annotations to [connect the lines](https://wiesmann.codiferes.net/wordpress/archives/37337) and close polygons
+* Polygon annotations to [connect the lines](https://wiesmann.codiferes.net/wordpress/archives/37337) and closed polygons
 * Fractional pen width
 * [Text rotation](https://wiesmann.codiferes.net/wordpress/archives/37285)
+* [ICC Color profiles](https://wiesmann.codiferes.net/wordpress/archives/41085)
 * CMYK colors embedded in proprietary Deneba / Canvas comments.
 
 ## Unsupported features

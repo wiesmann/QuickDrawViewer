@@ -25,13 +25,16 @@ class MacPaintImage : PixMapMetadata, @unchecked Sendable {
   /// This could be a QuickTime opcode that embeds the MacPaint data, but
   /// this is very involved, instead we just build a `BitRectOpcode`.
   func makeOpcode() -> some OpCode {
-    let bitRect = BitRectOpcode(isPacked: true);
-    bitRect.bitmapInfo.rowBytes = self.rowBytes;
+
+    let bitmapInfo = QDBitMapInfo(isPacked: true);
+    bitmapInfo.rowBytes = self.rowBytes;
     let frame = QDRect(topLeft: .zero, dimension: self.dimensions);
-    bitRect.bitmapInfo.bounds = frame;
-    bitRect.bitmapInfo.srcRect = frame;
-    bitRect.bitmapInfo.dstRect = frame;
-    bitRect.bitmapInfo.data = bitmap;
+    bitmapInfo.bounds = frame;
+    bitmapInfo.srcRect = frame;
+    bitmapInfo.dstRect = frame;
+    bitmapInfo.data = bitmap;
+    var bitRect = BitRectOpcode(isPacked: true);
+    bitRect.bitmapInfo = bitmapInfo;
     return bitRect;
   }
   

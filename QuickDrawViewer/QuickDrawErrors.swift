@@ -26,8 +26,10 @@ enum QuickDrawError: Error {
   case invalidPhotoShopDepth(depth: Int);
   case invalidCommentPayload(payload: CommentPayload);
   case invalidReservedSize(reservedType: ReservedOpType);
+  case invalidPackType(packtype: UInt16);
   case corruptRegionLine(line: Int);
   case missingDestinationRect(message: String);
   case unsupportedBlend(fg: QDColor, bg: QDColor);
+  case cannotBlend(message: String)
   case cannotConvertToRGB(color: QDColor);
 }

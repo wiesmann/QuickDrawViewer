@@ -119,8 +119,8 @@ class QDPenState {
   var bgColor : QDColor = QDColor.white;
   var opColor : QDColor = QDColor.black;
   var highlightColor : QDColor = .rgb(rgb: RGBColor(red: 0, green: 0, blue: 0xffff));
-  var drawPattern: QDPattern = QDPattern.black;
-  var fillPattern: QDPattern = QDPattern.black;
+  var drawPattern: QDPixPattern = .bw(pattern: QDPattern.black);
+  var fillPattern: QDPixPattern = .bw(pattern: QDPattern.black);
   var ovalSize : QDDelta = QDDelta.zero;
   
   var drawColor : QDColor  {

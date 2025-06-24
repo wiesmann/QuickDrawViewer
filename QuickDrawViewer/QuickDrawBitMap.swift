@@ -115,10 +115,11 @@ class QDBitMapInfo : CustomStringConvertible, PixMapMetadata, @unchecked Sendabl
     if dstRect != nil {
       result += "dst: \(dstRect!) ";
     }
-    result += "Mode: \(mode)]";
+    result += " Mode: \(mode)]";
     if let pixmap = pixMapInfo {
       result += "Pixmap: \(pixmap)]";
     }
+    result += " Data \(data.count) bytes";
     return result;
   }
 }
@@ -127,7 +128,11 @@ extension QuickDrawDataReader {
   func readPixMapInfo() throws -> QDPixMapInfo  {
     let pixMapInfo = QDPixMapInfo();
     pixMapInfo.version = Int(try readUInt16());
-    pixMapInfo.packType = QDPackType(rawValue:try readUInt16())!;
+    let rawPackType = try readUInt16();
+    guard let packType = QDPackType(rawValue:rawPackType) else {
+      throw QuickDrawError.invalidPackType(packtype:rawPackType);
+    }
+    pixMapInfo.packType = packType;
     pixMapInfo.packSize = Int(try readUInt32());
     pixMapInfo.resolution = try readResolution();
     pixMapInfo.pixelType = Int(try readUInt16());
