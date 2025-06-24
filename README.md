@@ -114,8 +114,8 @@ The library basically parses QuickDraw version 1 and version 2 files
 * Lines
 * Basic Shapes (Rectangles, Ovals, Round-Rectangles and Arcs)
 * Regions
-* Text
-* Patterns (black & white)
+* Text, size, font and style selection.
+* Patterns, both 1 bit, 8×8 and arbitrary colour.
 * Colours
 * Palette images
 * Direct (RGB) images
@@ -148,7 +148,6 @@ Currently, the following QuickDraw features don't work:
 * Some exotic compositing modes (which are typically not supported by printers)
 * Text alignement
 * Polygon smoothing
-* Color patterns
 * Exotic QuickTime codecs, like for instance Photo-CD
 
 ## User Interface Application
