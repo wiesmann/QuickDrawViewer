@@ -23,7 +23,7 @@ Instructions meant for printers (QuickDraw _comments_) are also used in the tran
 ## QuickDraw 
 
 QuickDraw was the graphical language of the original Macintosh, and the format used to store and exchange images on the computer. 
-The original interpreter was written in Motorola 68K
+The original interpreter was written in large part in Motorola 68K
 by the late [Bill Atkinson](https://en.wikipedia.org/wiki/Bill_Atkinson).
 Support for these files has been slowly decaying with newer versions of Mac OS X, and on my M1 PowerBook, Preview can only open a small subset of the files I have.
 
@@ -148,13 +148,18 @@ Currently, the following QuickDraw features don't work:
 * Some exotic compositing modes (which are typically not supported by printers)
 * Text alignement
 * Polygon smoothing
-* Exotic QuickTime codecs, like for instance Photo-CD
+* Exotic QuickTime codecs, like for instance [Photo-CD](https://en.wikipedia.org/wiki/Photo_CD)
 
 ## User Interface Application
 
 The application is currently very simple, you can view pictures, copy-paste them to Preview. 
 There is an export icon in the toolbar that allows you to export to PDF files. 
 There is some primitive drag-drop that as of Mac OS X 15.5 seems to work with most targets I could test with. 
+
+## Helper script
+
+I wrote a small [Python script](QuickDrawViewer/pict_de_rez.py) for converting the QuickDraw data in a text resource description into  actual PICT files.
+This can be useful for [recovering data from clipping or from applications](https://wiesmann.codiferes.net/wordpress/archives/41107). 
 
 
 ## License 
