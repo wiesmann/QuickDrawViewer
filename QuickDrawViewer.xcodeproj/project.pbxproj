@@ -89,6 +89,8 @@
 		E5CDA0282B44155E008DC6D6 /* QuickDrawParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDA0262B44155E008DC6D6 /* QuickDrawParser.swift */; };
 		E5CDA02D2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDA02C2B4450FB008DC6D6 /* ImageWrapper.swift */; };
 		E5CDA02E2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDA02C2B4450FB008DC6D6 /* ImageWrapper.swift */; };
+		E5CDC7962E1C68A000F6D0E0 /* DV.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDC7952E1C689800F6D0E0 /* DV.swift */; };
+		E5CDC7972E1C68A000F6D0E0 /* DV.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDC7952E1C689800F6D0E0 /* DV.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -157,6 +159,7 @@
 		E5CDA0232B441536008DC6D6 /* QuickDrawErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawErrors.swift; sourceTree = "<group>"; };
 		E5CDA0262B44155E008DC6D6 /* QuickDrawParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawParser.swift; sourceTree = "<group>"; };
 		E5CDA02C2B4450FB008DC6D6 /* ImageWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageWrapper.swift; sourceTree = "<group>"; };
+		E5CDC7952E1C689800F6D0E0 /* DV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DV.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -244,6 +247,7 @@
 				E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */,
 				E53BBF412BBAD1D800D9350A /* Targa.swift */,
 				E53BBF442BBB4E5800D9350A /* IntelRaw.swift */,
+				E5CDC7952E1C689800F6D0E0 /* DV.swift */,
 				E508C4F92B911FD5007686AE /* MacPaint.swift */,
 				E574829A2B990DBC004A6409 /* Animation.swift */,
 				E52FEB042BACC269004E8BB4 /* QuickDrawPort.swift */,
@@ -393,6 +397,7 @@
 				E53BBF592BD05EFB00D9350A /* QuickDrawText.swift in Sources */,
 				E553E4DC2B6AED62009B1EC2 /* Yuv2.swift in Sources */,
 				E53BBF5C2BD060CE00D9350A /* QuickDrawResolution.swift in Sources */,
+				E5CDC7962E1C68A000F6D0E0 /* DV.swift in Sources */,
 				E53BBF532BCFD39D00D9350A /* QuickDrawRect.swift in Sources */,
 				E5CDA02D2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */,
 				E59CDF6E2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift in Sources */,
@@ -439,6 +444,7 @@
 				E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */,
 				E59CDF812B42C0E600D7BB7B /* QuickDrawViewerTests.swift in Sources */,
 				E59CDFB02B42EE0A00D7BB7B /* PackBit.swift in Sources */,
+				E5CDC7972E1C68A000F6D0E0 /* DV.swift in Sources */,
 				E554EE592B9C61A700D56DF7 /* Bits.swift in Sources */,
 				E554EE5C2B9DBDE100D56DF7 /* Blitting.swift in Sources */,
 				E59CDFB42B42EE0A00D7BB7B /* QuickDrawTypes.swift in Sources */,
