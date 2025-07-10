@@ -426,8 +426,8 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       let cinepak = Cinepak(dimensions: quicktimeImage.dimensions, clut: quicktimeImage.clut);
       try cinepak.load(data: data);
       quicktimeImage.dataStatus = .decoded(decodedMetaData: cinepak);
-      quicktimeImage.data = Data(cinepak.pixmap);
-    case "dvc ", "dvcp", "dv5n", "dvpp", "dv5p", "h263":
+      quicktimeImage.data = Data(cinepak.pixmap)
+    case let c where c.hasPrefix("dv") || c == "h263":
       let dvimage = try DVImage(codec: quicktimeImage.codecType, dimensions: quicktimeImage.dimensions);
       try dvimage.load(data: data);
       quicktimeImage.dataStatus = .decoded(decodedMetaData: dvimage);

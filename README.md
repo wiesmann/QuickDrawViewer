@@ -99,13 +99,15 @@ MacPaint images are supported by virtue of being one of codecs that can be embed
 
 ## Structure
 
-This program has basically three parts:
+This program has basically four parts:
 
 * A library that parses QuickDraw files, which only depends on the `Foundation` framework.
 * A Library that renders into a CoreGraphics context, which depends on CoreGraphics, CoreText and CoreImage (AppKit is pulled in for some color logic, but could easily be removed).
+* A library that uses Core Video to decode QuickTime embedded images that use video codecs into RGB.
 * A minimalistic Swift-UI application that shows the pictures. 
 
 This means the code could be used in other applications that want to handle QuickDraw files.
+
 
 ## Features
 
@@ -132,6 +134,8 @@ The library basically parses QuickDraw version 1 and version 2 files
   * Planar Video (`8BPS`)
   * Intel Raw (`YVU9`)
   * Cinepak (`CVID`)
+  * Digital Video variants (`dvc `, `dvcp`, `dv5n`, `dvpp`, `dv5p`)
+  * `h263`
 
 Some basic comment parsing is used to improve images, in particular:
 
