@@ -10,6 +10,7 @@
 import Foundation
 
 /// MacPaint images are fixed size (720 × 576) PackBit compressed bitmaps.
+///  See http://www.textfiles.com/programming/FORMATS/pix_fmt.txt
 class MacPaintImage : PixMapMetadata, @unchecked Sendable {
 
   static let width : Int = 576;

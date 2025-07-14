@@ -31,7 +31,7 @@ class QDPixMapInfo : CustomStringConvertible {
     result += "composant count: \(cmpCount) ";
     result += "composant size: \(cmpSize) ";
     result += "plane byte: \(planeByte) ";
-    result += "clut Id: \(clutId) ";
+    result += "clutId: \(clutId) ";
     if clut != nil {
       result += "clut: \(clut!)";
     }
@@ -141,6 +141,9 @@ extension QuickDrawDataReader {
     pixMapInfo.cmpSize = Int(try readUInt16());
     pixMapInfo.planeByte = Int64(try readUInt32());
     pixMapInfo.clutId = try readInt32();
+    if let clut = QDColorTable.forClutId(clutId: Int(pixMapInfo.clutId)) {
+      pixMapInfo.clut = clut;
+    }
     pixMapInfo.clutSeed = try readType();
     return pixMapInfo;
   }

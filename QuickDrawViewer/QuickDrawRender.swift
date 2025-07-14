@@ -800,7 +800,28 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       mode: directBitOp.bitmapInfo.mode.mode,
       data: directBitOp.bitmapInfo.data);
   }
-  
+
+  /// Like `executeDirectBitOp` but with a clip region.
+  func executeDirectBitMaskOp(directBitMaskOp: DirectBitOpcodeWithMask) throws {
+    guard portBits.contains(.bitsEnable) else {
+      return;
+    }
+    context!.saveGState();
+    if let mask = directBitMaskOp.mask {
+      let qdRects = mask.getRects().map({CGRect(qdrect: $0)});
+      context!.beginPath();
+      context!.addRects(qdRects);
+      context!.closePath();
+      context!.clip();
+    }
+    try executeRGBImage(
+      metadata: directBitMaskOp.bitmapInfo,
+      destination: directBitMaskOp.bitmapInfo.destinationRect,
+      mode: directBitMaskOp.bitmapInfo.mode.mode,
+      data: directBitMaskOp.bitmapInfo.data);
+    context!.restoreGState()
+  }
+
   func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
     let mode = quicktimeOp.quicktimePayload.mode.mode;
     context!.saveGState();
@@ -874,6 +895,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         try executeBitRect(bitRectOp: bitRectOp);
       case let directBitOp as DirectBitOpcode:
         try executeDirectBitOp(directBitOp: directBitOp);
+       case let directBitMaskOp as DirectBitOpcodeWithMask:
+        try executeDirectBitMaskOp(directBitMaskOp: directBitMaskOp);
       case let quicktimeOp as QuickTimeOpcode:
         try executeQuickTime(quicktimeOp: quicktimeOp);
       case let commentOp as CommentOp:

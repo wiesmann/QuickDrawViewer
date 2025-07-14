@@ -80,9 +80,15 @@ final class QuickDrawViewerDocument: ReferenceFileDocument {
         throw error;
       }
     case .macPaintImage:
-      let macPaint = MacPaintImage();
-      try macPaint.load(data: data.subdata(in: 512..<data.count));
-      picture = macPaint.macPicture(filename: configuration.file.filename);
+        do {
+          let macPaint = MacPaintImage();
+          try macPaint.load(data: data.subdata(in: 512..<data.count));
+          picture = macPaint.macPicture(filename: configuration.file.filename);
+        } catch {
+        let message = String(localized: "Failed parsing MacPaint file");
+        logger.log(level: .error,  "\(message): \(error)");
+        throw error;
+      }
     default:
       throw CocoaError(.fileReadUnknown);
     }

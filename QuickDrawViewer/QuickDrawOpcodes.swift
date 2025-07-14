@@ -425,8 +425,8 @@ struct PixPatternOp : OpCode, PenStateOperation  {
       let color : QDColor = try .rgb(rgb: reader.readRGB());
       patternType = .color(pattern: pattern, color: color);
     } else {
-      var bitmapInfo = try reader.readQDBitMapInfoStart(isPacked: true);
-      bitmapInfo = try reader.readQDBitMapInfoData(bitmapInfo: bitmapInfo);
+      let bitmapInfo = try reader.readQDBitMapInfoStart(isPacked: true);
+      bitmapInfo.data = try reader.readQDBitMapInfoData(bitmapInfo: bitmapInfo);
       patternType = .pattern(pattern: pattern, bitmap: bitmapInfo);
     }
   }
@@ -694,12 +694,13 @@ extension QuickDrawDataReader {
     return bitmapInfo;
   }
 
-  func readQDBitMapInfoData(bitmapInfo : QDBitMapInfo) throws -> QDBitMapInfo {
+  func readQDBitMapInfoData(bitmapInfo : QDBitMapInfo) throws -> [UInt8] {
     let rows = bitmapInfo.bounds.dimensions.dv.rounded;
+    var data : [UInt8] = [];
     for _ in 0 ..< rows {
       if !bitmapInfo.isPacked {
         let line_data = try readUInt8(bytes: Data.Index(bitmapInfo.rowBytes));
-        bitmapInfo.data.append(contentsOf: line_data);
+        data.append(contentsOf: line_data);
         continue;
       }
       var lineLength : Data.Index;
@@ -710,9 +711,9 @@ extension QuickDrawDataReader {
       }
       let rowData = try readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(data: rowData, unpackedSize: bitmapInfo.rowBytes);
-      bitmapInfo.data.append(contentsOf: decompressed);
+      data.append(contentsOf: decompressed);
     }
-    return bitmapInfo;
+    return data;
   }
 
   func readQDBitMapInfo(isPacked: Bool) throws -> QDBitMapInfo {
@@ -720,110 +721,143 @@ extension QuickDrawDataReader {
     bitmapInfo.srcRect = try readRect();
     bitmapInfo.dstRect = try readRect();
     bitmapInfo.mode = try QuickDrawMode(rawValue: readUInt16());
-    return try readQDBitMapInfoData(bitmapInfo: bitmapInfo);
+    bitmapInfo.data = try readQDBitMapInfoData(bitmapInfo: bitmapInfo);
+    return bitmapInfo;
   }
 }
 
-
-struct DirectBitOpcode : OpCode {
-  mutating func load(reader: QuickDrawDataReader) throws {
-    reader.skip(bytes: 4);  // Base address
-    var masked = try reader.readUInt16();
+extension QuickDrawDataReader {
+  func readQDPixMapInfoStart() throws -> QDBitMapInfo {
+    let pixMap = QDBitMapInfo(isPacked: false);
+    self.skip(bytes: 4);  // Base address
+    var masked = try self.readUInt16();
     if masked & 0x8000 != 0 {
       masked = masked ^ 0x8000;
     }
-    bitmapInfo.rowBytes = Int(masked);
-    bitmapInfo.bounds = try reader.readRect();
-    bitmapInfo.pixMapInfo = try reader.readPixMapInfo();
-    bitmapInfo.srcRect = try reader.readRect();
-    bitmapInfo.dstRect = try reader.readRect();
-    bitmapInfo.mode = try QuickDrawMode(rawValue: reader.readUInt16());
-    switch bitmapInfo.pixMapInfo!.packType {
-      case .noPack, .defaultPack:
-        try loadUnpacked(reader:reader);
-      case .removePadByte:
-        try loadRemovePad(reader: reader);
-      case .pixelRunLength:
-        try loadPixelRunLength(reader: reader);
-      case .componentRunLength:
-        try loadComponentRunLength(reader: reader);
-    }
+
+    pixMap.rowBytes = Int(masked);
+    pixMap.bounds = try self.readRect();
+    pixMap.pixMapInfo = try self.readPixMapInfo();
+    pixMap.srcRect = try self.readRect();
+    pixMap.dstRect = try self.readRect();
+    pixMap.mode = try QuickDrawMode(rawValue: self.readUInt16());
+    return pixMap;
   }
-  
-  /// Pack 1
-  mutating func loadUnpacked(reader: QuickDrawDataReader) throws {
+
+  /// Pack type 1
+  func loadPixMapUnpacked(bitmapInfo: QDBitMapInfo) throws -> [UInt8] {
     let rows = bitmapInfo.height;
     let rowBytes = bitmapInfo.rowBytes;
     let byteNum = rows * rowBytes;
-    bitmapInfo.data = try reader.readUInt8(bytes: byteNum);
+    return try self.readUInt8(bytes: byteNum);
   }
-  
+
   /// Pack 2
   /// This is basically 24-bits RGB, Quickdraw would actually pad this to 32 bits.
   /// We just load it as 24-bits and update rowBytes to reflect this.
-  mutating func loadRemovePad(reader: QuickDrawDataReader) throws {
+  func loadPixMapRemovePad(bitmapInfo: QDBitMapInfo) throws -> [UInt8] {
     let rows = bitmapInfo.height;
     let rowBytes = bitmapInfo.rowBytes * 3 / 4;
     let byteNum = rows * rowBytes;
     bitmapInfo.rowBytes = rowBytes;
     bitmapInfo.pixMapInfo!.pixelSize = 24;
-    bitmapInfo.data = try reader.readUInt8(bytes: byteNum);
+    return try self.readUInt8(bytes: byteNum);
   }
-  
+
   /// Pack 3
   /// Packbit algorithm on 16 bit quantities.
-  ///
-  mutating func loadPixelRunLength(reader: QuickDrawDataReader) throws {
+  func loadPixMapPixelRunLength(bitmapInfo: QDBitMapInfo) throws -> [UInt8] {
     let rows = bitmapInfo.height;
+    var data : [UInt8] = [];
     for _ in 0..<rows {
       var lineLength : Data.Index;
       if bitmapInfo.hasShortRows {
-        lineLength = Data.Index(try reader.readUInt8());
+        lineLength = Data.Index(try self.readUInt8());
       } else {
-        lineLength = Data.Index(try reader.readUInt16());
+        lineLength = Data.Index(try self.readUInt16());
       }
-      let line_data = try reader.readSlice(bytes: lineLength);
+      let line_data = try self.readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(
         data: line_data, unpackedSize: bitmapInfo.rowBytes, byteNum: 2);
-      
-      bitmapInfo.data.append(contentsOf: decompressed);
+
+      data.append(contentsOf: decompressed);
     }
+    return data;
   }
-  
+
   /// Pack 4
   /// Packbit algorithm on 8 bit quantities, for each row, first the red values, then the green, blue.
-  mutating func loadComponentRunLength(reader: QuickDrawDataReader) throws {
+  func loadPixMapComponentRunLength(bitmapInfo: inout QDBitMapInfo) throws -> [UInt8]{
     let rows = bitmapInfo.height;
     let cmpCount = bitmapInfo.pixMapInfo?.cmpCount
     guard cmpCount == 3 || cmpCount == 4 else {
       throw QuickDrawError.wrongComponentNumber(componentNumber: bitmapInfo.cmpSize);
     }
-    
+
     let rowBytes = bitmapInfo.rowBytes * cmpCount! / 4;
+    var data : [UInt8] = [];
+
     for _ in 0..<rows {
       var lineLength : Data.Index;
       if bitmapInfo.hasShortRows {
-        lineLength = Data.Index(try reader.readUInt8());
+        lineLength = Data.Index(try self.readUInt8());
       } else {
-        lineLength = Data.Index(try reader.readUInt16());
+        lineLength = Data.Index(try self.readUInt16());
       }
-      let line_data = try reader.readSlice(bytes: lineLength);
+      let line_data = try self.readSlice(bytes: lineLength);
       let decompressed = try decompressPackBit(data: line_data, unpackedSize: rowBytes, byteNum: 1);
       var interleaved = interleave(planar: decompressed[...], components: cmpCount!);
-      /// Even if there is an alpha channel, it is actually meaningless, so we blank it. 
+      /// Even if there is an alpha channel, it is actually meaningless, so we blank it.
       if (cmpCount! == 4) {
         interleaved = makeAlphaOpaque(argb: interleaved);
       }
 
-      bitmapInfo.data.append(contentsOf: interleaved);
+      data.append(contentsOf: interleaved);
     }
     /// Update the pixel information to reflect reality. There is no alpha.
     bitmapInfo.rowBytes = rowBytes ;
     bitmapInfo.pixMapInfo?.pixelSize = cmpCount! * 8;
+    return data;
   }
-  
+}
+
+/// Direct bitmap operation opcode.
+struct DirectBitOpcode : OpCode {
+  mutating func load(reader: QuickDrawDataReader) throws {
+    bitmapInfo = try reader.readQDPixMapInfoStart();
+    switch bitmapInfo.pixMapInfo!.packType {
+      case .noPack, .defaultPack:
+        bitmapInfo.data = try reader.loadPixMapUnpacked(bitmapInfo: bitmapInfo);
+      case .removePadByte:
+        bitmapInfo.data = try reader.loadPixMapRemovePad(bitmapInfo: bitmapInfo);
+      case .pixelRunLength:
+        bitmapInfo.data = try reader.loadPixMapPixelRunLength(bitmapInfo: bitmapInfo);
+      case .componentRunLength:
+        bitmapInfo.data = try reader.loadPixMapComponentRunLength(bitmapInfo: &bitmapInfo);
+    }
+  }
+
   var bitmapInfo : QDBitMapInfo = QDBitMapInfo(isPacked: false);
 }
 
+/// Direct bitmap operation with mask opcode.
+struct DirectBitOpcodeWithMask : OpCode {
+  mutating func load(reader: QuickDrawDataReader) throws {
+    bitmapInfo = try reader.readQDPixMapInfoStart();
+    mask = try reader.readRegion();
 
+    switch bitmapInfo.pixMapInfo!.packType {
+      case .noPack, .defaultPack:
+        bitmapInfo.data = try reader.loadPixMapUnpacked(bitmapInfo: bitmapInfo);
+      case .removePadByte:
+        bitmapInfo.data = try reader.loadPixMapRemovePad(bitmapInfo: bitmapInfo);
+      case .pixelRunLength:
+        bitmapInfo.data = try reader.loadPixMapPixelRunLength(bitmapInfo: bitmapInfo);
+      case .componentRunLength:
+        bitmapInfo.data = try reader.loadPixMapComponentRunLength(bitmapInfo: &bitmapInfo);
+    }
+  }
 
+  var mask : QDRegion? = nil;
+  var bitmapInfo : QDBitMapInfo = QDBitMapInfo(isPacked: false);
+}

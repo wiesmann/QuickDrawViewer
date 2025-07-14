@@ -93,6 +93,9 @@
         }
       }
     },
+    "Failed parsing MacPaint file" : {
+
+    },
     "Failed parsing QuickDraw file" : {
       "localizations" : {
         "fr" : {

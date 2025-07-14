@@ -111,6 +111,7 @@ class QDParser {
       case 0x90: return BitRectOpcode(isPacked: false);
       case 0x98: return BitRectOpcode(isPacked: true);
       case 0x9A: return DirectBitOpcode();
+      case 0x9B: return DirectBitOpcodeWithMask();
       case 0xA0: return CommentOp(long_comment:false);
       case 0xA1: return CommentOp(long_comment:true);
       case 0xA2...0xAF: return ReservedOp(code: opcode, reservedType: .readLength(bytes: 2));
