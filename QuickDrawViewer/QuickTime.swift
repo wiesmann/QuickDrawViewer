@@ -335,6 +335,18 @@ func patchQuickTimeSGI(quicktimeImage : inout QuickTimeIdsc) throws {
   quicktimeImage.dataStatus = .patched;
 }
 
+func patchQuickTimeRaw(quicktimeImage : inout QuickTimeIdsc) throws {
+  let (_, componentSize) = try expandDepth(quicktimeImage.depth);
+  let metadata = ConvertedImageMeta(
+    rowBytes: quicktimeImage.dimensions.dh.rounded * 4,
+    cmpSize: componentSize,
+    pixelSize: 32,
+    dimensions: quicktimeImage.dimensions,
+    clut: nil);
+  quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata)
+}
+
+
 /// Prepare the data in a QuickTime image for downstream processing.
 /// * If the codec of the image can be handled by the system dowstream (core-image).
 ///   The data is just passed along, except in the case of Windows BMP where the headers need to be
@@ -358,13 +370,7 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       try patchQuickTimeSGI(quicktimeImage: &quicktimeImage);
       break
     case "raw ":
-      let metadata = ConvertedImageMeta(
-        rowBytes: quicktimeImage.dimensions.dh.rounded * 4,
-        cmpSize: 8,
-        pixelSize: 32,
-        dimensions: quicktimeImage.dimensions,
-        clut: nil);
-      quicktimeImage.dataStatus = .decoded(decodedMetaData: metadata)
+      try patchQuickTimeRaw(quicktimeImage: &quicktimeImage);
     case "rpza":
       let rpza = RoadPizzaImage(dimensions: quicktimeImage.dimensions);
       try rpza.load(data: data);

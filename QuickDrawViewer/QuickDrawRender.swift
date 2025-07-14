@@ -49,7 +49,6 @@ extension CGImageSourceStatus : @retroactive CustomStringConvertible {
   }
 }
 
-
 extension CGPoint {
   init(qd_point : QDPoint) {
     self.init(x: qd_point.horizontal.value, y: qd_point.vertical.value)
@@ -151,10 +150,12 @@ extension CGFloat {
   }
 }
 
-// Convert float to
-func toFloat(_ value: UInt16) -> CGFloat {
-  return CGFloat(value) / 0x10000;
+extension UInt16 {
+  var floatValue: CGFloat {
+    return CGFloat(self) / 0x10000;
+  }
 }
+
 
 /// Blend two colors, it seems we need AppKit for this.
 /// - Parameters:
@@ -185,9 +186,9 @@ extension QDColor {
     get throws {
       switch self {
         case .rgb(let rgb):
-          let red = toFloat(rgb.red);
-          let green = toFloat(rgb.green);
-          let blue = toFloat(rgb.blue);
+          let red = rgb.red.floatValue;
+          let green = rgb.green.floatValue;
+          let blue = rgb.blue.floatValue;
           return CGColor(red: red, green: green, blue: blue, alpha: 1.0);
         case .qd1(let qd1):
           switch qd1 {
@@ -201,10 +202,10 @@ extension QDColor {
             case .yellow: return CGColor.yellow;
           }
         case .cmyk(cmyk: let cmyk, name: _):
-          let c = toFloat(cmyk.cyan);
-          let m = toFloat(cmyk.magenta);
-          let y = toFloat(cmyk.yellow);
-          let k = toFloat(cmyk.black);
+          let c = cmyk.cyan.floatValue;
+          let m = cmyk.magenta.floatValue;
+          let y = cmyk.yellow.floatValue;
+          let k = cmyk.black.floatValue;
           return CGColor(genericCMYKCyan: c, magenta: m , yellow:  y, black: k, alpha: 1.0);
           
         case .blend(colorA: let colorA, colorB: let colorB, weight: let weight):
@@ -802,7 +803,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   
   func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
     let mode = quicktimeOp.quicktimePayload.mode.mode;
+    context!.saveGState();
+    let quickTimeTransform = CGAffineTransform(qdTransform: quicktimeOp.quicktimePayload.transform);
+    context?.concatenate(quickTimeTransform);
     // TODO: use QuickTime transform.
+
     guard let payload = quicktimeOp.quicktimePayload.idsc.data else {
       throw QuickTimeError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
     }
@@ -845,6 +850,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
     /// Prevent error message by disabling other procs.
     portBits = [.quickTimeEnable];
+    context!.restoreGState();
   }
   
   func executeDefHighlight() throws {
