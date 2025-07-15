@@ -462,6 +462,8 @@ func codecToContentType(qtImage : QuickTimeIdsc) -> String {
       return "com.compuserve.gif";
     case ".SGI":
       return "com.sgi.sgi-image";
+    case "mjpa":
+      return "com.jpeg";
     default:
       return "public." + qtImage.codecType.description.trimmingCharacters(in: .whitespacesAndNewlines)
   }
