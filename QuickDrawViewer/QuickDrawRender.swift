@@ -117,7 +117,7 @@ extension CGColor {
       guard let c : [CGFloat] = try rgb.components else {
         throw CoreGraphicRenderError.notRgbConvertible(color: self);
       }
-      return c[0...2].map({$0.uInt8});
+      return c[0...2].map({$0.normalizedUInt8});
     }
   }
   
@@ -145,17 +145,16 @@ extension PixMapMetadata {
 }
 
 extension CGFloat {
-  var uInt8: UInt8 {
-    return UInt8(self * 0xff);
+  var normalizedUInt8: UInt8 {
+    return UInt8(self * CGFloat(UInt8.max));
   }
 }
 
 extension UInt16 {
-  var floatValue: CGFloat {
-    return CGFloat(self) / 0x10000;
+  var normalizedFloatValue: CGFloat {
+    return CGFloat(self) / CGFloat(UInt16.max);
   }
 }
-
 
 /// Blend two colors, it seems we need AppKit for this.
 /// - Parameters:
@@ -186,9 +185,9 @@ extension QDColor {
     get throws {
       switch self {
         case .rgb(let rgb):
-          let red = rgb.red.floatValue;
-          let green = rgb.green.floatValue;
-          let blue = rgb.blue.floatValue;
+          let red = rgb.red.normalizedFloatValue;
+          let green = rgb.green.normalizedFloatValue;
+          let blue = rgb.blue.normalizedFloatValue;
           return CGColor(red: red, green: green, blue: blue, alpha: 1.0);
         case .qd1(let qd1):
           switch qd1 {
@@ -202,10 +201,10 @@ extension QDColor {
             case .yellow: return CGColor.yellow;
           }
         case .cmyk(cmyk: let cmyk, name: _):
-          let c = cmyk.cyan.floatValue;
-          let m = cmyk.magenta.floatValue;
-          let y = cmyk.yellow.floatValue;
-          let k = cmyk.black.floatValue;
+          let c = cmyk.cyan.normalizedFloatValue;
+          let m = cmyk.magenta.normalizedFloatValue;
+          let y = cmyk.yellow.normalizedFloatValue;
+          let k = cmyk.black.normalizedFloatValue;
           return CGColor(genericCMYKCyan: c, magenta: m , yellow:  y, black: k, alpha: 1.0);
           
         case .blend(colorA: let colorA, colorB: let colorB, weight: let weight):
@@ -383,7 +382,13 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   ///
   /// - Parameter verb: type of rendering (paint, draw)
   func applyVerbToPath(verb: QDVerb) throws {
-    try applyMode(mode: penState.mode.mode);
+
+    if !penState.mode.isPattern {
+      try applyMode(mode: penState.mode.mode);
+    } else {
+      // Pattern modes don't play nice
+      try applyMode(mode: .copyMode);
+    }
     switch verb {
         // The difference between paint and fill verbs is that paint uses the
         // pen (frame) color.
@@ -649,7 +654,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
 
       /// Polygon comment handling
       case (.polyBegin, _):
-        polyAccumulator = QDPolygon();
+        polyAccumulator = .empty;
       case (.polyClose, _):
         guard let poly = polyAccumulator else {
           throw CoreGraphicRenderError.inconsistentPoly(
@@ -671,6 +676,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
           throw CoreGraphicRenderError.inconsistentPoly(
             message: String(localized: "Ending non existing polygon."));
         }
+        poly.ComputeBoundingBox();
         portBits = QDPortBits.defaultState;
         // Do something with polyverb?
         try stdPoly(polygon: poly, verb: QDVerb.frame);
@@ -945,9 +951,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   var fontState : QDFontState;
   var portBits = QDPortBits.defaultState ;
   // Last shapes, used by the SameXXX operations.
-  var lastPoly : QDPolygon = QDPolygon();
-  var lastRect : QDRect = QDRect.empty;
-  var lastRegion :QDRegion = QDRegion.empty;
+  var lastPoly : QDPolygon = .empty;
+  var lastRect : QDRect = .empty;
+  var lastRegion :QDRegion = .empty;
   // Polygon for reconstruction.
   var polyAccumulator : QDPolygon?;
   var polyVerb = PolygonOptions.empty;

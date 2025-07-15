@@ -38,7 +38,19 @@ struct QDPoint : CustomStringConvertible, Equatable, Sendable {
     let dh = p1.horizontal - p2.horizontal;
     return QDDelta(dv: dv, dh: dh);
   }
-  
+
+  func mostNorthWest(point : QDPoint) -> QDPoint {
+    let vertical = min(self.vertical, point.vertical);
+    let horizontal = min(self.horizontal, point.horizontal);
+    return QDPoint(vertical: vertical, horizontal: horizontal);
+  }
+
+  func mostSouthEast(point : QDPoint) -> QDPoint {
+    let vertical = max(self.vertical, point.vertical);
+    let horizontal = max(self.horizontal, point.horizontal);
+    return QDPoint(vertical: vertical, horizontal: horizontal);
+  }
+
   let vertical: FixedPoint;
   let horizontal: FixedPoint;
   

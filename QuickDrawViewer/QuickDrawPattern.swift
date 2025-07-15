@@ -93,6 +93,13 @@ enum QDPixPattern  {
     }
   }
 
+  public var intensity : Double? {
+    switch self {
+      case .bw(pattern: let p): return p.intensity;
+      default: return nil;
+    }
+  }
+
 }
 
 extension QuickDrawDataReader {

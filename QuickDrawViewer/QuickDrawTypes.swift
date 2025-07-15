@@ -94,6 +94,7 @@ struct QuickDrawMode : RawRepresentable, CustomStringConvertible {
       result += " dither";
     }
     result += "]";
+    result += " (\(rawValue))";
     return result;
   }
   

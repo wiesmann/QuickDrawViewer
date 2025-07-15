@@ -25,22 +25,23 @@ struct PolygonOptions : OptionSet, CustomStringConvertible {
   }
 }
 
-class QDPolygon {
-  
-  init(boundingBox: QDRect?, points: [QDPoint]) {
+class QDPolygon : CustomStringConvertible {
+  var description: String {
+    return "⬡ box: \(boundingBox) \(points.count) points";
+  }
+
+  init(boundingBox: QDRect, points: [QDPoint]) {
     self.boundingBox = boundingBox;
     self.points = points;
     self.options = PolygonOptions.empty;
   }
-  
-  convenience init() {
-    self.init(boundingBox: nil, points: []);
-  }
-  
-  var boundingBox : QDRect?;
-  var points : [QDPoint];
+
+  var boundingBox : QDRect = .empty
+  var points : [QDPoint] = [];
   var options : PolygonOptions;
-  
+
+  static let empty = QDPolygon(boundingBox: .empty, points: []);
+
   func AddLine(line : [QDPoint]) {
     if points.isEmpty {
       self.points = line;
@@ -50,6 +51,24 @@ class QDPolygon {
       points.removeLast();
     }
     points.append(contentsOf: line);
+  }
+
+  func ComputeBoundingBox() {
+    if points.isEmpty {
+      boundingBox = .empty;
+      return;
+    }
+    var topLeft = points[0];
+    var bottomRight = points[0];
+
+    for (position, point)  in points.enumerated() {
+      if position == 0 {
+        continue;
+      }
+      topLeft = topLeft.mostNorthWest(point: point);
+      bottomRight = bottomRight.mostSouthEast(point: point);
+    }
+    boundingBox = QDRect(topLeft: topLeft, bottomRight: bottomRight);
   }
 }
 

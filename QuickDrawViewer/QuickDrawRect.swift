@@ -44,13 +44,27 @@ struct QDRect : CustomStringConvertible, Equatable, Sendable {
   var isEmpty : Bool {
     return dimensions.dh == .zero || dimensions.dv == .zero;
   }
-  
+
+  func contains(_ point: QDPoint) -> Bool {
+    return
+      point.horizontal >= topLeft.horizontal &&
+      point.horizontal <= bottomRight.horizontal &&
+      point.vertical >= topLeft.vertical &&
+      point.vertical <= bottomRight.vertical;
+  }
+
   static func + (rect: QDRect, delta: QDDelta) -> QDRect {
     let topleft = rect.topLeft + delta;
     let dimensions = rect.dimensions;
     return QDRect(topLeft: topleft, dimension: dimensions);
   }
-  
+
+  func extendToContain(point : QDPoint) -> QDRect {
+    return QDRect(
+        topLeft: topLeft.mostNorthWest(point: point),
+        bottomRight: bottomRight.mostSouthEast(point: point));
+  }
+
   static let empty = QDRect(topLeft: QDPoint.zero, bottomRight: QDPoint.zero);
 }
 

@@ -56,7 +56,7 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
     result += "|";
     result += String(format: "%04X", green);
     result += "|";
-    result += String(format: "%04X", green);
+    result += String(format: "%04X", blue);
     return result;
   }
   
