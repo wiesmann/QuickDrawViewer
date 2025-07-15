@@ -10,16 +10,23 @@
 import Foundation
 
 /// MacPaint images are fixed size (720 × 576) PackBit compressed bitmaps.
-///  See http://www.textfiles.com/programming/FORMATS/pix_fmt.txt
+///  See http://preserve.mactech.com/articles/mactech/Vol.01/01.07/MacPaintfiles/index.html
 class MacPaintImage : PixMapMetadata, @unchecked Sendable {
 
   static let width : Int = 576;
   static let height : Int = 720;
-  
+
+  /// Return the size (in bytes) of the header.
+  func getHeaderSize(data: Data) throws -> Int {
+    // TODO: check if the file actually a mac-binarx file.
+    return 512;
+  }
+
+  // Macpaint files sometimes contain more
   func load(data : Data) throws {
     let a = Array(data);
     self.bitmap = try decompressPackBit(
-      data: a[0..<a.count], unpackedSize: MacPaintImage.height * rowBytes);
+      data: a[0..<a.count], unpackedSize: MacPaintImage.height * rowBytes, byteNum: 1, checkSize: false);
   }
   
   /// Convert the MacPaint images into an opcode.

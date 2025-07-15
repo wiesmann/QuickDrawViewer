@@ -34,32 +34,6 @@ enum TargaImageType : UInt8 {
   case rleGrayScale = 11;
 }
 
-/// Targa has its own variant of Packbit.
-/// - Parameters:
-///   - data: slice of bytes to decompress
-///   - maxSize: maximum size of the decompressed data
-///   - byteNum: bytes to decompress.
-/// - Throws: packbit errors.
-/// - Returns: decompressed bytes
-func decompressTarga(data : ArraySlice<UInt8>, maxSize : Int, byteNum: Int) throws -> [UInt8] {
-  var result : [UInt8] = [];
-  var p = data.startIndex;
-  while p < data.endIndex && result.count < maxSize {
-    let c = data[p];
-    p += 1;
-    if c & 0x80 > 0 {
-      let run = Int(c & 0x7f) + 1;
-      let end = p + byteNum;
-      p += try copyRepeated(length: run, src: data[p..<end], destination: &result, byteNum: byteNum);
-    } else {
-      let run = Int(c + 1);
-      let end = p + run * byteNum
-      p += try copyDiscrete(length: run, src: data[p..<end], destination: &result, byteNum: byteNum);
-    }
-  }
-  return result;
-}
-
 /// We need a special Targa decoder because the color-table can be external.
 class TargaImage : PixMapMetadata, @unchecked Sendable {
 
@@ -151,14 +125,14 @@ class TargaImage : PixMapMetadata, @unchecked Sendable {
     
     switch imageType {
       case .rleColorMap:
-        pixmap = try decompressTarga(data: imageData, maxSize: rowBytes * height, byteNum: 1);
+        (pixmap, _) = try decompressPackbitTarga(data: imageData, maxSize: rowBytes * height, byteNum: 1);
       case .rleTrueColor:
-        pixmap = try decompressTarga(data: imageData, maxSize: rowBytes * height, byteNum: pixelSize / 8);
+        (pixmap, _) = try decompressPackbitTarga(data: imageData, maxSize: rowBytes * height, byteNum: pixelSize / 8);
         if pixelSize == 16 {
           swap16BitColor();
         }
       case .rleGrayScale:
-        pixmap = try decompressTarga(data: imageData, maxSize: rowBytes * height, byteNum: 1);
+        (pixmap, _) = try decompressPackbitTarga(data: imageData, maxSize: rowBytes * height, byteNum: 1);
       case .grayScale:
         pixmap = Array(imageData);
       case .colorMap:

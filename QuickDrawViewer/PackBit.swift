@@ -66,7 +66,7 @@ func copyDiscrete(length: Int, src : ArraySlice<UInt8>, destination : inout [UIn
 ///   - unpackedSize: size of the unpacked data
 ///   - byteNum: number of bytes in a chunk (default 1)
 /// - Returns: decompressed data
-func decompressPackBit(data : ArraySlice<UInt8>, unpackedSize: Int, byteNum : Int = 1) throws -> [UInt8] {
+func decompressPackBit(data : ArraySlice<UInt8>, unpackedSize: Int, byteNum : Int = 1, checkSize : Bool = true) throws -> [UInt8] {
   var decompressed : [UInt8] = [];
   decompressed.reserveCapacity(unpackedSize);
   var index = data.startIndex
@@ -84,8 +84,34 @@ func decompressPackBit(data : ArraySlice<UInt8>, unpackedSize: Int, byteNum : In
       index += try copyDiscrete(length: length, src: data[index...], destination: &decompressed, byteNum: byteNum);
     }
   }
-  guard decompressed.count == unpackedSize else {
+  guard checkSize == false || decompressed.count == unpackedSize else {
     throw PackbitError.mismatchedLength(expectedLength: unpackedSize, actualLength: decompressed.count );
   }
   return decompressed;
+}
+
+/// Variant of Packbit decompression used by Targa.
+/// - Parameters:
+///   - data: slice of bytes to decompress
+///   - maxSize: maximum size of the decompressed data
+///   - byteNum: bytes to decompress.
+/// - Throws: packbit errors.
+/// - Returns: decompressed bytes, new index
+func decompressPackbitTarga(data : ArraySlice<UInt8>, maxSize : Int, byteNum: Int) throws -> ([UInt8], Int) {
+  var result : [UInt8] = [];
+  var p = data.startIndex;
+  while p < data.endIndex && result.count < maxSize {
+    let c = data[p];
+    p += 1;
+    if c & 0x80 > 0 {
+      let run = Int(c & 0x7f) + 1;
+      let end = p + byteNum;
+      p += try copyRepeated(length: run, src: data[p..<end], destination: &result, byteNum: byteNum);
+    } else {
+      let run = Int(c + 1);
+      let end = p + run * byteNum
+      p += try copyDiscrete(length: run, src: data[p..<end], destination: &result, byteNum: byteNum);
+    }
+  }
+  return (result, p);
 }

@@ -82,7 +82,8 @@ final class QuickDrawViewerDocument: ReferenceFileDocument {
     case .macPaintImage:
         do {
           let macPaint = MacPaintImage();
-          try macPaint.load(data: data.subdata(in: 512..<data.count));
+          let headerSize = try macPaint.getHeaderSize(data: data.subdata(in: 0..<128));
+          try macPaint.load(data: data.subdata(in: headerSize..<data.count));
           picture = macPaint.macPicture(filename: configuration.file.filename);
         } catch {
         let message = String(localized: "Failed parsing MacPaint file");
