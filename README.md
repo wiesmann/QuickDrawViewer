@@ -4,7 +4,8 @@
 
 I wanted to teach myself Swift programming, and needed something a bit more involved than just _Hello World_, so I decided the write a program that would decode QuickDraw image files and display them. This was basically a rewrite of the [Java Quickdraw](https://github.com/wiesmann/JavaQuickDraw) code I wrote, many years back.
 
-This program is far from finished, but I decided to release it for the 40th anniversary of the original Macintosh computer.
+This program is functional, although the UI is a bit rough and the code could certainly be improved. 
+I originally decided to release it for the 40th anniversary of the original Macintosh computer.
 
 ## Philosophy
 
@@ -17,17 +18,15 @@ closer to the resolution of the LaserWriter printers (300DPI) than that of the s
 of a compact Macintosh (72 DPI) and well above the resolution of an ImageWriter dot matrix printer (144 DPI.)
 The rendering engine of Mac OS X is also closer to a PostScript printer than the QuickDraw model.
 
-So this program mostly translates QuickDraw instructions and delegates most of the actual rendering to Core Graphics.
-Instructions meant for printers (QuickDraw _comments_) are also used in the translation.
+So this program mostly translates QuickDraw instructions and delegates the actual rendering to Core Graphics.
+Instructions meant for printers (QuickDraw _comments_) are also used in this translation.
 
 ## QuickDraw 
 
-QuickDraw was the graphical language of the original Macintosh, and the format used to store and exchange images on the computer. 
+[QuickDraw](https://en.wikipedia.org/wiki/QuickDraw) was the graphical language of the original Macintosh, and the format used to store and exchange images on the computer. 
 The original interpreter was written in large part in Motorola 68K
 by the late [Bill Atkinson](https://en.wikipedia.org/wiki/Bill_Atkinson).
 Support for these files has been slowly decaying with newer versions of Mac OS X, and on my M1 PowerBook, Preview can only open a small subset of the files I have.
-
-
 
 ## Original Pict Example
 
@@ -95,7 +94,7 @@ This application basically handles QuickDraw image files, but also two related (
 
 These two formats are handled by converting them into QuickDraw at load time.
 QuickTime images are supported so far as the underlying codec is supported.
-MacPaint images are supported by virtue of being one of codecs that can be embedded inside QuickTime.
+MacPaint images are just converted into a bitmap. Technically they are supported because it is one possible QuickTime codec for an image, although I have yet to encouter such an image in the wild.
 
 ## Structure
 
@@ -103,39 +102,49 @@ This program has basically four parts:
 
 * A library that parses QuickDraw files, which only depends on the `Foundation` framework.
 * A Library that renders into a CoreGraphics context, which depends on CoreGraphics, CoreText and CoreImage (AppKit is pulled in for some color logic, but could easily be removed).
-* A library that uses Core Video to decode QuickTime embedded images that use video codecs into RGB.
+* A library that uses [Core Video to decode QuickTime embedded images](https://wiesmann.codiferes.net/wordpress/archives/41172) that use video codecs into RGB.
 * A minimalistic Swift-UI application that shows the pictures. 
 
-This means the code could be used in other applications that want to handle QuickDraw files.
-
+This architecture is meant to allow the code to be used in other applications that want to handle QuickDraw files.
 
 ## Features
 
-The library basically parses QuickDraw version 1 and version 2 files
+The library basically parses QuickDraw version 1 and version 2 files and supports the following primitives:
 
 * Lines
-* Basic Shapes (Rectangles, Ovals, Round-Rectangles and Arcs)
+* Basic Shapes
+  * Rectangles
+  * Ovals
+  * Round-Rectangles
+  * Arcs 
 * Regions
-* Text, size, font and style selection.
-* Patterns, both 1 bit, 8×8 and arbitrary colour.
-* Colours
+* Text, with the following features:
+  * Size, font and style selection.
+  * Rotation 
+* Patterns
+  * original 8×8 1 bit patterns
+  * colour patterns of arbitrary size.
+* Color selection:
+  * Quickdraw 1 (color planes) 
+  * Quickdraw 2 RGB
+  * Proprietary (Canvas) CMYK
 * Palette images
 * Direct (RGB) images
 * QuickTime embedded images with the following codecs:
   * External image formats: JPEG, TIFF, PNG, BMP, JPEG-2000, GIF, SGI 
-    (these are handled natively by the renderer)
-  * RAW (`raw `)
-  * MacPaint
+    – rendering is delegated to Core Graphics 
+  * RAW (`raw `) – Decoded to RGB
+  * MacPaint – Decoded to BitMap 
   * Targa (`tga `) for RLE 8-bit palette, RLE 24-bit RGB, RLE 8-bit grayscale.
-  * Apple Video (`RPZA`)
-  * Apple Component Video (`YUV2`)
-  * Apple Graphics (`smc `)
+  * Apple Video (`RPZA`) – Decoded to 555 RGB 
+  * Apple Component Video (`YUV2`) – Decoded to RGB 
+  * Apple Graphics (`smc `) – Decoded to palette. 
   * Apple Animation (`RLE `) with depths of 2,4,8,16, 24 and 32 bits/pixel
-  * Planar Video (`8BPS`)
-  * Intel Raw (`YVU9`)
-  * Cinepak (`CVID`)
-  * Digital Video variants (`dvc `, `dvcp`, `dv5n`, `dvpp`, `dv5p`)
-  * `h263`
+  * Planar Video (`8BPS`) – Decoded to RGB 
+  * Intel Raw (`YVU9`) – Decoded to RGB 
+  * Cinepak (`CVID`) – Decoded to palette or RGB 
+  * Digital Video variants (`dvc `, `dvcp`, `dv5n`, `dvpp`, `dv5p`) - Decoded to RGB Using Core Video
+  * `h263` – Decoded to RGB using Core Video.
 
 Some basic comment parsing is used to improve images, in particular:
 
@@ -152,7 +161,7 @@ Currently, the following QuickDraw features don't work:
 * Some exotic compositing modes (which are typically not supported by printers)
 * Text alignement
 * Polygon smoothing
-* Exotic QuickTime codecs, like for instance [Photo-CD](https://en.wikipedia.org/wiki/Photo_CD)
+* Exotic QuickTime codecs, like for instance [Photo-CD](https://en.wikipedia.org/wiki/Photo_CD) or Sorenson.
 
 ## User Interface Application
 
