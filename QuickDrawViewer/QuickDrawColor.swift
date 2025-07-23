@@ -127,17 +127,17 @@ enum QD1Color : UInt32 {
   case yellow = 0x45;
   
   var rgb : RGBColor {
-    let r = UInt16(rawValue >> 5 & 0x01) * 0xFFFF;
-    let g = UInt16(rawValue >> 4 & 0x01) * 0xFFFF;
-    let b = UInt16(rawValue >> 3 & 0x01) * 0xFFFF;
+    let r = UInt16(rawValue >> 5 & 0x01) * UInt16.max;
+    let g = UInt16(rawValue >> 4 & 0x01) * UInt16.max;
+    let b = UInt16(rawValue >> 3 & 0x01) * UInt16.max;
     return RGBColor(red: r, green: g, blue: b);
   }
   
   var cmyk : CMKYColor {
-    let c = UInt16(rawValue >> 9 & 0x01) * 0xFFFF;
-    let m = UInt16(rawValue >> 8 & 0x01) * 0xFFFF;
-    let y = UInt16(rawValue >> 7 & 0x01) * 0xFFFF;
-    let k = UInt16(rawValue >> 6 & 0x01) * 0xFFFF;
+    let c = UInt16(rawValue >> 9 & 0x01) * UInt16.max;
+    let m = UInt16(rawValue >> 8 & 0x01) * UInt16.max;
+    let y = UInt16(rawValue >> 7 & 0x01) * UInt16.max;
+    let k = UInt16(rawValue >> 6 & 0x01) * UInt16.max;
     return CMKYColor(cyan: c, magenta: m, yellow: y, black: k);
   }
   
