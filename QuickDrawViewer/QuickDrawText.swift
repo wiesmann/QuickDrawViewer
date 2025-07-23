@@ -23,27 +23,42 @@ class QDFontState {
     if let name = self.fontName {
       return name;
     }
-    /// List of classic fonts with their canonical IDs.
-    switch fontId {
-      case 2: return "New York";
-      case 3: return "Geneva";
-      case 4: return "Monaco";
-      case 5: return "Venice";
-      case 6: return "Venice";
-      case 7: return "Athens";
-      case 8: return "San Francisco";
-      case 9: return "Toronto";
-      case 11: return "Cairo";
-      case 12: return "Los Angeles";
-      case 20: return "Times";
-      case 21: return "Helvetica";
-      case 22: return "Courrier";
-      case 23: return "Symbol";
-      case 24: return "Mobile";
-      default:
-        return nil;
-    }  // Switch
+    if let name = fontMapping[fontId] {
+      return name;
+    }
+    return nil;
   }
+
+  var fontMapping = [
+    2: "New York",
+    3: "Geneva",
+    4: "Monaco",
+    5: "Venice",
+    6: "Venice",
+    7: "Athens",
+    8: "San Francisco",
+    9: "Toronto",
+    11: "Cairo",
+    12: "Los Angeles",
+    20: "Times",
+    21: "Helvetica",
+    22: "Courrier",
+    23: "Symbol",
+    24: "Mobile"
+  ];
+
+  func setFont(fontId: Int?, fontName: String?) {
+    if let fId = fontId {
+      self.fontId = fId;
+      if let name = fontName {
+        fontMapping[fId] = name;
+      }
+    }
+    if let fName = fontName {
+      self.fontName = fName;
+    }
+  }
+
   var fontId : Int = 0;
   var fontName : String?;
   var fontSize = FixedPoint(12);

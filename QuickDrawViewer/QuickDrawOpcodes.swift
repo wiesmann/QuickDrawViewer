@@ -485,12 +485,7 @@ struct TextModeOp : OpCode, FontStateOperation {
 
 struct FontOp : OpCode, FontStateOperation {
   func execute(fontState: inout QDFontState) {
-    if fontName != nil {
-      fontState.fontName = fontName!;
-    }
-    if fontId != nil {
-      fontState.fontId = fontId!;
-    }
+    fontState.setFont(fontId: self.fontId, fontName: self.fontName);
   }
   
   mutating func load(reader: QuickDrawDataReader) throws {

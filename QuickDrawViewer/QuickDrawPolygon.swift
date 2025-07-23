@@ -40,10 +40,8 @@ class QDPolygon : CustomStringConvertible {
   var points : [QDPoint] = [];
   var options : PolygonOptions;
 
-  static let empty = QDPolygon(boundingBox: .empty, points: []);
-
-  func AddLine(line : [QDPoint]) {
-    if points.isEmpty {
+  func addLine(line : [QDPoint]) {
+    if self.points.isEmpty {
       self.points = line;
       return;
     }
@@ -53,7 +51,7 @@ class QDPolygon : CustomStringConvertible {
     points.append(contentsOf: line);
   }
 
-  func ComputeBoundingBox() {
+  func computeBoundingBox() {
     if points.isEmpty {
       boundingBox = .empty;
       return;

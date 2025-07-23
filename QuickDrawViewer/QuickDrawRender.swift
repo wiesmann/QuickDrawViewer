@@ -431,10 +431,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     guard portBits.contains(.lineEnable) else {
       return;
     }
-    if let poly = polyAccumulator {
-      poly.AddLine(line: points);
+    if let poly = polyAccumulator  {
+      poly.addLine(line: points);
     } else {
       let cg_points = points.map({ CGPoint(qd_point:$0)});
+      context!.beginPath();
       context!.addLines(between: cg_points);
       try applyVerbToPath(verb: .frame);
     }
@@ -654,7 +655,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
 
       /// Polygon comment handling
       case (.polyBegin, _):
-        polyAccumulator = .empty;
+        polyAccumulator = QDPolygon(boundingBox: .empty, points:[]);
       case (.polyClose, _):
         guard let poly = polyAccumulator else {
           throw CoreGraphicRenderError.inconsistentPoly(
@@ -676,10 +677,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
           throw CoreGraphicRenderError.inconsistentPoly(
             message: String(localized: "Ending non existing polygon."));
         }
-        poly.ComputeBoundingBox();
+        poly.computeBoundingBox();
         portBits = QDPortBits.defaultState;
         // Do something with polyverb?
+        context!.saveGState();
         try stdPoly(polygon: poly, verb: QDVerb.frame);
+        context!.restoreGState();
         polyAccumulator = nil;
         polyVerb = PolygonOptions.empty;
 
@@ -951,11 +954,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   var fontState : QDFontState;
   var portBits = QDPortBits.defaultState ;
   // Last shapes, used by the SameXXX operations.
-  var lastPoly : QDPolygon = .empty;
+  var lastPoly : QDPolygon = QDPolygon(boundingBox: .empty, points: []);
   var lastRect : QDRect = .empty;
   var lastRegion :QDRegion = .empty;
   // Polygon for reconstruction.
-  var polyAccumulator : QDPolygon?;
+  var polyAccumulator : QDPolygon? = nil;
   var polyVerb = PolygonOptions.empty;
 
   // ColorSpace
