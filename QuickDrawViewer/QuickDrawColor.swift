@@ -116,16 +116,18 @@ struct CMKYColor : RawRepresentable {
   
 }
 
+/// QuickDraw 1 color plane / plotter colours.
+/// The 8 pre-defined colours are represented by their 1 bit representation
 enum QD1Color : UInt32 {
-  case black = 0x21;
-  case white = 0x1e;
-  case red = 0xcd;
-  case blue = 0x199;
-  case green = 0x155;
-  case cyan = 0x111;
-  case magenta = 0x89;
-  case yellow = 0x45;
-  
+  case black =   0b000100001;
+  case white =   0b000011110;
+  case red =     0b011001101;
+  case blue =    0b110011001;
+  case green =   0b101010101;
+  case cyan =    0b100010001;
+  case magenta = 0b010001001;
+  case yellow =  0b001000101;
+
   var rgb : RGBColor {
     let r = UInt16(rawValue >> 5 & 0x01) * UInt16.max;
     let g = UInt16(rawValue >> 4 & 0x01) * UInt16.max;
