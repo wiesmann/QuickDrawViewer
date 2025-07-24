@@ -59,7 +59,8 @@ final class QuickDrawViewerDocument: ReferenceFileDocument {
       throw CocoaError(.fileReadCorruptFile);
     }
   }
-  
+
+  // Consiser checking if the file is actually an Apple-Single file and decode this first.
   required init(configuration: ReadConfiguration) throws {
     guard let data = configuration.file.regularFileContents else {
       throw CocoaError(.fileReadCorruptFile)
@@ -82,8 +83,7 @@ final class QuickDrawViewerDocument: ReferenceFileDocument {
     case .macPaintImage:
         do {
           let macPaint = MacPaintImage();
-          let headerSize = try macPaint.getHeaderSize(data: data.subdata(in: 0..<128));
-          try macPaint.load(data: data.subdata(in: headerSize..<data.count));
+          try macPaint.load(data: data.subdata(in: MacPaintImage.fileHeaderSize..<data.count));
           picture = macPaint.macPicture(filename: configuration.file.filename);
         } catch {
         let message = String(localized: "Failed parsing MacPaint file");

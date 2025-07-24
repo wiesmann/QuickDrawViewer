@@ -445,7 +445,7 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
 
 /// Convert the `codec` name of a QuickTime image into a type description.
 /// Not strictly needed, as core-image seems to be able to guess types fines, but we have the data so.
-/// Despite the fact that Preview can handle Targa files, CoreImage cannot.
+/// Despite the fact that Preview can handle Targa files, Core Image cannot.
 /// - Parameter qtImage: image whose codec will be translated.
 /// - Returns: a type description as used on OS X.
 func codecToContentType(qtImage : QuickTimeIdsc) -> String {

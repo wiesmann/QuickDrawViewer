@@ -15,12 +15,8 @@ class MacPaintImage : PixMapMetadata, @unchecked Sendable {
 
   static let width : Int = 576;
   static let height : Int = 720;
+  static let fileHeaderSize = 512;
 
-  /// Return the size (in bytes) of the header.
-  func getHeaderSize(data: Data) throws -> Int {
-    // TODO: check if the file actually a mac-binarx file.
-    return 512;
-  }
 
   // Macpaint files sometimes contain more
   func load(data : Data) throws {
