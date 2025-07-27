@@ -103,7 +103,8 @@ class QDBitMapInfo : CustomStringConvertible, PixMapMetadata, @unchecked Sendabl
       return pix_info.clut!;
     }
     // Should be colorised with foreground color.
-    return QDColorTable.palette1;
+    // return QDColorTable.palette1;
+    return nil;
   }
   
   public var description : String {

@@ -337,9 +337,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   }
 
   func paintPath(bitmap: QDBitMapInfo) throws {
-    guard let clut = bitmap.clut else {
-      throw QuickDrawError.missingColorTableError;
-    }
+    let bwClut = try self.penState.colorTable();
+    let clut : QDColorTable = bitmap.clut ?? bwClut
     let area = CGRect(qdrect: bitmap.bounds);
     let colorSpace = try clut.ToColorSpace(base: self.colorSpace);
     let bitmapInfo = CGBitmapInfo();
@@ -408,6 +407,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         context!.saveGState();
         let width = penState.penWidth.value
         context!.setLineWidth(width);
+        context!.setLineCap(.square);
         context!.replacePathWithStrokedPath();
         try paintPath(pix_pattern: penState.drawPattern);
         context!.restoreGState();
@@ -442,8 +442,13 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       poly.addLine(line: points);
     } else {
       let cg_points = points.map({ CGPoint(qd_point:$0)});
+      context!.saveGState();
       context!.beginPath();
+      // Offset the lines so that that the line is below/right of the coordinates, as this is the way of QuickDraw.
+      let offset = CGFloat(self.penState.penWidth.value) / 2;
+      context!.translateBy(x: offset, y: offset);
       context!.addLines(between: cg_points);
+      context!.restoreGState()
       try applyVerbToPath(verb: .frame);
     }
     if let last = points.last {
@@ -794,9 +799,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   /// Execute palette bitmap operations
   /// - Parameter bitRectOp: the opcode to execute
   func executeBitRect(bitRectOp: BitRectOpcode) throws {
-    guard let clut = bitRectOp.bitmapInfo?.clut else {
-      throw QuickDrawError.missingColorTableError;
-    }
+    let bwClut = try self.penState.colorTable();
+    let clut : QDColorTable = bitRectOp.bitmapInfo?.clut ?? bwClut;
     guard portBits.contains(.bitsEnable) else {
       return;
     }

@@ -135,7 +135,11 @@ class QDPenState {
       return try fillPattern.blendColors(fg: fgColor, bg: bgColor);
     }
   }
-  
+
+  func colorTable() throws -> QDColorTable  {
+    return QDColorTable(clut: [try bgColor.getRgb(), try fgColor.getRgb()], id: 0, clutFlags: 0);
+  }
+
   /// Pen width, assuming a square pen (height = width).
   var penWidth : FixedPoint {
     get {
