@@ -102,6 +102,7 @@ class QDBitMapInfo : CustomStringConvertible, PixMapMetadata, @unchecked Sendabl
     if let pix_info = pixMapInfo {
       return pix_info.clut!;
     }
+    // Should be colorised with foreground color.
     return QDColorTable.palette1;
   }
   

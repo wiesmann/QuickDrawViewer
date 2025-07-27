@@ -22,6 +22,7 @@ struct QDPortBits : OptionSet {
   static let txtMeasEnable = QDPortBits(rawValue: 1 << 11);
   static let clipEnable = QDPortBits(rawValue: 1 << 12);
   static let quickTimeEnable = QDPortBits(rawValue: 1 << 13);
+  static let gradientEnable = QDPortBits(rawValue: 1 << 14);
   static let defaultState = QDPortBits([
     textEnable, lineEnable, rectEnable, rRectEnable, ovalEnable,
     arcEnable, polyEnable, rgnEnable, bitsEnable, commentsEnable,
@@ -30,7 +31,7 @@ struct QDPortBits : OptionSet {
 }
 
 protocol QuickDrawPort {
-  // Bottleneck functions
+  // QuickDraw Bottleneck functions
   func stdPoly(polygon: QDPolygon, verb: QDVerb) throws -> Void;
   func stdRect(rect : QDRect, verb: QDVerb) throws -> Void;
   func stdOval(rect : QDRect, verb: QDVerb) throws -> Void;
@@ -39,6 +40,8 @@ protocol QuickDrawPort {
   func stdRoundRect(rect : QDRect, verb: QDVerb) throws -> Void;
   func stdLine(points: [QDPoint]) throws -> Void;
   func stdArc(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws -> Void;
+  // QuickDraw does not support gradient, but this dispatches comments.
+  func stdGradient(gradient: GradientDescription) throws -> Void;
 
   // Port state
   var penState : QDPenState {get  set };

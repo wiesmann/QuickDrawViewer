@@ -107,6 +107,8 @@ struct IccProfile {
   let data : Data?;
 }
 
+
+
 enum CommentPayload : Sendable {
   case noPayload;
   case dataPayload(creator: MacTypeCode, data: Data);
@@ -116,35 +118,42 @@ enum CommentPayload : Sendable {
   case polySmoothPayload(verb: PolygonOptions);
   case canvasPayload(canvas: CanvasPayload);
   case creatorPayload(creator: MacTypeCode, frame: QDRect);
-  case colorPayload(creator: MacTypeCode, color: QDColor);
+  case colorPayload(creator: MacTypeCode, color: QDColor, selector : UInt16?);
   case unknownPayload(rawType: Int, data: Data);
   case iccColorProfilePayload(selector: IccProfileSelector, data: Data?);
+  case gradientPayload(creator: MacTypeCode, gradient: GradientDescription);
+  case gradientEndPayload(creator: MacTypeCode);
+  case customClipPayLoad(creator: MacTypeCode);
+  case clarisPayload(claris: ClarisPayload);
 }
 
-/// See Technote 091: Optimizing for the LaserWriter—Picture Comments
-func readTextPictRecord(reader: QuickDrawDataReader) throws -> QDTextPictRecord {
-  let raw_justification = try reader.readUInt8();
-  guard let justification = QDTextJustification(rawValue: raw_justification) else {
-    throw QuickDrawError.quickDrawIoError(message: "Could not parse justification value \(raw_justification)");
+
+extension QuickDrawDataReader {
+  /// See Technote 091: Optimizing for the LaserWriter—Picture Comments
+  func readTextPictRecord() throws -> QDTextPictRecord {
+    let raw_justification = try readUInt8();
+    guard let justification = QDTextJustification(rawValue: raw_justification) else {
+      throw QuickDrawError.quickDrawIoError(message: "Could not parse justification value \(raw_justification)");
+    }
+    let rawFlip = try readUInt8();
+    guard let flip = QDTextFlip(rawValue: rawFlip) else {
+      throw QuickDrawError.quickDrawIoError(message: "Could not parse flip value \(rawFlip)");
+    }
+    let angle1 = FixedPoint(try readInt16());
+    let rawLineHeight = try readUInt8();
+    guard let lineHeight = QDTextLineHeight(rawValue: rawLineHeight) else {
+      throw QuickDrawError.quickDrawIoError(message: "Could not parse line height value \(rawLineHeight)");
+    }
+    skip(bytes: 1);  // Reserved
+                            // MacDraw 1 comments are shorter
+    if remaining < 4 {
+      return QDTextPictRecord(justification: justification, flip: flip, angle: angle1, lineHeight: lineHeight);
+    }
+    let angle2 = try readFixed();
+    let angle = angle2 + angle1
+    return QDTextPictRecord(
+      justification: justification, flip: flip, angle: angle, lineHeight: lineHeight);
   }
-  let rawFlip = try reader.readUInt8();
-  guard let flip = QDTextFlip(rawValue: rawFlip) else {
-    throw QuickDrawError.quickDrawIoError(message: "Could not parse flip value \(rawFlip)");
-  }
-  let angle1 = FixedPoint(try reader.readInt16());
-  let rawLineHeight = try reader.readUInt8();
-  guard let lineHeight = QDTextLineHeight(rawValue: rawLineHeight) else {
-    throw QuickDrawError.quickDrawIoError(message: "Could not parse line height value \(rawLineHeight)");
-  }
-  reader.skip(bytes: 1);  // Reserved
-  // MacDraw 1 comments are shorter
-  if reader.remaining < 4 {
-    return QDTextPictRecord(justification: justification, flip: flip, angle: angle1, lineHeight: lineHeight);
-  }
-  let angle2 = try reader.readFixed();
-  let angle = angle2 + angle1
-  return QDTextPictRecord(
-    justification: justification, flip: flip, angle: angle, lineHeight: lineHeight);
 }
 
 enum CanvasPayload {
@@ -163,16 +172,66 @@ func parseCanvasPayload(creator: MacTypeCode, data: Data) throws -> CommentPaylo
       reader.skip(bytes :10);
       let cmyk = try reader.readCMKY();
       let name = try reader.readPascalString();
-      return .colorPayload(creator: creator, color: .cmyk(cmyk: cmyk, name: name));
+      return .colorPayload(creator: creator, color: .cmyk(cmyk: cmyk, name: name), selector: code);
     default:
       return .canvasPayload(canvas: .canvasUnknown(code: code, data: try reader.readFullData()));
   }
 }
 
+enum ClarisPayload {
+  case clarisUnknown(code: UInt16, data: Data);
+}
+
+extension QuickDrawDataReader {
+  func readClarisGradient() throws -> GradientDescription {
+    let gradientType = try readUInt16();
+    skip(bytes: 6);
+    var raw_colors: [QDColor] = [];
+    for _ in 0..<4 {
+      let rgb_color = try readRGB();
+      skip(bytes: 2);
+      raw_colors.append(.rgb(rgb: rgb_color));
+    }
+    // The top 4 bits of sizeControl tell us which colours to actually use.
+    let sizeControl = try readUInt8();
+    var colors: [QDColor] = [];
+    for i in 0..<4 {
+      if (sizeControl << i) & 0x80 != 0 {
+        colors.append(raw_colors[i]);
+      }
+    }
+    let angleDegree = try readUInt8();
+    switch gradientType {
+      case 0x0000:
+        return GradientDescription(type: .linear(angleDegrees: Int(angleDegree)), colors: colors);
+      case 0x0002:
+        return GradientDescription(type: .radial, colors: colors);
+      default:
+        throw QuickDrawError.quickDrawIoError(message: "Unknwon gradient type \(gradientType)");
+    }
+  }
+}
+
+func parseClarisPayload(creator: MacTypeCode, data: Data) throws -> CommentPayload {
+  let reader = try QuickDrawDataReader(data: data, position: 0);
+  let code = try reader.readUInt16();
+  switch code {
+    case 0x0015:
+      return .gradientEndPayload(creator: creator);
+    case 0x0016:
+      return .gradientPayload(creator: creator, gradient: try reader.readClarisGradient());
+    default:
+      return .clarisPayload(claris: .clarisUnknown(code: code, data: try reader.readFullData()));
+  }
+}
+
+
 func parseProprietaryPayload(creator: MacTypeCode, data: Data) throws -> CommentPayload {
   switch creator.description {
     case "drw2":
       return try parseCanvasPayload(creator: creator, data: data);
+    case "dPro":
+      return try parseClarisPayload(creator: creator, data: data);
     default:
       return .dataPayload(creator: creator, data: data);
   }
@@ -197,7 +256,7 @@ struct CommentOp : OpCode, CustomStringConvertible, CullableOpcode {
         payload = .postScriptPayLoad(postscript : postscript);
       case (.textBegin, let size) where size > 0:
         let subreader = try reader.subReader(bytes: size);
-        let fontOp = TextPictPayload(textPictRecord: try readTextPictRecord(reader: subreader));
+        let fontOp = TextPictPayload(textPictRecord: try subreader.readTextPictRecord());
         payload = .fontStatePayload(fontOperation: fontOp);
       case (.setLineWidth, let size) where size > 0:
         let subreader = try reader.subReader(bytes: size);

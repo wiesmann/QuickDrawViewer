@@ -31,6 +31,7 @@ enum CoreGraphicRenderError : LocalizedError {
   case unsupportedMode(mode: QuickDrawTransferMode);
   case emptyIccData(message: String);
   case invalidIccData(data: Data);
+  case missingGradient(message: String);
 }
 
 /// Make CGImageSourceStatus return some usable information.
@@ -69,6 +70,11 @@ extension CGRect {
     let size = CGSize(delta: qdrect.dimensions);
     self.init(origin:origin, size:size);
   }
+
+  var center : CGPoint {
+    return CGPoint(x: self.midX, y: self.midY);
+  }
+
 }
 
 extension CGContext {
@@ -268,6 +274,7 @@ func deg2rad<T: BinaryInteger>(_ angle: T) -> Double {
 /// Ideally, most of the rendering logic should be decoupled from the rendering implementation.
 /// We are not there yet (and we only have one rendered anyway).
 class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
+
   init(context : CGContext?) {
     self.context = context;
     penState = QDPenState();
@@ -445,7 +452,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   }
   
   func stdPoly(polygon: QDPolygon, verb: QDVerb) throws {
-    guard portBits.contains(.polyEnable) else {
+    guard portBits.contains(.polyEnable) || verb == .clip else {
       return;
     }
     if polygon.points.count > 0 {
@@ -465,7 +472,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   ///   - rect: rectangle to draw
   ///   - verb: QuickDraw verb to use for drawing.
   func stdRect(rect : QDRect, verb: QDVerb) throws {
-    guard portBits.contains(.rectEnable) else {
+    guard portBits.contains(.rectEnable) || verb == .clip else {
       return;
     }
     context!.beginPath();
@@ -476,7 +483,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   }
   
   func stdRoundRect(rect : QDRect, verb: QDVerb) throws {
-    guard portBits.contains(.rRectEnable) else {
+    guard portBits.contains(.rRectEnable) || verb == .clip else {
       return;
     }
     context!.beginPath();
@@ -491,7 +498,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   }
   
   func stdOval(rect : QDRect, verb : QDVerb) throws {
-    guard portBits.contains(.ovalEnable) else {
+    guard portBits.contains(.ovalEnable) || verb == .clip else {
       return;
     }
     context!.beginPath();
@@ -503,7 +510,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   
   // TODO: Picture DeskDrawCar.pict bugs with angles.
   func stdArc(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws {
-    guard portBits.contains(.arcEnable) else {
+    guard portBits.contains(.arcEnable) || verb == .clip else {
       return;
     }
     /// Compute stuff
@@ -533,13 +540,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   }
   
   func stdRegion(region: QDRegion, verb: QDVerb) throws {
-    guard portBits.contains(.rgnEnable) else {
+    guard portBits.contains(.rgnEnable) || verb == .clip else {
       return;
     }
-    let qdRects = region.getRects().map({CGRect(qdrect: $0)});
+    let cgRects = region.getRects().map({CGRect(qdrect: $0)});
     context!.beginPath();
-    context!.addRects(qdRects);
-    context!.closePath();
+    context!.addRects(cgRects);
     try applyVerbToPath(verb: verb);
     lastRegion = region;
   }
@@ -635,6 +641,29 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     fontState.textCenter = nil;
   }
 
+  func stdGradient(gradient: GradientDescription) throws {
+    guard self.portBits.contains(.gradientEnable) else {
+      return;
+    }
+    let r = self.context!.boundingBoxOfClipPath;
+    let colors =  try gradient.colors.reversed().map { try $0.cgColor };
+    let cgGradient = CGGradient(
+        colorsSpace: self.colorSpace, colors: colors as CFArray, locations: gradient.colors.indices.map { CGFloat($0) / CGFloat(gradient.colors.count) })!
+    let options : CGGradientDrawingOptions = [.drawsAfterEndLocation, .drawsBeforeStartLocation];
+    let start = r.center;
+    let d = max(r.width, r.height);
+    switch (gradient.type) {
+      case .linear(let a):
+        let angle = deg2rad(a);
+        let end1 = CGPoint(x: start.x + sin(angle) * d, y: start.y - cos(angle) * d);
+        self.context!.drawLinearGradient(cgGradient, start: start, end: end1, options: options)
+        let end2 = CGPoint(x: start.x - sin(angle) * d, y: start.y + cos(angle) * d);
+        self.context!.drawLinearGradient(cgGradient, start: start, end: end2, options: options);
+      case .radial:
+        self.context!.drawRadialGradient(cgGradient, startCenter: start, startRadius: 0, endCenter: start, endRadius: d, options: options);
+    }
+  }
+
   /// Set the ICC profile for the renderer.
   func setIccProfile(iccProfileData: Data) throws {
     guard let iccSpace = CGColorSpace(iccData: iccProfileData as CFData) else {
@@ -671,6 +700,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       case (.polyIgnore, _):
         // Disabling the poly operations and executing it later (with polyClose)
         // Causes problems with patterns, which are converted to shades.
+        // portBits.remove(.polyEnable);
         break;
       case (.polyEnd, _):
         guard let poly = polyAccumulator else {
@@ -703,12 +733,25 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
             try setIccProfile(iccProfileData: iccData!);
             iccData = nil;
             break;
+      case (_, .gradientPayload(_, let gradient)):
+        self.gradient = gradient;
+        if self.portBits.contains(.gradientEnable) {
+          self.portBits = [.gradientEnable];
+        }
+      case (_, .gradientEndPayload):
+        guard let gradient = self.gradient else {
+          throw CoreGraphicRenderError.missingGradient(message: "Closing gradient with no begining");
+        }
+        try stdGradient(gradient: gradient);
+        self.gradient = nil;
+        self.portBits = QDPortBits.defaultState;
+
       /// Generic dispatch for comments that implement some operation interface,
       case (_, .penStatePayload(let penOp)):
         try penOp.execute(penState: &penState);
       case (_, .fontStatePayload(let fontOp)):
         fontOp.execute(fontState: &fontState);
-      case (_, .colorPayload(_, let color)):
+      case (_, .colorPayload(_, let color, _)):
         penState.fgColor = color;
       default:
         break;
@@ -960,6 +1003,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   // Polygon for reconstruction.
   var polyAccumulator : QDPolygon? = nil;
   var polyVerb = PolygonOptions.empty;
+  // Gradient
+  var gradient : GradientDescription? = nil;
 
   // ColorSpace
   var colorSpace : CGColorSpace = CGColorSpaceCreateDeviceRGB();

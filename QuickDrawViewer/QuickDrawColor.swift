@@ -367,3 +367,13 @@ extension QuickDrawDataReader {
     return QDColorTable(clut: clut, id: 0,  clutFlags: clutFlags);
   }
 }
+
+enum GradientType {
+  case linear(angleDegrees: Int);
+  case radial;
+}
+
+struct GradientDescription {
+  let type : GradientType;
+  let colors : [QDColor];
+}
