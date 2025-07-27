@@ -4,7 +4,7 @@
 
 I wanted to teach myself Swift programming, and needed something a bit more involved than just _Hello World_, so I decided the write a program that would decode QuickDraw image files and display them. This was basically a rewrite of the [Java Quickdraw](https://github.com/wiesmann/JavaQuickDraw) code I wrote, many years back.
 
-This program is functional, although the UI is a bit rough and the code could certainly be improved. 
+This program is functional, although there are many [rendering edge cases](https://wiesmann.codiferes.net/wordpress/archives/41206) and the UI is a bit rough and the code could certainly be improved. 
 I originally decided to release it for the 40th anniversary of the original Macintosh computer.
 
 ## Philosophy
