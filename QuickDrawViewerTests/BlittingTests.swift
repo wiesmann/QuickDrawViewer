@@ -7,12 +7,13 @@
 
 import XCTest
 
-final class ColorTests : XCTestCase {
+final class BlittingTests : XCTestCase {
+
   func testRGBFields() throws {
-    XCTAssertEqual(RGBColor.black.rgb, [0x00, 0x00, 0x00]);
-    XCTAssertEqual(RGBColor.red.rgb, [0xff, 0x00, 0x00]);
-    XCTAssertEqual(RGBColor.green.rgb, [0x00, 0xff, 0x00]);
-    XCTAssertEqual(RGBColor.blue.rgb, [0x00, 0x00, 0xff]);
+    XCTAssertEqual(RGBColor.black.rgb.bytes, [0x00, 0x00, 0x00]);
+    XCTAssertEqual(RGBColor.red.rgb.bytes, [0xff, 0x00, 0x00]);
+    XCTAssertEqual(RGBColor.green.rgb.bytes, [0x00, 0xff, 0x00]);
+    XCTAssertEqual(RGBColor.blue.rgb.bytes, [0x00, 0x00, 0xff]);
     XCTAssertEqual(RGBColor.cyan.rawValue, 0x0000ffffffff);
   }
   
@@ -28,5 +29,12 @@ final class ColorTests : XCTestCase {
     XCTAssertEqual(red.red, 0x1f);
     XCTAssertEqual(red.green, 0x00);
     XCTAssertEqual(red.blue, 0x00);
+  }
+
+  func testYuv() throws {
+    let black = yuv2Rgb(y: 0.0, u: 0.0, v: 0.0);
+    XCTAssertEqual(black.bytes, [0x00, 0x00, 0x00]);
+    let white = yuv2Rgb(y: 255.0, u: 0.0, v: 0.0);
+    XCTAssertEqual(white.bytes, [0xff, 0xff, 0xff]);
   }
 }

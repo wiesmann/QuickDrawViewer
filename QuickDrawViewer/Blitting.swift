@@ -20,7 +20,7 @@ func roundTo(_ value: FixedPoint, multipleOf: Int) -> Int {
 }
 
 /// Struct to hold an classical RGB8 value
-struct RGB8 : Hashable {
+struct RGB8 : Hashable, Sendable {
   init(r: UInt8, g: UInt8, b: UInt8) {
     self.r = r;
     self.g = g;
@@ -66,7 +66,7 @@ func padComponentTo16<T : BinaryInteger>(_ value: T) -> UInt16 {
 
 /// Pixel in ARGB555 format with the alpha in the first bit.
 /// Mostly used by the RoadPizza decompressor.
-struct ARGB555: RawRepresentable {
+struct ARGB555: RawRepresentable, Sendable {
   init(rawValue: UInt16) {
     self.rawValue = rawValue
   }

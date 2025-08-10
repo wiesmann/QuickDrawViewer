@@ -51,7 +51,7 @@ final class QuickDrawViewerDocument: ReferenceFileDocument {
       let input_url = URL(string: path);
       let parser = try QDParser(contentsOf: input_url!);
       parser.filename = path;
-      picture = try parser.parse();
+      self.picture = try parser.parse();
     }
     catch {
       let message = String(localized: "Failed parsing QuickDraw file");
@@ -87,7 +87,7 @@ final class QuickDrawViewerDocument: ReferenceFileDocument {
           picture = macPaint.macPicture(filename: configuration.file.filename);
         } catch {
         let message = String(localized: "Failed parsing MacPaint file");
-        logger.log(level: .error,  "\(message): \(error)");
+        logger.log(level: .error, "\(message): \(error)");
         throw error;
       }
     default:
