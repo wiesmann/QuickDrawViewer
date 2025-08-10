@@ -7,13 +7,6 @@
 
 import Foundation
 
-typealias RGB8 = [UInt8];
-
-func toRGB8(r: SIMD4<UInt8>, g: SIMD4<UInt8>, b: SIMD4<UInt8>) -> [RGB8] {
-  return [
-    [r.x, g.x, b.x], [r.y, g.y, b.y], [r.z, g.z, b.z], [r.w, g.w, b.w]];
-}
-
 /// Quickdraw stores RGB colours in 3 × 16 bit values.
 /// Struct represents them as 64 bit value.
 struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
@@ -24,20 +17,20 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
     self.rawValue = rawValue & 0xffffffffffff;
   }
   
-  init (red: UInt16, green: UInt16, blue: UInt16) {
+  init(red: UInt16, green: UInt16, blue: UInt16) {
     let r = UInt64(red);
     let g = UInt64(green);
     let b = UInt64(blue);
     self.init(rawValue: r << 32 | g << 16 | b);
   }
-  
-  init (red8: UInt8, green8: UInt8, blue8: UInt8) {
-    let r = RGBColor.pad16(red8);
-    let g = RGBColor.pad16(green8);
-    let b = RGBColor.pad16(blue8);
+
+  init(red8: UInt8, green8: UInt8, blue8: UInt8) {
+    let r = padComponentTo16(red8);
+    let g = padComponentTo16(green8);
+    let b = padComponentTo16(blue8);
     self.init(red: r, green: g, blue: b);
   }
-  
+
   var red : UInt16 {
     return UInt16((rawValue >> 32) & 0xffff);
   }
@@ -62,18 +55,9 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   
   /// Return classical 3 byte RGB representation.
   var rgb : RGB8 {
-    var data : [UInt8] = [];
-    data.append(UInt8(red >> 8));
-    data.append(UInt8(green >> 8));
-    data.append(UInt8(blue >> 8));
-    return data;
+    return RGB8(r: UInt8(red >> 8), g: UInt8(green >> 8), b: UInt8(blue >> 8));
   }
-  
-  // Convert a 8 bit color value into a 16 bit one.
-  static func pad16<T : BinaryInteger>(_ value: T) -> UInt16 {
-    return UInt16(value & 0xff) << 8 | UInt16(value & 0xff);
-  }
-    
+
   // Constants that represent the colours of QuickDraw 1.
   static let black = RGBColor(red8: 0x00, green8: 0x00, blue8: 0x00);
   static let white = RGBColor(red8: 0xff, green8: 0xff, blue8: 0xff);
@@ -113,7 +97,6 @@ struct CMKYColor : RawRepresentable {
   var black: UInt16 {
     return UInt16((rawValue) & 0xffff);
   }
-  
 }
 
 /// QuickDraw 1 color plane / plotter colours.
@@ -145,44 +128,7 @@ enum QD1Color : UInt32 {
   
 }
 
-/// Pixel in ARGB555 format with the alpha in the first bit.
-/// Mostly used by the RoadPizza decompressor.
-struct ARGB555: RawRepresentable {
-  
-  init(rawValue: UInt16) {
-    self.rawValue = rawValue
-  }
-  
-  init(red: UInt8, green: UInt8, blue: UInt8) {
-    rawValue = UInt16(blue & 0x1F) | UInt16(green & 0x1F) << 5 | UInt16(red & 0x1F) << 10 | 0x8000;
-  }
-  
-  init(simd: SIMD3<UInt8>) {
-    self.init(red: simd.x, green: simd.y, blue: simd.z);
-  }
-  
-  var red : UInt8 {
-    return UInt8((rawValue >> 10) & 0x1F);
-  }
-  
-  var green : UInt8 {
-    return UInt8((rawValue >> 5) & 0x1F);
-  }
-  
-  var blue : UInt8 {
-    return UInt8((rawValue) & 0x1F);
-  }
-  
-  let rawValue : UInt16;
-  
-  var simdValue : SIMD3<UInt8> {
-    return SIMD3<UInt8>(x: red, y: green, z:blue);
-  }
-  
-  static let zero = ARGB555(rawValue: 0);
-  static let pixelSize = 16;
-  static let componentSize = 5;
-}
+
 
 enum QDColor : CustomStringConvertible {
   var description: String {
@@ -284,9 +230,9 @@ final class QDColorTable : CustomStringConvertible, Sendable {
     self.clutFlags = 0;
     var clut : [RGBColor] = [];
     for v in raw {
-      let r = RGBColor.pad16(v >> 16)
-      let g = RGBColor.pad16(v >> 8);
-      let b = RGBColor.pad16(v);
+      let r = padComponentTo16(v >> 16)
+      let g = padComponentTo16(v >> 8);
+      let b = padComponentTo16(v);
       let color = RGBColor(red: r, green: g, blue: b);
       clut.append(color)
     }

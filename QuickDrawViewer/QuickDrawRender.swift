@@ -228,12 +228,9 @@ extension QDColorTable {
   /// - Parameter base: The reference RGB color-space.
   /// - Returns: A Core Graphics color-space
   func ToColorSpace(base: CGColorSpace) throws -> CGColorSpace {
-    var data : [UInt8] = [];
-    for color in clut {
-      data.append(contentsOf: color.rgb);
-    }
-    guard data.count <= 256 * 8 else {
-      throw QuickDrawError.invalidClutError(clut:self);
+    var data = Array(clut.map(){$0.rgb.bytes}.joined());
+    guard data.count <= 256 * 3 else {
+      throw QuickDrawError.clutTooBigError(clut:self);
     }
     let result = CGColorSpace(indexedBaseSpace: base, last: clut.count - 1, colorTable: &data);
     guard result != nil else {

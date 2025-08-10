@@ -118,7 +118,7 @@ struct CinepakCodeBookEntry {
     self.payload = .eight(y: SIMD4<UInt8>(y4[0], y4[1], y4[2], y4[3]))
   }
   
-  /// Initialize an entry with four 6 8-bit values, four intensities and two chrominance bytes (u, v).
+  /// Initialize an entry with four 6, 8-bit values, four intensities and two chrominance bytes (u, v).
   /// - Parameters:
   ///   - y4: intensities (unsigned)
   ///   - u: u chrominance value (signed)
@@ -160,7 +160,7 @@ struct CinepakCodeBookEntry {
   var rgb : [RGB8] {
     switch payload {
       case .eight(let y):
-        return y.bytes.map(){[$0, $0, $0]};
+        return y.bytes.map(){RGB8(r: $0, g: $0, b:$0)};
       case .twelve(let y, let u, let v):
         // Decode cinepak YUV
         let u4 = SIMD4<Int16>.init(repeating: Int16(u));
@@ -189,20 +189,18 @@ struct CinepakCodeBookEntry {
   }
 
   private let payload: CodeBookPayload;
-  static let uninitialized = CinepakCodeBookEntry(uninitialized: [0xff, 0x00, 0xff]);
+  static let uninitialized = CinepakCodeBookEntry(uninitialized: RGB8(r: 0xff, g: 0x00, b: 0xff));
 }
 
 /// A code-book is a collection of 2×2 pixel patterns, see the CinepakCodeBookEntry struct .
 class CinepakCodeBook {
-  
   init(name: String) {
     self.name = name;
-  
     entries = [CinepakCodeBookEntry].init(repeating: CinepakCodeBookEntry.uninitialized, count: 256);
   }
   
-  func readEntries(n: Int, chunkType: CinepakChunk.ChunkType, reader : QuickDrawDataReader) throws {
-    for i in 0..<n {
+  func readEntries(count: Int, chunkType: CinepakChunk.ChunkType, reader : QuickDrawDataReader) throws {
+    for i in 0..<count {
       let entry = try reader.readCinepakCodeBookEntry(chunkType: chunkType);
       entries[i] = entry;
     }
@@ -256,8 +254,9 @@ extension QuickDrawDataReader {
 }
 
 
-/// A cinepak image is composed of 4×4 blocks, which are filled either using one 2×2 codebook entries (doubled),
-/// or 4 2×2 code book entries, each block
+/// A cinepak image is composed of 4×4 blocks, which are filled either using
+/// * one 2×2 codebook entries (doubled),
+/// * four 2×2 code book entries, each block
 class Cinepak : BlockPixMap, @unchecked Sendable{
   init(dimensions: QDDelta, clut: QDColorTable?) {
     components = clut != nil ? CinepakComponents.index : CinepakComponents.rgb;
@@ -279,9 +278,9 @@ class Cinepak : BlockPixMap, @unchecked Sendable{
         pixmap[offset] = entry.y[pos];
       case .rgb:
         let rgb = entry.rgb[pos]
-        for c in 0..<3 {
-          pixmap[offset + c] = rgb[c];
-        }
+        pixmap[offset] = rgb.r;
+        pixmap[offset + 1] = rgb.g;
+        pixmap[offset + 2] = rgb.b;
     }
   }
   
@@ -376,9 +375,9 @@ class Cinepak : BlockPixMap, @unchecked Sendable{
           throw CinepakError.tooManyCodebookEntries(number: numEntries);
         }
         if c.contains(.v1) {
-          try v1Codebook.readEntries(n: numEntries, chunkType: chunk.chunkType, reader: reader);
+          try v1Codebook.readEntries(count: numEntries, chunkType: chunk.chunkType, reader: reader);
         } else {
-          try v4Codebook.readEntries(n: numEntries, chunkType: chunk.chunkType, reader: reader);
+          try v4Codebook.readEntries(count: numEntries, chunkType: chunk.chunkType, reader: reader);
         }
       /// The chunk contains codebook updates.
       case let c where c.contains(.codebook) && c.contains(.update):

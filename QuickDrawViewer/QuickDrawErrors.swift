@@ -15,6 +15,7 @@ enum QuickDrawError: Error {
   case missingColorTableError;
   case invalidStr32(length: Int);
   case invalidClutError(clut: QDColorTable);
+  case clutTooBigError(clut: QDColorTable);
   case corruptPackbitLine(row: Int, expectedLength : Data.Index, actualLength: Data.Index);
   case corruptRegion(boundingBox: QDRect);
   case renderingError (message: String);

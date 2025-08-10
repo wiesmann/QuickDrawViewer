@@ -50,3 +50,4 @@ func byteArrayLE<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
 func byteArrayBE<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
   withUnsafeBytes(of: value.bigEndian, Array.init)
 }
+

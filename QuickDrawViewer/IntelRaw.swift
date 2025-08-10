@@ -40,7 +40,7 @@ class IntelRawImage : PixMapMetadata, @unchecked Sendable {
         let v = vData[vuOffset + vData.startIndex];
         let u = uData[vuOffset + uData.startIndex];
         let rgb = yuv2Rgb(y: y, u: u, v: v)
-        pixmap.append(contentsOf: rgb);
+        pixmap.append(contentsOf: rgb.bytes);
       }
     }
   }
