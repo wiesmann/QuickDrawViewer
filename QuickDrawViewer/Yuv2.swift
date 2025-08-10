@@ -11,7 +11,12 @@ import CoreGraphics
 
 /// It would be nice to use something like the accelerate framework to decode this.
 /// Sadly this particular version uses _signed_ int8 for u and v, not a cut-off of 128.
-/// So we code it explicitely. 
+/// So we code it explicitely.
+/// - Parameters:
+///   - y: luma value
+///   - u: u chroma value
+///   - v: v chroma value
+/// - Returns: converted RGB color
 func signedYuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> RGB8 {
   let nu = Double(Int8(bitPattern: u));
   let nv = Double(Int8(bitPattern: v));
@@ -19,6 +24,9 @@ func signedYuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> RGB8 {
   return yuv2Rgb(y: ny, u: nu, v: nv);
 }
 
+/// Convert  YUV data into RGB
+/// - Parameter data: YUV bytes
+/// - Returns: RGB8 bytes.
 func convertYuv2Data(data: Data) -> [UInt8] {
   var rgb : [UInt8] = [];
   let pixelPairCount = data.count / 4;
