@@ -17,7 +17,7 @@ import os
 let rgbDeviceSpace = CGColorSpaceCreateDeviceRGB();
 
 enum CoreGraphicRenderError : LocalizedError {
-  case noContext(message: String);
+  case noContext;
   case noPdfContext(rect: CGRect);
   case notRgbColor(color: CGColor);
   case notRgbConvertible(color: CGColor);
@@ -74,7 +74,6 @@ extension CGRect {
   var center : CGPoint {
     return CGPoint(x: self.midX, y: self.midY);
   }
-
 }
 
 extension CGContext {
@@ -88,6 +87,7 @@ extension CGContext {
   }
 }
 
+/// Glue code to convert QuickTime transforms into CGAffineTransform.
 extension CGAffineTransform {
   init(qdTransform: [[FixedPoint]]) {
     self.init(
@@ -97,6 +97,7 @@ extension CGAffineTransform {
   }
 }
 
+/// Glue code to work with CGColor instances.
 extension CGColor {
   static let red = CGColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0);
   static let green = CGColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0);
@@ -184,7 +185,6 @@ func Blend(a : CGColor,  b : CGColor, weight : Double) throws -> CGColor {
 
 /// Glue extensions for QuickDraw colour.
 extension QDColor {
-
   // Get the equivalent CGColor in relevant generic color-space.
   // The color can be defined either in RGB or CMYK.
   var cgColor : CGColor {
@@ -240,6 +240,27 @@ extension QDColorTable {
       throw QuickDrawError.renderingError(message: "CGColorSpace creation failed for \(self)");
     }
     return result!;
+  }
+}
+
+extension CGContext {
+  func applyMode(mode: QuickDrawTransferMode) throws {
+    switch mode {
+      case .copyMode:
+        setBlendMode(.normal);
+      case .orMode:
+        setBlendMode(.darken);
+      case .xorMode:
+        setBlendMode(.xor);
+      case .notOrMode:
+        setBlendMode(.destinationAtop);
+      case .notBic:
+        setBlendMode(.normal);
+      case .notCopyMode:
+        setBlendMode(.darken);
+      default:
+        throw CoreGraphicRenderError.unsupportedMode(mode: mode);
+    }
   }
 }
 
@@ -315,11 +336,14 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   }
 
   func paintPath(pix_pattern: QDPixPattern) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     switch pix_pattern {
       case .bw(pattern: let p): return try paintPath(pattern: p);
       case .color(pattern: _,  color: let c):
-        try context!.setFillColor(c.cgColor);
-        context!.fillPath();
+        try ctx.setFillColor(c.cgColor);
+        ctx.fillPath();
         return;
       case .pattern(pattern: _, bitmap: let bitmap):
         return try paintPath(bitmap: bitmap);
@@ -328,16 +352,19 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
 
   /// Paint the current path using a b/w pattern
   func paintPath(pattern: QDPattern) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     // Check if the pattern can be replaced with a color.
     if pattern.isShade {
       let color = try penState.drawColor;
-      try context!.setFillColor(color.cgColor);
-      context!.fillPath();
+      try ctx.setFillColor(color.cgColor);
+      ctx.fillPath();
       return;
     }
     let area = CGRect(qdrect: QDRect(topLeft: .zero, dimension: pattern.dimensions));
-    context!.saveGState();
-    context!.clip();
+    ctx.saveGState();
+    ctx.clip();
     let data = pattern.bytes;
     let cfData = CFDataCreate(nil, data, data.count)!;
     let provider = CGDataProvider(data: cfData)!;
@@ -354,11 +381,14 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       decode: nil,
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent)!;
-    context!.drawFlipped(patternImage, in: area, byTiling: true);
-    context!.restoreGState();
+    ctx.drawFlipped(patternImage, in: area, byTiling: true);
+    ctx.restoreGState();
   }
 
   func paintPath(bitmap: QDBitMapInfo) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     let bwClut = try self.penState.colorTable();
     let clut : QDColorTable = bitmap.clut ?? bwClut
     let area = CGRect(qdrect: bitmap.bounds);
@@ -366,8 +396,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     let bitmapInfo = CGBitmapInfo();
     let cfData = CFDataCreate(nil, bitmap.data, bitmap.data.count)!;
     let provider = CGDataProvider(data: cfData)!;
-    context!.saveGState();
-    context!.clip();
+    ctx.saveGState();
+    ctx.clip();
     guard let patternImage = CGImage(
       width: bitmap.dimensions.dh.rounded,
       height: bitmap.dimensions.dv.rounded,
@@ -380,42 +410,25 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       shouldInterpolate: false,
       intent: CGColorRenderingIntent.defaultIntent) else {
       throw CoreGraphicRenderError.imageFailure(
-        message: String(localized:"Could not create palette image."),
+        message: String(localized:"Could not create CGImage from palette image."),
         metadata: bitmap);
     }
-    context!.drawFlipped(patternImage, in: area, byTiling: true);
-    context!.restoreGState();
-  }
-
-  func applyMode(mode: QuickDrawTransferMode) throws {
-    switch mode {
-      case .copyMode:
-        context!.setBlendMode(.normal);
-      case .orMode:
-        context!.setBlendMode(.darken);
-      case .xorMode:
-        context!.setBlendMode(.xor);
-      case .notOrMode:
-        context!.setBlendMode(.destinationAtop);
-      case .notBic:
-        context!.setBlendMode(.normal);
-      case .notCopyMode:
-        context!.setBlendMode(.darken);
-      default:
-        throw CoreGraphicRenderError.unsupportedMode(mode: mode);
-    }
+    ctx.drawFlipped(patternImage, in: area, byTiling: true);
+    ctx.restoreGState();
   }
   
   /// Main _painting_ function, renders the current path using a defined Quickdraw verb.
   ///
   /// - Parameter verb: type of rendering (paint, draw)
   func applyVerbToPath(verb: QDVerb) throws {
-
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     if !penState.mode.isPattern {
-      try applyMode(mode: penState.mode.mode);
+      try ctx.applyMode(mode: penState.mode.mode);
     } else {
       // Pattern modes don't play nice
-      try applyMode(mode: .copyMode);
+      try ctx.applyMode(mode: .copyMode);
     }
     switch verb {
         // The difference between paint and fill verbs is that paint uses the
@@ -423,40 +436,46 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       case QDVerb.paint:
         try paintPath(pix_pattern: penState.drawPattern);
       case QDVerb.fill:
-        try context!.setFillColor(penState.fillColor.cgColor);
-        context!.fillPath();
+        try ctx.setFillColor(penState.fillColor.cgColor);
+        ctx.fillPath();
       case QDVerb.frame:
         context!.saveGState();
         let width = penState.penWidth.value
-        context!.setLineWidth(width);
-        context!.setLineCap(.square);
-        context!.replacePathWithStrokedPath();
+        ctx.setLineWidth(width);
+        ctx.setLineCap(.square);
+        ctx.replacePathWithStrokedPath();
         try paintPath(pix_pattern: penState.drawPattern);
-        context!.restoreGState();
+        ctx.restoreGState();
       case QDVerb.erase:
-        try context!.setFillColor(penState.bgColor.cgColor);
-        context!.fillPath();
+        try ctx.setFillColor(penState.bgColor.cgColor);
+        ctx.fillPath();
       case QDVerb.clip:
         /// Quickdraw clip operation replace the existing clip, where CoreGraphic ones are cumulative (intersection).
-        context!.resetClip();
-        context!.clip();
+        ctx.resetClip();
+        ctx.clip();
         break;
       case QDVerb.invert:
-        context!.saveGState();
-        context!.setBlendMode(CGBlendMode.difference);
+        ctx.saveGState();
+        ctx.setBlendMode(CGBlendMode.difference);
         try context!.setFillColor(penState.fillColor.cgColor);
-        context!.fillPath();
-        context!.restoreGState();
+        ctx.fillPath();
+        ctx.restoreGState();
       case QDVerb.ignore:
         break;
     }
   }
   
-  func executeOrigin(originOp: OriginOp) {
-    context!.translateBy(x: -originOp.delta.dh.value, y: -originOp.delta.dv.value);
+  func executeOrigin(originOp: OriginOp) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
+    ctx.translateBy(x: -originOp.delta.dh.value, y: -originOp.delta.dv.value);
   }
   
   func stdLine(points: [QDPoint]) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     guard portBits.contains(.lineEnable) else {
       return;
     }
@@ -464,30 +483,35 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       poly.addLine(line: points);
     } else {
       let cg_points = points.map({ CGPoint(qd_point:$0)});
-      context!.saveGState();
-      context!.beginPath();
+      ctx.saveGState();
+      ctx.beginPath();
       // Offset the lines so that that the line is below/right of the coordinates, as this is the way of QuickDraw.
       let offset = CGFloat(self.penState.penWidth.value) / 2;
-      context!.translateBy(x: offset, y: offset);
-      context!.addLines(between: cg_points);
-      context!.restoreGState()
+      ctx.translateBy(x: offset, y: offset);
+      ctx.addLines(between: cg_points);
+      ctx.restoreGState()
       try applyVerbToPath(verb: .frame);
     }
     if let last = points.last {
       penState.location = last;
     }
   }
-  
+
+  /// Bottleneck function for polygon rendering.
   func stdPoly(polygon: QDPolygon, verb: QDVerb) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
+    // If feature is disabled, only accept clip operations.
     guard portBits.contains(.polyEnable) || verb == .clip else {
       return;
     }
     if polygon.points.count > 0 {
       let cg_points = polygon.points.map({ CGPoint(qd_point:$0)});
-      context!.beginPath();
-      context!.addLines(between: cg_points);
+      ctx.beginPath();
+      ctx.addLines(between: cg_points);
       if polygon.options.contains(.close) {
-        context!.closePath();
+        ctx.closePath();
       }
       try applyVerbToPath(verb: verb);
     }
@@ -499,44 +523,59 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   ///   - rect: rectangle to draw
   ///   - verb: QuickDraw verb to use for drawing.
   func stdRect(rect : QDRect, verb: QDVerb) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
+    // If feature is disabled, only accept clip operations.
     guard portBits.contains(.rectEnable) || verb == .clip else {
       return;
     }
-    context!.beginPath();
-    context!.addRect(CGRect(qdrect: rect));
-    context!.closePath();
+    ctx.beginPath();
+    ctx.addRect(CGRect(qdrect: rect));
+    ctx.closePath();
     try applyVerbToPath(verb: verb);
     lastRect = rect;
   }
   
   func stdRoundRect(rect : QDRect, verb: QDVerb) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
+    // If feature is disabled, only accept clip operations.
     guard portBits.contains(.rRectEnable) || verb == .clip else {
       return;
     }
-    context!.beginPath();
+    ctx.beginPath();
     let path = CGMutablePath();
     // Core graphics dies if the corners are too big
     let cornerWidth = min(penState.ovalSize.dh, rect.dimensions.dh >> 1).value;
     let cornerHeight = min(penState.ovalSize.dv, rect.dimensions.dv >> 1).value;
     path.addRoundedRect(in: CGRect(qdrect: rect), cornerWidth: cornerWidth, cornerHeight: cornerHeight);
-    context!.addPath(path);
-    context!.closePath();
+    ctx.addPath(path);
+    ctx.closePath();
     try applyVerbToPath(verb: verb);
   }
   
   func stdOval(rect : QDRect, verb : QDVerb) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     guard portBits.contains(.ovalEnable) || verb == .clip else {
       return;
     }
-    context!.beginPath();
-    context!.addEllipse(in: CGRect(qdrect: rect));
-    context!.closePath();
+    ctx.beginPath();
+    ctx.addEllipse(in: CGRect(qdrect: rect));
+    ctx.closePath();
     try applyVerbToPath(verb: verb);
     lastRect = rect;
   }
   
   // TODO: Picture DeskDrawCar.pict bugs with angles.
   func stdArc(rect: QDRect, startAngle : Int16, angle: Int16, verb: QDVerb) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
+
     guard portBits.contains(.arcEnable) || verb == .clip else {
       return;
     }
@@ -548,31 +587,34 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     let clockwise = angle > 0;
     
     /// Core graphics can only do angles in a circle, so do it on the unit circle, and scale it.
-    context!.saveGState();
-    context!.beginPath();
-    context!.translateBy(x: rect.center.horizontal.value, y: rect.center.vertical.value);
-    context!.scaleBy(x: -width * 0.5, y: height * 0.5);
-    
+    ctx.saveGState();
+    ctx.beginPath();
+    ctx.translateBy(x: rect.center.horizontal.value, y: rect.center.vertical.value);
+    ctx.scaleBy(x: -width * 0.5, y: height * 0.5);
+
     /// startAngle The angle to the starting point of the arc, measured in radians from the positive x-axis.
     /// endAngle The angle to the end point of the arc, measured in radians from the positive x-axis.
-    context!.move(to: CGPoint(x: 0, y: 0));
-    context!.addArc(
+    ctx.move(to: CGPoint(x: 0, y: 0));
+    ctx.addArc(
       center: CGPoint(x:0, y:0),
       radius: 1.0,
       startAngle: radStartAngle, endAngle: radEndAngle, clockwise: clockwise);
-    context!.move(to: CGPoint(x: 0, y: 0));
+    ctx.move(to: CGPoint(x: 0, y: 0));
     try applyVerbToPath(verb: verb);
     // context!.fillPath();
-    context!.restoreGState();
+    ctx.restoreGState();
   }
   
   func stdRegion(region: QDRegion, verb: QDVerb) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     guard portBits.contains(.rgnEnable) || verb == .clip else {
       return;
     }
     let cgRects = region.getRects().map({CGRect(qdrect: $0)});
-    context!.beginPath();
-    context!.addRects(cgRects);
+    ctx.beginPath();
+    ctx.addRects(cgRects);
     try applyVerbToPath(verb: verb);
     lastRegion = region;
   }
@@ -597,6 +639,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   /// Draw text at the current pen location.
   /// Sounds easy, it is far from trivial.
   func stdText(text : String) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     guard portBits.contains(QDPortBits.textEnable) else {
       return;
     }
@@ -620,20 +665,20 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         kCTUnderlineStyleAttributeName as NSAttributedString.Key , value: CTUnderlineStyle.single.rawValue, range: range);
     }
     /// Start work
-    context!.saveGState();
-    try applyMode(mode: fontState.fontMode.mode);
+    ctx.saveGState();
+    try ctx.applyMode(mode: fontState.fontMode.mode);
     /// Use the ratios, but invert the y axis
-    context!.textMatrix = CGAffineTransform(scaleX: fontState.xRatio.value, y: -fontState.yRatio.value);
+    ctx.textMatrix = CGAffineTransform(scaleX: fontState.xRatio.value, y: -fontState.yRatio.value);
     if fontState.fontStyle.contains(.outlineBit) {
       lineText.addAttribute(
         kCTForegroundColorAttributeName as NSAttributedString.Key, value: bgColor!, range: range);
       lineText.addAttribute(
         kCTStrokeColorAttributeName as NSAttributedString.Key, value: fgColor!, range: range);
-      context!.setTextDrawingMode(.fillStroke);
+      ctx.setTextDrawingMode(.fillStroke);
     } else {
       lineText.addAttribute(
         kCTForegroundColorAttributeName as NSAttributedString.Key, value: fgColor!, range: range);
-      context!.setTextDrawingMode(.fill);
+      ctx.setTextDrawingMode(.fill);
     }
     /// Handle extra-space between the chars.
     if fontState.extraSpace != FixedPoint.zero {
@@ -653,9 +698,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         if pictRec.angle.rounded == 270 {
           angle = -0.5 *  .pi;
         }
-        context!.translateBy(x: x, y: y);
-        context!.rotate(by: angle);
-        context!.translateBy(x: -x, y: -y)
+        ctx.translateBy(x: x, y: y);
+        ctx.rotate(by: angle);
+        ctx.translateBy(x: -x, y: -y)
       }
     }
 
@@ -669,17 +714,20 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
 
     let lineToDraw: CTLine = CTLineCreateWithAttributedString(lineText);
     
-    context!.textPosition = position
+    ctx.textPosition = position
     CTLineDraw(lineToDraw, context!);
-    context!.restoreGState();
+    ctx.restoreGState();
     fontState.textCenter = nil;
   }
 
   func stdGradient(gradient: GradientDescription) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     guard self.portBits.contains(.gradientEnable) else {
       return;
     }
-    let r = self.context!.boundingBoxOfClipPath;
+    let r = ctx.boundingBoxOfClipPath;
     let colors =  try gradient.colors.reversed().map { try $0.cgColor };
     let cgGradient = CGGradient(
         colorsSpace: self.colorSpace, colors: colors as CFArray, locations: gradient.colors.indices.map { CGFloat($0) / CGFloat(gradient.colors.count) })!
@@ -690,11 +738,11 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       case .linear(let a):
         let angle = deg2rad(a);
         let end1 = CGPoint(x: start.x + sin(angle) * d, y: start.y - cos(angle) * d);
-        self.context!.drawLinearGradient(cgGradient, start: start, end: end1, options: options)
+        ctx.drawLinearGradient(cgGradient, start: start, end: end1, options: options)
         let end2 = CGPoint(x: start.x - sin(angle) * d, y: start.y + cos(angle) * d);
-        self.context!.drawLinearGradient(cgGradient, start: start, end: end2, options: options);
+        ctx.drawLinearGradient(cgGradient, start: start, end: end2, options: options);
       case .radial:
-        self.context!.drawRadialGradient(cgGradient, startCenter: start, startRadius: 0, endCenter: start, endRadius: d, options: options);
+        ctx.drawRadialGradient(cgGradient, startCenter: start, startRadius: 0, endCenter: start, endRadius: d, options: options);
     }
   }
 
@@ -743,9 +791,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         }
         portBits = QDPortBits.defaultState;
         // Do something with polyverb?
-        context!.saveGState();
+        guard let ctx = context else {
+          throw CoreGraphicRenderError.noContext;
+        }
+        ctx.saveGState();
         try stdPoly(polygon: poly, verb: QDVerb.frame);
-        context!.restoreGState();
+        ctx.restoreGState();
         polyAccumulator = nil;
         polyVerb = PolygonOptions.empty;
 
@@ -799,6 +850,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   ///   - data: pixel data
   ///   - clut: color table to use for lookups
   func executePaletteImage(metadata: PixMapMetadata, destination: QDRect, mode: QuickDrawTransferMode, data: [UInt8], clut: QDColorTable) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     let colorSpace = try clut.ToColorSpace(base: self.colorSpace);
     let bitmapInfo = CGBitmapInfo();
     let cfData = CFDataCreate(nil, data, data.count)!;
@@ -818,8 +872,8 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         message: String(localized:"Could not create palette image."),
         metadata: metadata);
     }
-    try applyMode(mode: mode);
-    context!.drawFlipped(
+    try ctx.applyMode(mode: mode);
+    ctx.drawFlipped(
       image,
       in: CGRect(qdrect: destination));
   }
@@ -847,6 +901,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   ///   - mode: QuickDraw rendering mode.
   ///   - data: raw data to render.
   func executeRGBImage(metadata: PixMapMetadata, destination: QDRect, mode: QuickDrawTransferMode, data: [UInt8]) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     let cfData = CFDataCreate(nil, data, data.count)!;
     guard let provider = CGDataProvider(data: cfData) else {
       throw CoreGraphicRenderError.imageFailure(
@@ -868,12 +925,14 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         message: String(localized:"Could not create RGB bitmap from \(data.count) bytes."),
         metadata: metadata);
     }
-    try applyMode(mode: mode);
-    context!.drawFlipped(
+    try ctx.applyMode(mode: mode);
+    ctx.drawFlipped(
       image,
       in: CGRect(qdrect: destination));
   }
   
+  /// Execute a direct bit operation
+  /// - Parameter directBitOp: opcode to execute.
   func executeDirectBitOp(directBitOp: DirectBitOpcode) throws {
     guard portBits.contains(.bitsEnable) else {
       return;
@@ -885,33 +944,44 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       data: directBitOp.bitmapInfo.data);
   }
 
-  /// Like `executeDirectBitOp` but with a clip region.
+  /// Execute a direct bit operation
+  /// - Parameter directBitMaskOp: opcode to execute.
   func executeDirectBitMaskOp(directBitMaskOp: DirectBitOpcodeWithMask) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
     guard portBits.contains(.bitsEnable) else {
       return;
     }
-    context!.saveGState();
+    ctx.saveGState();
+    /// If there is a mask, use it as a clip
     if let mask = directBitMaskOp.mask {
       let qdRects = mask.getRects().map({CGRect(qdrect: $0)});
-      context!.beginPath();
-      context!.addRects(qdRects);
-      context!.closePath();
-      context!.clip();
+      ctx.beginPath();
+      ctx.addRects(qdRects);
+      ctx.closePath();
+      ctx.clip();
     }
     try executeRGBImage(
       metadata: directBitMaskOp.bitmapInfo,
       destination: directBitMaskOp.bitmapInfo.destinationRect,
       mode: directBitMaskOp.bitmapInfo.mode.mode,
       data: directBitMaskOp.bitmapInfo.data);
-    context!.restoreGState()
+    ctx.restoreGState()
   }
-
+  
+  /// Bottleneck function to render a QuickTime object.
+  /// - Parameter quicktimeOp: opcode with the QuickTime information.
   func executeQuickTime(quicktimeOp : QuickTimeOpcode) throws {
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
+    }
+
     let mode = quicktimeOp.quicktimePayload.mode.mode;
-    context!.saveGState();
+    ctx.saveGState();
+    /// Use the QuickTime transform.
     let quickTimeTransform = CGAffineTransform(qdTransform: quicktimeOp.quicktimePayload.transform);
-    context?.concatenate(quickTimeTransform);
-    // TODO: use QuickTime transform.
+    ctx.concatenate(quickTimeTransform);
 
     guard let payload = quicktimeOp.quicktimePayload.idsc.data else {
       throw QuickTimeError.missingQuickTimePayload(quicktimeOpcode: quicktimeOp);
@@ -950,12 +1020,12 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     guard let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
       throw CoreGraphicRenderError.imageCreationFailed(message: "CGImageSourceCreateImageAtIndex \(imageSource): \(count)", quicktimeOpcode: quicktimeOp);
     }
-    context!.drawFlipped(
+    ctx.drawFlipped(
       image,
       in: CGRect(qdrect: quicktimeOp.quicktimePayload.srcMask!.boundingBox));
     /// Prevent error message by disabling other procs.
     portBits = [.quickTimeEnable];
-    context!.restoreGState();
+    ctx.restoreGState();
   }
   
   func executeDefHighlight() throws {
@@ -974,7 +1044,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         var port : QuickDrawPort = self;
         try portOp.execute(port: &port);
       case let originOp as OriginOp:
-        executeOrigin(originOp:originOp);
+        try executeOrigin(originOp:originOp);
       case let bitRectOp as BitRectOpcode:
         try executeBitRect(bitRectOp: bitRectOp);
       case let directBitOp as DirectBitOpcode:
@@ -993,24 +1063,26 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         throw CoreGraphicRenderError.unsupportedOpcode(opcode: opcode);
     }
   }
-  
+
   /// Executes the picture into the graphical context.
-  /// - Parameter picture: the quickdraw picture to render
+  /// - Parameters:
+  ///   - picture: the quickdraw picture to render
+  ///   - zoom: zoom level to render.
   public func execute(picture: QDPicture, zoom: Double) throws {
-    guard context != nil else {
-      throw CoreGraphicRenderError.noContext(message: "No context associated with renderer.");
+    guard let ctx = context else {
+      throw CoreGraphicRenderError.noContext;
     }
     self.picture = picture;
     let origin = CGPoint(qd_point: picture.frame.topLeft);
-    context!.translateBy(x: -origin.x, y: -origin.y);
-    
+    ctx.translateBy(x: -origin.x, y: -origin.y);
+
     // TODO: figure out when this should be turned on.
     // Scaling causes regressions on old pictures.
     /*let vScale = QDResolution.defaultResolution.vRes.value / picture.resolution.vRes.value;
      let hScale = QDResolution.defaultResolution.hRes.value / picture.resolution.hRes.value;
      context!.scaleBy(x: hScale, y: vScale);*/
-    context!.scaleBy(x: zoom, y: zoom);
-    
+    ctx.scaleBy(x: zoom, y: zoom);
+
     for opcode in picture.opcodes {
       do {
         try execute(opcode:opcode);
