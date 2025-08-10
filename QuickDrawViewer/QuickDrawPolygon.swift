@@ -27,16 +27,14 @@ struct PolygonOptions : OptionSet, CustomStringConvertible {
 
 class QDPolygon : CustomStringConvertible {
   var description: String {
-    return "⬡ box: \(boundingBox) \(points.count) points";
+    return "⬡ \(points.count) points";
   }
 
-  init(boundingBox: QDRect, points: [QDPoint]) {
-    self.boundingBox = boundingBox;
+  init(points: [QDPoint]) {
     self.points = points;
     self.options = PolygonOptions.empty;
   }
 
-  var boundingBox : QDRect = .empty
   var points : [QDPoint] = [];
   var options : PolygonOptions;
 
@@ -51,10 +49,9 @@ class QDPolygon : CustomStringConvertible {
     points.append(contentsOf: line);
   }
 
-  func computeBoundingBox() {
+  var boundingBox : QDRect {
     if points.isEmpty {
-      boundingBox = .empty;
-      return;
+      return .empty;
     }
     var topLeft = points[0];
     var bottomRight = points[0];
@@ -66,15 +63,15 @@ class QDPolygon : CustomStringConvertible {
       topLeft = topLeft.mostNorthWest(point: point);
       bottomRight = bottomRight.mostSouthEast(point: point);
     }
-    boundingBox = QDRect(topLeft: topLeft, bottomRight: bottomRight);
+    return  QDRect(topLeft: topLeft, bottomRight: bottomRight);
   }
 }
 
 extension QuickDrawDataReader {
   func readPoly() throws -> QDPolygon {
     let raw_size = try readUInt16();
-    let boundingBox = try readRect();
-    
+    let _ = try readRect();
+
     let pointNumber = (raw_size - 10) / 4;
     var points : [QDPoint]  = [];
     if pointNumber > 0 {
@@ -82,7 +79,7 @@ extension QuickDrawDataReader {
         points.append(try readPoint());
       }
     }
-    return QDPolygon(boundingBox: boundingBox, points: points);
+    return QDPolygon(points: points);
   }
 }
 

@@ -246,13 +246,9 @@ extension QDColorTable {
 /// Convert a font name from the classic mac universe ino a corresponding one on Mac OS X.
 /// - Parameter fontName: Font name
 /// - Returns: A font-name that probably exists on Mac OS X.
-func SubstituteFontName(fontName : String?) -> String {
+func substituteFontName(fontName : String?) -> String {
   if let name = fontName {
-    switch name {
-      case "Geneva" : return "Verdana";
-      default:
-        return name;
-    }
+    return name;
   }
   return "Helvetica";
 }
@@ -266,6 +262,32 @@ let tau = 2.0 * .pi;
 ///
 func deg2rad<T: BinaryInteger>(_ angle: T) -> Double {
   return -Double((angle + 90) % 360) * tau / 360;
+}
+
+func calculateKerningToFit(text: String,
+                           font: CTFont,
+                           targetWidth: CGFloat,
+                           baseAttributes: [NSAttributedString.Key: Any] = [:]) -> CGFloat {
+
+  // Create attributed string with base attributes
+  var attributes = baseAttributes
+  attributes[.font] = font
+  let baseAttributedString = NSAttributedString(string: text, attributes: attributes)
+  let baseLine = CTLineCreateWithAttributedString(baseAttributedString)
+
+  // Get current width
+  let currentWidth = CTLineGetTypographicBounds(baseLine, nil, nil, nil)
+
+  if currentWidth <= Double(targetWidth) {
+    return 0.0 // No adjustment needed
+  }
+
+  // Calculate required kerning adjustment
+  let excessWidth = CGFloat(currentWidth) - targetWidth
+  let characterCount = max(1, text.count - 1) // Don't kern after last character
+  let requiredKerning = -excessWidth / CGFloat(characterCount)
+
+  return requiredKerning
 }
 
 
@@ -579,7 +601,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
       return;
     }
     /// Get the font attributes.
-    let fontName = SubstituteFontName(fontName: fontState.getFontName()) as CFString;
+    let fontName = substituteFontName(fontName: fontState.getFontName()) as CFString;
     let fontSize = CGFloat(fontState.fontSize.value);
     /// Make sure the colors are in the current color-space.
     let fgColor = try penState.fgColor.cgColor.converted(to: colorSpace, intent: .defaultIntent, options: nil);
@@ -620,16 +642,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     }
     
     let position = CGPoint(qd_point: fontState.location);
-    
-    // TODO: use fontState.textCenter to adjust the width of strings.
-    if let pictRect = fontState.textPictRecord {
+
+    if let pictRec = fontState.textPictRecord {
       // Zero means no rotation, but in the QuickDraw referential, it's 12 O'clock.
-      if pictRect.angle != FixedPoint.zero {
+      if pictRec.angle != FixedPoint.zero {
         let x = position.x + (fontState.textCenter?.dh ?? FixedPoint.zero).value;
         let y = position.y + (fontState.textCenter?.dv ?? FixedPoint.zero).value;
-        var angle = deg2rad(pictRect.angle.rounded);
+        var angle = deg2rad(pictRec.angle.rounded);
         // 270° would mean 0, but it actually means -90°.
-        if pictRect.angle.rounded == 270 {
+        if pictRec.angle.rounded == 270 {
           angle = -0.5 *  .pi;
         }
         context!.translateBy(x: x, y: y);
@@ -637,7 +658,15 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
         context!.translateBy(x: -x, y: -y)
       }
     }
-    
+
+    if let center = fontState.textCenter {
+      let maxWidth = center.dh.value * 2;
+      let kerning = calculateKerningToFit(text: text, font: font, targetWidth: maxWidth);
+      let range = NSMakeRange(0, lineText.length);
+      lineText.addAttribute(
+        kCTKernAttributeName as NSAttributedString.Key, value: kerning, range: range);
+    }
+
     let lineToDraw: CTLine = CTLineCreateWithAttributedString(lineText);
     
     context!.textPosition = position
@@ -689,7 +718,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
 
       /// Polygon comment handling
       case (.polyBegin, _):
-        polyAccumulator = QDPolygon(boundingBox: .empty, points:[]);
+        polyAccumulator = QDPolygon(points:[]);
       case (.polyClose, _):
         guard let poly = polyAccumulator else {
           throw CoreGraphicRenderError.inconsistentPoly(
@@ -712,7 +741,6 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
           throw CoreGraphicRenderError.inconsistentPoly(
             message: String(localized: "Ending non existing polygon."));
         }
-        poly.computeBoundingBox();
         portBits = QDPortBits.defaultState;
         // Do something with polyverb?
         context!.saveGState();
@@ -1001,7 +1029,7 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
   var fontState : QDFontState;
   var portBits = QDPortBits.defaultState ;
   // Last shapes, used by the SameXXX operations.
-  var lastPoly : QDPolygon = QDPolygon(boundingBox: .empty, points: []);
+  var lastPoly : QDPolygon = QDPolygon(points: []);
   var lastRect : QDRect = .empty;
   var lastRegion :QDRegion = .empty;
   // Polygon for reconstruction.
