@@ -21,6 +21,16 @@
         }
       }
     },
+    "Could not create CGImage from palette image." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échec de création d'image  CGImage à partir d’une image palette."
+          }
+        }
+      }
+    },
     "Could not create palette image." : {
       "localizations" : {
         "de" : {
@@ -94,7 +104,14 @@
       }
     },
     "Failed parsing MacPaint file" : {
-
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur de décodage d’un fichier MacPaint"
+          }
+        }
+      }
     },
     "Failed parsing QuickDraw file" : {
       "localizations" : {
