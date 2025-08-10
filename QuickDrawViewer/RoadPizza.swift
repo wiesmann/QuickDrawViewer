@@ -11,6 +11,9 @@ enum RoadPizzaError : Error {
   case badMagic(magic: UInt8);
   case unknownOpcode(opcode: UInt8);
   case badPixMapIndex(index: Int);
+  case invalidPixelLineSize(count: Int);
+  case invalidColorTableSize(count: Int);
+  case invalidColorDirectSize(count: Int);
 }
 
 /// Image compressed with the RPZA (RoadPizza) compression.
@@ -21,14 +24,28 @@ class RoadPizzaImage : BlockPixMap, @unchecked Sendable {
   init(dimensions: QDDelta) {
     super.init(dimensions: dimensions, blockSize: 4, pixelSize: ARGB555.pixelSize, cmpSize: ARGB555.componentSize, clut: nil);
   }
-  
+
+  /// Creates a ARGB555 color that is ⅔ color a and ⅓ color b.
+  /// - Parameters:
+  ///   - a: color to mix ⅔ from
+  ///   - b: color to mix ⅓ from
+  /// - Returns: a color which is on the line in RGB space between a and b.
+  private static func mix⅔(_ a: SIMD3<UInt8>, _ b: SIMD3<UInt8>) -> ARGB555 {
+    let aa = SIMD3<UInt16>.init(clamping: a) &* RoadPizzaImage.m21;
+    let bb = SIMD3<UInt16>.init(clamping: b) &* RoadPizzaImage.m11;
+    let mix = SIMD3<UInt8>(clamping: (aa &+ bb) &>> RoadPizzaImage.m5);
+    return ARGB555(simd: mix);
+  }
+
   /// Function that writes a line of pixels from a block into the buffer.
   /// - Parameters:
   ///   - block: block number
   ///   - line: line number within the block
   ///   - color4: slice of 4 pixels
   private func writePixelLine(block: Int, line: Int, color4: ArraySlice<ARGB555>) throws {
-    assert(color4.count == blockSize, "Invalid pixel line size");
+    guard color4.count == blockSize else {
+      throw RoadPizzaError.invalidPixelLineSize(count: color4.count);
+    }
     let p = try getOffset(block: block, line: line);
     for (index, value) in color4.enumerated() {
       let rawValue = value.rawValue;
@@ -40,35 +57,25 @@ class RoadPizzaImage : BlockPixMap, @unchecked Sendable {
   private static let m21 = SIMD3<UInt16>.init(repeating: 21);
   private static let m11 = SIMD3<UInt16>.init(repeating: 11);
   private static let m5 = SIMD3<UInt16>.init(repeating: 5);
-   
-  /// Creates a ARGB555 color that is ⅔ color a and ⅓ color b.
-  /// - Parameters:
-  ///   - a: color to mix ⅔ from
-  ///   - b: color to mix ⅓ from
-  /// - Returns: a color which is on the line in RGB space between a and b.
-  private func mix⅔(_ a: SIMD3<UInt8>, _ b: SIMD3<UInt8>) -> ARGB555 {
-    let aa = SIMD3<UInt16>.init(clamping: a) &* RoadPizzaImage.m21;
-    let bb = SIMD3<UInt16>.init(clamping: b) &* RoadPizzaImage.m11;
-    let mix = SIMD3<UInt8>(clamping: (aa &+ bb) &>> RoadPizzaImage.m5);
-    return ARGB555(simd: mix);
-  }
-  
+
   private func makeColorTable(colorA: ARGB555, colorB: ARGB555) -> [ARGB555] {
     let simda = colorA.simdValue;
     let simdb = colorB.simdValue;
     return  [
-      colorB, mix⅔(simdb, simda), mix⅔(simda, simdb), colorA];
+      colorB, RoadPizzaImage.mix⅔(simdb, simda), RoadPizzaImage.mix⅔(simda, simdb), colorA];
   }
   
-  func execute1Color(block: Int, color: ARGB555) throws {
+  private func execute1Color(block: Int, color: ARGB555) throws {
     let color4 = [ARGB555].init(repeating: color, count: blockSize);
     for line in 0..<blockSize {
       try writePixelLine(block: block, line: line, color4: color4[0..<4]);
     }
   }
   
-  func executeIndexColor(block: Int, colorA: ARGB555, colorB: ARGB555, data: [UInt8]) throws {
-    assert(data.count == blockSize, "Invalid index color data size");
+  private func executeIndexColor(block: Int, colorA: ARGB555, colorB: ARGB555, data: [UInt8]) throws {
+    guard data.count == blockSize else {
+      throw RoadPizzaError.invalidColorTableSize(count: data.count);
+    }
     let colorTable : [ARGB555] = makeColorTable(colorA: colorA, colorB: colorB);
     for (line, value) in data.enumerated() {
       var color4 : [ARGB555] = [];
@@ -82,10 +89,10 @@ class RoadPizzaImage : BlockPixMap, @unchecked Sendable {
     }
   }
   
-  func executeDirectColor(block: Int, data: [ARGB555]) throws {
-    assert(data.count == blockSize * blockSize,
-           "Invalid direct color data size");
-    
+  private func executeDirectColor(block: Int, data: [ARGB555]) throws {
+    guard data.count == blockSize * blockSize else {
+      throw RoadPizzaError.invalidColorDirectSize(count: data.count);
+    }
     for line in 0..<blockSize {
       try writePixelLine(block: block, line: line, color4: data[line*4..<(line + 1)*4]);
     }
