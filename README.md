@@ -169,6 +169,12 @@ The application is currently very simple, you can view pictures, copy-paste them
 There is an export icon in the toolbar that allows you to export to PDF files. 
 There is some primitive drag-drop that as of Mac OS X 15.5 seems to work with most targets I could test with. 
 
+## Conversion tool
+
+A small conversion command-line tool is provided, it takes PICT files as input and writes PDF files.
+Note that this tool has minimal error handling. 
+I would recommend to keep the original files, as – hopefully – the quality of the conversion will improve with time.
+
 ## Helper script
 
 I wrote a small [Python script](QuickDrawViewer/pict_de_rez.py) for converting the QuickDraw data in a text resource description into  actual PICT files.
