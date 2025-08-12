@@ -1153,3 +1153,23 @@ class PDFRenderer : QuickdrawCGRenderer {
   
   let consumer : CGDataConsumer;
 }
+
+extension QDPicture {
+  var pdfFilename : String {
+    let filename = filename ?? "picture.pict";
+    return filename.replacingOccurrences(of: "pict", with: "pdf");
+  }
+
+  func pdfData() -> NSData {
+    let data = NSMutableData();
+    let renderer = PDFRenderer(data: data);
+    do {
+      try renderer.execute(picture: self, zoom: 1.0);
+    } catch {
+      let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "imageWrapper");
+      logger.log(level: .error, "Failed rendering \(error)");
+    }
+    return data;
+  }
+}
+

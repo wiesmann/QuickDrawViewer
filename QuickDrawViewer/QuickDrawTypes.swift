@@ -205,5 +205,3 @@ public class QDPicture : CustomStringConvertible {
     }
   }
 }
-
-

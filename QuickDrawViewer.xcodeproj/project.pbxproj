@@ -21,6 +21,40 @@
 		E50ADB972B599CDE009EA7AF /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6F2B42C0E500D7BB7B /* ContentView.swift */; };
 		E50ADB982B599CE1009EA7AF /* QuickDrawViewerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6B2B42C0E500D7BB7B /* QuickDrawViewerApp.swift */; };
 		E50ADB992B599CE3009EA7AF /* QuickDrawViewerDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6D2B42C0E500D7BB7B /* QuickDrawViewerDocument.swift */; };
+		E52B46272E4B2153009F2F3F /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52B46252E4B2153009F2F3F /* main.swift */; };
+		E52B46282E4B232A009F2F3F /* FixedPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50ADB932B599BDE009EA7AF /* FixedPoint.swift */; };
+		E52B46292E4B232A009F2F3F /* Bits.swift in Sources */ = {isa = PBXBuildFile; fileRef = E554EE572B9C61A700D56DF7 /* Bits.swift */; };
+		E52B462A2E4B232A009F2F3F /* Blitting.swift in Sources */ = {isa = PBXBuildFile; fileRef = E554EE5A2B9DBDE100D56DF7 /* Blitting.swift */; };
+		E52B462B2E4B232A009F2F3F /* TypeCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4E12B6FFA53009B1EC2 /* TypeCode.swift */; };
+		E52B462C2E4B232A009F2F3F /* PackBit.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDFA82B42EE0A00D7BB7B /* PackBit.swift */; };
+		E52B462D2E4B232A009F2F3F /* QuickDrawPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF4F2BCFD30F00D9350A /* QuickDrawPoint.swift */; };
+		E52B462E2E4B232A009F2F3F /* QuickDrawText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF582BD05EFB00D9350A /* QuickDrawText.swift */; };
+		E52B462F2E4B232A009F2F3F /* QuickDrawRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF522BCFD39D00D9350A /* QuickDrawRect.swift */; };
+		E52B46302E4B232A009F2F3F /* QuickDrawPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF552BCFD41600D9350A /* QuickDrawPolygon.swift */; };
+		E52B46312E4B232A009F2F3F /* QuickDrawTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDFAA2B42EE0A00D7BB7B /* QuickDrawTypes.swift */; };
+		E52B46322E4B232A009F2F3F /* QuickDrawBitMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5E2BD0639700D9350A /* QuickDrawBitMap.swift */; };
+		E52B46332E4B232A009F2F3F /* QuickDrawResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF5B2BD060CE00D9350A /* QuickDrawResolution.swift */; };
+		E52B46342E4B232A009F2F3F /* QuickDrawPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = E554EE5D2B9DF68800D56DF7 /* QuickDrawPattern.swift */; };
+		E52B46352E4B232A009F2F3F /* QuickDrawColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F62B8E9575007686AE /* QuickDrawColor.swift */; };
+		E52B46362E4B232A009F2F3F /* QuickDrawRegions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4FF2B936919007686AE /* QuickDrawRegions.swift */; };
+		E52B46372E4B232A009F2F3F /* QuickDrawParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDA0262B44155E008DC6D6 /* QuickDrawParser.swift */; };
+		E52B46382E4B232A009F2F3F /* QuickDrawErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDA0232B441536008DC6D6 /* QuickDrawErrors.swift */; };
+		E52B46392E4B232A009F2F3F /* QuickDrawOpcodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDFA72B42EE0A00D7BB7B /* QuickDrawOpcodes.swift */; };
+		E52B463A2E4B232A009F2F3F /* QuickDrawComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52FEB012BAB8C53004E8BB4 /* QuickDrawComment.swift */; };
+		E52B463B2E4B232A009F2F3F /* QuickDrawReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDFA92B42EE0A00D7BB7B /* QuickDrawReader.swift */; };
+		E52B463C2E4B232A009F2F3F /* QuickTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */; };
+		E52B463D2E4B232A009F2F3F /* RoadPizza.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */; };
+		E52B463E2E4B232A009F2F3F /* Cinepak.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF472BC3254200D9350A /* Cinepak.swift */; };
+		E52B463F2E4B232A009F2F3F /* QuickTimeGraphics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E554EE542B9BB4B100D56DF7 /* QuickTimeGraphics.swift */; };
+		E52B46402E4B232A009F2F3F /* Planar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F32B764CB2007686AE /* Planar.swift */; };
+		E52B46412E4B232A009F2F3F /* Yuv2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E553E4DB2B6AED62009B1EC2 /* Yuv2.swift */; };
+		E52B46422E4B232A009F2F3F /* Targa.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF412BBAD1D800D9350A /* Targa.swift */; };
+		E52B46432E4B232A009F2F3F /* IntelRaw.swift in Sources */ = {isa = PBXBuildFile; fileRef = E53BBF442BBB4E5800D9350A /* IntelRaw.swift */; };
+		E52B46442E4B232A009F2F3F /* DV.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDC7952E1C689800F6D0E0 /* DV.swift */; };
+		E52B46452E4B232A009F2F3F /* MacPaint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E508C4F92B911FD5007686AE /* MacPaint.swift */; };
+		E52B46462E4B232A009F2F3F /* Animation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E574829A2B990DBC004A6409 /* Animation.swift */; };
+		E52B46472E4B232A009F2F3F /* QuickDrawPort.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52FEB042BACC269004E8BB4 /* QuickDrawPort.swift */; };
+		E52B46482E4B232A009F2F3F /* QuickDrawRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDFAB2B42EE0A00D7BB7B /* QuickDrawRender.swift */; };
 		E52FEAFE2BA46D99004E8BB4 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E52FEAFD2BA46D99004E8BB4 /* InfoPlist.xcstrings */; };
 		E52FEB002BA46D99004E8BB4 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E52FEAFF2BA46D99004E8BB4 /* Localizable.xcstrings */; };
 		E52FEB022BAB8C53004E8BB4 /* QuickDrawComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52FEB012BAB8C53004E8BB4 /* QuickDrawComment.swift */; };
@@ -103,6 +137,18 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		E52B461C2E4B1F86009F2F3F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		E508C4F32B764CB2007686AE /* Planar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planar.swift; sourceTree = "<group>"; };
 		E508C4F62B8E9575007686AE /* QuickDrawColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawColor.swift; sourceTree = "<group>"; };
@@ -110,6 +156,8 @@
 		E508C4FF2B936919007686AE /* QuickDrawRegions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawRegions.swift; sourceTree = "<group>"; };
 		E508C5022B94F457007686AE /* QuickDrawViewerRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickDrawViewerRelease.entitlements; sourceTree = "<group>"; };
 		E50ADB932B599BDE009EA7AF /* FixedPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedPoint.swift; sourceTree = "<group>"; };
+		E52B461E2E4B1F86009F2F3F /* QuickDrawConverter */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = QuickDrawConverter; sourceTree = BUILT_PRODUCTS_DIR; };
+		E52B46252E4B2153009F2F3F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		E52FEAFD2BA46D99004E8BB4 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		E52FEAFF2BA46D99004E8BB4 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		E52FEB012BAB8C53004E8BB4 /* QuickDrawComment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawComment.swift; sourceTree = "<group>"; };
@@ -163,6 +211,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		E52B461B2E4B1F86009F2F3F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E59CDF652B42C0E500D7BB7B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -191,6 +246,14 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
+		E52B46262E4B2153009F2F3F /* QuickDrawConverter */ = {
+			isa = PBXGroup;
+			children = (
+				E52B46252E4B2153009F2F3F /* main.swift */,
+			);
+			path = QuickDrawConverter;
+			sourceTree = "<group>";
+		};
 		E59CDF5F2B42C0E500D7BB7B = {
 			isa = PBXGroup;
 			children = (
@@ -198,6 +261,7 @@
 				E55E05F42B6193D200EA1AD8 /* README.md */,
 				E59CDF6A2B42C0E500D7BB7B /* QuickDrawViewer */,
 				E59CDF7F2B42C0E600D7BB7B /* QuickDrawViewerTests */,
+				E52B46262E4B2153009F2F3F /* QuickDrawConverter */,
 				E59CDF692B42C0E500D7BB7B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -207,6 +271,7 @@
 			children = (
 				E59CDF682B42C0E500D7BB7B /* QuickDrawViewer.app */,
 				E59CDF7C2B42C0E600D7BB7B /* QuickDrawViewerTests.xctest */,
+				E52B461E2E4B1F86009F2F3F /* QuickDrawConverter */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -283,6 +348,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		E52B461D2E4B1F86009F2F3F /* QuickDrawConverter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E52B46242E4B1F86009F2F3F /* Build configuration list for PBXNativeTarget "QuickDrawConverter" */;
+			buildPhases = (
+				E52B461A2E4B1F86009F2F3F /* Sources */,
+				E52B461B2E4B1F86009F2F3F /* Frameworks */,
+				E52B461C2E4B1F86009F2F3F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QuickDrawConverter;
+			packageProductDependencies = (
+			);
+			productName = QuickDrawConverter;
+			productReference = E52B461E2E4B1F86009F2F3F /* QuickDrawConverter */;
+			productType = "com.apple.product-type.tool";
+		};
 		E59CDF672B42C0E500D7BB7B /* QuickDrawViewer */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E59CDF902B42C0E600D7BB7B /* Build configuration list for PBXNativeTarget "QuickDrawViewer" */;
@@ -325,9 +409,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1510;
+				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
+					E52B461D2E4B1F86009F2F3F = {
+						CreatedOnToolsVersion = 16.4;
+					};
 					E59CDF672B42C0E500D7BB7B = {
 						CreatedOnToolsVersion = 15.1;
 					};
@@ -354,6 +441,7 @@
 			targets = (
 				E59CDF672B42C0E500D7BB7B /* QuickDrawViewer */,
 				E59CDF7B2B42C0E600D7BB7B /* QuickDrawViewerTests */,
+				E52B461D2E4B1F86009F2F3F /* QuickDrawConverter */,
 			);
 		};
 /* End PBXProject section */
@@ -383,6 +471,47 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		E52B461A2E4B1F86009F2F3F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E52B46282E4B232A009F2F3F /* FixedPoint.swift in Sources */,
+				E52B46292E4B232A009F2F3F /* Bits.swift in Sources */,
+				E52B462A2E4B232A009F2F3F /* Blitting.swift in Sources */,
+				E52B462B2E4B232A009F2F3F /* TypeCode.swift in Sources */,
+				E52B462C2E4B232A009F2F3F /* PackBit.swift in Sources */,
+				E52B462D2E4B232A009F2F3F /* QuickDrawPoint.swift in Sources */,
+				E52B462E2E4B232A009F2F3F /* QuickDrawText.swift in Sources */,
+				E52B462F2E4B232A009F2F3F /* QuickDrawRect.swift in Sources */,
+				E52B46302E4B232A009F2F3F /* QuickDrawPolygon.swift in Sources */,
+				E52B46312E4B232A009F2F3F /* QuickDrawTypes.swift in Sources */,
+				E52B46322E4B232A009F2F3F /* QuickDrawBitMap.swift in Sources */,
+				E52B46332E4B232A009F2F3F /* QuickDrawResolution.swift in Sources */,
+				E52B46342E4B232A009F2F3F /* QuickDrawPattern.swift in Sources */,
+				E52B46352E4B232A009F2F3F /* QuickDrawColor.swift in Sources */,
+				E52B46362E4B232A009F2F3F /* QuickDrawRegions.swift in Sources */,
+				E52B46372E4B232A009F2F3F /* QuickDrawParser.swift in Sources */,
+				E52B46382E4B232A009F2F3F /* QuickDrawErrors.swift in Sources */,
+				E52B46392E4B232A009F2F3F /* QuickDrawOpcodes.swift in Sources */,
+				E52B463A2E4B232A009F2F3F /* QuickDrawComment.swift in Sources */,
+				E52B463B2E4B232A009F2F3F /* QuickDrawReader.swift in Sources */,
+				E52B463C2E4B232A009F2F3F /* QuickTime.swift in Sources */,
+				E52B463D2E4B232A009F2F3F /* RoadPizza.swift in Sources */,
+				E52B463E2E4B232A009F2F3F /* Cinepak.swift in Sources */,
+				E52B463F2E4B232A009F2F3F /* QuickTimeGraphics.swift in Sources */,
+				E52B46402E4B232A009F2F3F /* Planar.swift in Sources */,
+				E52B46412E4B232A009F2F3F /* Yuv2.swift in Sources */,
+				E52B46422E4B232A009F2F3F /* Targa.swift in Sources */,
+				E52B46432E4B232A009F2F3F /* IntelRaw.swift in Sources */,
+				E52B46442E4B232A009F2F3F /* DV.swift in Sources */,
+				E52B46452E4B232A009F2F3F /* MacPaint.swift in Sources */,
+				E52B46462E4B232A009F2F3F /* Animation.swift in Sources */,
+				E52B46472E4B232A009F2F3F /* QuickDrawPort.swift in Sources */,
+				E52B46482E4B232A009F2F3F /* QuickDrawRender.swift in Sources */,
+				E52B46272E4B2153009F2F3F /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E59CDF642B42C0E500D7BB7B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -498,6 +627,31 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		E52B46222E4B1F86009F2F3F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3ZZ49ZPVNF;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E52B46232E4B1F86009F2F3F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3ZZ49ZPVNF;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		E59CDF8E2B42C0E600D7BB7B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -771,6 +925,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		E52B46242E4B1F86009F2F3F /* Build configuration list for PBXNativeTarget "QuickDrawConverter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E52B46222E4B1F86009F2F3F /* Debug */,
+				E52B46232E4B1F86009F2F3F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E59CDF632B42C0E500D7BB7B /* Build configuration list for PBXProject "QuickDrawViewer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -74,7 +74,7 @@ struct ContentView: View {
     get {
       let canvas = qdCanvas;
       let picture = $document.picture.wrappedValue;
-      return AnyView(canvas.focusable().copyable([picture]).draggable(picture).fileExporter(isPresented: $isExporting, item: picture, contentTypes: [.pdf], defaultFilename: MakePdfFilename(picture:picture), onCompletion: exportDone).toolbar {
+      return AnyView(canvas.focusable().copyable([picture]).draggable(picture).fileExporter(isPresented: $isExporting, item: picture, contentTypes: [.pdf], defaultFilename: picture.pdfFilename, onCompletion: exportDone).toolbar {
         ToolbarItemGroup() {
           Button {
             isExporting = true

@@ -12,32 +12,12 @@ import UniformTypeIdentifiers
 import SwiftUI
 
 
-/// Add UI related features.
-extension QDPicture {
-  
-  func pdfData() -> NSData {
-    let data = NSMutableData();
-    let renderer = PDFRenderer(data: data);
-    do {
-      try renderer.execute(picture: self, zoom: 1.0);
-    } catch {
-      let logger : Logger = Logger(subsystem: "net.codiferes.wiesmann.QuickDraw", category: "imageWrapper");
-      logger.log(level: .error, "Failed rendering \(error)");
-    }
-    return data;
-  }
-}
-
-func MakePdfFilename(picture: QDPicture) -> String {
-  let filename = picture.filename ?? "picture.pict";
-  return filename.replacingOccurrences(of: "pict", with: "pdf");
-}
 
 /// Make it possible to transfer pictures into the clipboard, drag-and-drop.
 extension QDPicture : Transferable {
   public static var transferRepresentation: some TransferRepresentation {
     DataRepresentation(exportedContentType: .pdf) {
-      picture in picture.pdfData() as Data }.suggestedFileName { MakePdfFilename(picture: $0) }
+      picture in picture.pdfData() as Data }.suggestedFileName { $0.pdfFilename }
   }
 }
 
