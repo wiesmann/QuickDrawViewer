@@ -62,42 +62,43 @@ struct ContentView: View {
     }
     operation.run();
   }
-  
-  func QDView() -> some View {
+
+  var qdCanvas : some View {
     let picture = $document.picture.wrappedValue;
-    
-    var width = picture.frame.dimensions.dh.value * renderZoom;
-    var height = picture.frame.dimensions.dv.value * renderZoom;
-    if width < 0 || height <= 0  {
-      logger.log(level: .error, "Invalid picture dimensions \(picture)");
-      width = 512;
-      height = 512;
-    }
-    let canvas = Canvas(opaque: true, colorMode: ColorRenderingMode.linear, rendersAsynchronously: true, renderer: self.render).frame(width: width, height: height);
-    return AnyView(canvas.focusable().copyable([picture]).draggable(picture).fileExporter(isPresented: $isExporting, item: picture, contentTypes: [.pdf], defaultFilename: MakePdfFilename(picture:picture), onCompletion: exportDone).toolbar {
-      ToolbarItemGroup() {
-        Button {
-          isExporting = true
-        } label: {
-          Label(String(localized: "Export file"), systemImage: "square.and.arrow.up")
-        }
-        Button {
-          doPrint(picture:picture);
-        } label: {
-          Label(String(localized: "Print"), systemImage: "printer")
-        }
-      }
-    }.alert(isPresented:$isAlerting){return $alertMessage.wrappedValue!}).scaleEffect(zoom)
-      .gesture(
-        MagnifyGesture()
-          .updating($zoom) { value, gestureState, transaction in
-            gestureState = value.magnification
+    let width = picture.frame.dimensions.dh.value * renderZoom;
+    let height = picture.frame.dimensions.dv.value * renderZoom;
+    return Canvas(opaque: true, colorMode: ColorRenderingMode.linear, rendersAsynchronously: true, renderer: self.render).frame(width: width, height: height);
+  }
+
+  var qdView : some View {
+    get {
+      let canvas = qdCanvas;
+      let picture = $document.picture.wrappedValue;
+      return AnyView(canvas.focusable().copyable([picture]).draggable(picture).fileExporter(isPresented: $isExporting, item: picture, contentTypes: [.pdf], defaultFilename: MakePdfFilename(picture:picture), onCompletion: exportDone).toolbar {
+        ToolbarItemGroup() {
+          Button {
+            isExporting = true
+          } label: {
+            Label(String(localized: "Export file"), systemImage: "square.and.arrow.up")
           }
-      )
+          Button {
+            doPrint(picture:picture);
+          } label: {
+            Label(String(localized: "Print"), systemImage: "printer")
+          }
+        }
+      }.alert(isPresented:$isAlerting){return $alertMessage.wrappedValue!}).scaleEffect(zoom)
+        .gesture(
+          MagnifyGesture()
+            .updating($zoom) { value, gestureState, transaction in
+              gestureState = value.magnification
+            }
+        )
+    }
   }
 
   var body: some View {
-    ScrollView([.horizontal, .vertical]){QDView()};
+    ScrollView([.horizontal, .vertical]){qdView};
   }
 }
 
