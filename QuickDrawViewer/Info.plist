@@ -47,6 +47,15 @@
 			</array>
 		</dict>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>Moof</string>
+		<key>UIColorName</key>
+		<string>LaunchScreenBackground</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
+	</dict>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>

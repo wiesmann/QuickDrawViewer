@@ -55,8 +55,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "© Matthias Wiesmann – Apache 2.0 License."
+            "state" : "needs_review",
+            "value" : "© Matthias Wiesmann – Apache 2.0 Licenz."
           }
         },
         "en" : {
@@ -67,8 +67,8 @@
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "© Matthias Wiesmann – Apache 2.0 License."
+            "state" : "needs_review",
+            "value" : "© Matthias Wiesmann – License Apache 2.0."
           }
         }
       }
