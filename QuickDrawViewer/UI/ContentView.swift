@@ -93,7 +93,7 @@ struct ContentView: View {
             .updating($zoom) { value, gestureState, transaction in
               gestureState = value.magnification
             }
-        )
+        ).accessibilityAddTraits(.isImage);
     }
   }
 
