@@ -27,17 +27,6 @@
       },
       "shouldTranslate" : false
     },
-    "CFBundleShortVersionString" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1.7"
-          }
-        }
-      }
-    },
     "MacPaint Picture" : {
       "localizations" : {
         "de" : {
