@@ -546,6 +546,8 @@ extension QuickDrawDataReader {
       }
       let type = try readType();
       let data = try readData(bytes: length);
+      // "iicc" would be ICC profile
+      // See https://exiftool.org/TagNames/QuickTime.html
       switch type.description {
         case "idsc":
           let subReader = try QuickDrawDataReader(data: data, position: 0);
@@ -608,6 +610,7 @@ extension QuickDrawDataReader {
     while self.remaining > 8 {
       let subAtom = try self.readType();
       let subSize = Int(try readUInt16());
+      // See https://exiftool.org/TagNames/QuickTime.html
       switch subAtom.description {
         case "©cpy":
           skip(bytes: 2);

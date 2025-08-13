@@ -11,6 +11,7 @@ import Foundation
 /// Comment operations
 /// ----------------
 /// https://developer.apple.com/library/archive/documentation/mac/pdf/Imaging_With_QuickDraw/Appendix_B.pdf
+/// https://web.archive.org/web/20151028215708/http://www.opennt.net/projects/opennt/repository/revisions/26/entry/trunk/com/ole32/olecnv32/qdcoment.i
 
 enum CommentType : UInt16, CaseIterable {
   case groupBegin = 0;
@@ -56,6 +57,10 @@ enum CommentType : UInt16, CaseIterable {
   case rotateCenter = 202;
   case formsPrinting = 210;
   case endFormsPrinting = 211;
+  case picAutoNap = 214;
+  case picAutoWake = 215;
+  case picManNap = 216;
+  case picManWake = 217;
   case iccColorProfile = 224;  // https://www.color.org/icc32.pdf
   case creator = 498 ;  // Seems to be set by Photoshop
   case scale = 499;

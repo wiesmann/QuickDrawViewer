@@ -27,7 +27,7 @@ class QDParser {
   public init(data : Data ) throws {
     try dataReader = QuickDrawDataReader(data: data);
   }
-  
+
   /// Decode a single opcode
   /// - Parameter opcode: numerical opcode identifier
   /// - Returns: an OpCode instance
