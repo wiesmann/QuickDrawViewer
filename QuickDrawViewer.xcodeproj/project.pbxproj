@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -117,6 +117,9 @@
 		E59CDFB42B42EE0A00D7BB7B /* QuickDrawTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDFAA2B42EE0A00D7BB7B /* QuickDrawTypes.swift */; };
 		E59CDFB52B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDFAB2B42EE0A00D7BB7B /* QuickDrawRender.swift */; };
 		E59CDFB62B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDFAB2B42EE0A00D7BB7B /* QuickDrawRender.swift */; };
+		E5A42B612E9457580011FFB5 /* QuickTake.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A42B602E9457510011FFB5 /* QuickTake.swift */; };
+		E5A42B622E9457580011FFB5 /* QuickTake.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A42B602E9457510011FFB5 /* QuickTake.swift */; };
+		E5A42B632E9457580011FFB5 /* QuickTake.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A42B602E9457510011FFB5 /* QuickTake.swift */; };
 		E5CDA0242B441536008DC6D6 /* QuickDrawErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDA0232B441536008DC6D6 /* QuickDrawErrors.swift */; };
 		E5CDA0252B441536008DC6D6 /* QuickDrawErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDA0232B441536008DC6D6 /* QuickDrawErrors.swift */; };
 		E5CDA0272B44155E008DC6D6 /* QuickDrawParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CDA0262B44155E008DC6D6 /* QuickDrawParser.swift */; };
@@ -140,9 +143,8 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		E52B461C2E4B1F86009F2F3F /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			dstSubfolder = None;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
@@ -203,6 +205,7 @@
 		E59CDFA92B42EE0A00D7BB7B /* QuickDrawReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickDrawReader.swift; sourceTree = "<group>"; };
 		E59CDFAA2B42EE0A00D7BB7B /* QuickDrawTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickDrawTypes.swift; sourceTree = "<group>"; };
 		E59CDFAB2B42EE0A00D7BB7B /* QuickDrawRender.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuickDrawRender.swift; sourceTree = "<group>"; };
+		E5A42B602E9457510011FFB5 /* QuickTake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTake.swift; sourceTree = "<group>"; };
 		E5C396BB2E05F92E00B3FD18 /* pict_de_rez.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = pict_de_rez.py; sourceTree = "<group>"; };
 		E5CDA0232B441536008DC6D6 /* QuickDrawErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawErrors.swift; sourceTree = "<group>"; };
 		E5CDA0262B44155E008DC6D6 /* QuickDrawParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawParser.swift; sourceTree = "<group>"; };
@@ -213,24 +216,18 @@
 /* Begin PBXFrameworksBuildPhase section */
 		E52B461B2E4B1F86009F2F3F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E59CDF652B42C0E500D7BB7B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E59CDF792B42C0E600D7BB7B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -305,6 +302,7 @@
 				E52FEB012BAB8C53004E8BB4 /* QuickDrawComment.swift */,
 				E59CDFA92B42EE0A00D7BB7B /* QuickDrawReader.swift */,
 				E553E4DE2B6FD9F5009B1EC2 /* QuickTime.swift */,
+				E5A42B602E9457510011FFB5 /* QuickTake.swift */,
 				E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */,
 				E53BBF472BC3254200D9350A /* Cinepak.swift */,
 				E554EE542B9BB4B100D56DF7 /* QuickTimeGraphics.swift */,
@@ -358,11 +356,7 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = QuickDrawConverter;
-			packageProductDependencies = (
-			);
 			productName = QuickDrawConverter;
 			productReference = E52B461E2E4B1F86009F2F3F /* QuickDrawConverter */;
 			productType = "com.apple.product-type.tool";
@@ -376,8 +370,6 @@
 				E59CDF662B42C0E500D7BB7B /* Resources */,
 			);
 			buildRules = (
-			);
-			dependencies = (
 			);
 			name = QuickDrawViewer;
 			productName = QuickDrawViewer;
@@ -410,7 +402,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					E52B461D2E4B1F86009F2F3F = {
 						CreatedOnToolsVersion = 16.4;
@@ -425,7 +417,6 @@
 				};
 			};
 			buildConfigurationList = E59CDF632B42C0E500D7BB7B /* Build configuration list for PBXProject "QuickDrawViewer" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -435,6 +426,7 @@
 				de,
 			);
 			mainGroup = E59CDF5F2B42C0E500D7BB7B;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = E59CDF692B42C0E500D7BB7B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -449,7 +441,6 @@
 /* Begin PBXResourcesBuildPhase section */
 		E59CDF662B42C0E500D7BB7B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				E508C4FD2B92199D007686AE /* License.txt in Resources */,
 				E52FEAFE2BA46D99004E8BB4 /* InfoPlist.xcstrings in Resources */,
@@ -459,21 +450,17 @@
 				E59CDF722B42C0E600D7BB7B /* Assets.xcassets in Resources */,
 				E53BBF662BD3108D00D9350A /* demo.pict in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E59CDF7A2B42C0E600D7BB7B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		E52B461A2E4B1F86009F2F3F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				E52B46282E4B232A009F2F3F /* FixedPoint.swift in Sources */,
 				E52B46292E4B232A009F2F3F /* Bits.swift in Sources */,
@@ -490,6 +477,7 @@
 				E52B46342E4B232A009F2F3F /* QuickDrawPattern.swift in Sources */,
 				E52B46352E4B232A009F2F3F /* QuickDrawColor.swift in Sources */,
 				E52B46362E4B232A009F2F3F /* QuickDrawRegions.swift in Sources */,
+				E5A42B622E9457580011FFB5 /* QuickTake.swift in Sources */,
 				E52B46372E4B232A009F2F3F /* QuickDrawParser.swift in Sources */,
 				E52B46382E4B232A009F2F3F /* QuickDrawErrors.swift in Sources */,
 				E52B46392E4B232A009F2F3F /* QuickDrawOpcodes.swift in Sources */,
@@ -510,11 +498,9 @@
 				E52B46482E4B232A009F2F3F /* QuickDrawRender.swift in Sources */,
 				E52B46272E4B2153009F2F3F /* main.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E59CDF642B42C0E500D7BB7B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				E508C4FE2B927073007686AE /* QuickDrawColor.swift in Sources */,
 				E53BBF482BC3254200D9350A /* Cinepak.swift in Sources */,
@@ -538,6 +524,7 @@
 				E50ADB942B599BDE009EA7AF /* FixedPoint.swift in Sources */,
 				E554EE582B9C61A700D56DF7 /* Bits.swift in Sources */,
 				E53BBF452BBB4E5800D9350A /* IntelRaw.swift in Sources */,
+				E5A42B632E9457580011FFB5 /* QuickTake.swift in Sources */,
 				E59CDFB52B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */,
 				E554EE552B9BB4B100D56DF7 /* QuickTimeGraphics.swift in Sources */,
 				E508C4F42B764CB2007686AE /* Planar.swift in Sources */,
@@ -554,17 +541,16 @@
 				E554EE5B2B9DBDE100D56DF7 /* Blitting.swift in Sources */,
 				E59CDF702B42C0E500D7BB7B /* ContentView.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E59CDF782B42C0E600D7BB7B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				E53BBF542BCFD39D00D9350A /* QuickDrawRect.swift in Sources */,
 				E574829C2B990DBC004A6409 /* Animation.swift in Sources */,
 				E53BBF432BBAD1D800D9350A /* Targa.swift in Sources */,
 				E508C4F82B8E9575007686AE /* QuickDrawColor.swift in Sources */,
 				E53BBF462BBB4E5800D9350A /* IntelRaw.swift in Sources */,
+				E5A42B612E9457580011FFB5 /* QuickTake.swift in Sources */,
 				E53BBF512BCFD30F00D9350A /* QuickDrawPoint.swift in Sources */,
 				E5CDA0252B441536008DC6D6 /* QuickDrawErrors.swift in Sources */,
 				E53BBF622BD2884900D9350A /* BlittingTests.swift in Sources */,
@@ -601,7 +587,6 @@
 				E553E4DD2B6AED62009B1EC2 /* Yuv2.swift in Sources */,
 				E50ADB952B599BDE009EA7AF /* FixedPoint.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -627,7 +612,7 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		E52B46222E4B1F86009F2F3F /* Debug */ = {
+		E52B46222E4B1F86009F2F3F /* Debug configuration for PBXNativeTarget "QuickDrawConverter" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -640,7 +625,7 @@
 			};
 			name = Debug;
 		};
-		E52B46232E4B1F86009F2F3F /* Release */ = {
+		E52B46232E4B1F86009F2F3F /* Release configuration for PBXNativeTarget "QuickDrawConverter" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -652,7 +637,7 @@
 			};
 			name = Release;
 		};
-		E59CDF8E2B42C0E600D7BB7B /* Debug */ = {
+		E59CDF8E2B42C0E600D7BB7B /* Debug configuration for PBXProject "QuickDrawViewer" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -723,6 +708,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = targeted;
@@ -732,7 +718,7 @@
 			};
 			name = Debug;
 		};
-		E59CDF8F2B42C0E600D7BB7B /* Release */ = {
+		E59CDF8F2B42C0E600D7BB7B /* Release configuration for PBXProject "QuickDrawViewer" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -798,6 +784,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-Osize";
 				SWIFT_STRICT_CONCURRENCY = targeted;
@@ -807,7 +794,7 @@
 			};
 			name = Release;
 		};
-		E59CDF912B42C0E600D7BB7B /* Debug */ = {
+		E59CDF912B42C0E600D7BB7B /* Debug configuration for PBXNativeTarget "QuickDrawViewer" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -825,8 +812,21 @@
 				DEVELOPMENT_ASSET_PATHS = "\"QuickDrawViewer/Preview Content\"";
 				DEVELOPMENT_TEAM = 3ZZ49ZPVNF;
 				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
+				ENABLE_FILE_ACCESS_PICTURE_FOLDER = readonly;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = YES;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickDrawViewer/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "QuickDraw Viewer";
@@ -847,7 +847,7 @@
 			};
 			name = Debug;
 		};
-		E59CDF922B42C0E600D7BB7B /* Release */ = {
+		E59CDF922B42C0E600D7BB7B /* Release configuration for PBXNativeTarget "QuickDrawViewer" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -864,8 +864,21 @@
 				DEVELOPMENT_ASSET_PATHS = "\"QuickDrawViewer/Preview Content\"";
 				DEVELOPMENT_TEAM = 3ZZ49ZPVNF;
 				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
+				ENABLE_FILE_ACCESS_PICTURE_FOLDER = readonly;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = YES;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickDrawViewer/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "QuickDraw Viewer";
@@ -887,7 +900,7 @@
 			};
 			name = Release;
 		};
-		E59CDF942B42C0E600D7BB7B /* Debug */ = {
+		E59CDF942B42C0E600D7BB7B /* Debug configuration for PBXNativeTarget "QuickDrawViewerTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -908,7 +921,7 @@
 			};
 			name = Debug;
 		};
-		E59CDF952B42C0E600D7BB7B /* Release */ = {
+		E59CDF952B42C0E600D7BB7B /* Release configuration for PBXNativeTarget "QuickDrawViewerTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -935,37 +948,33 @@
 		E52B46242E4B1F86009F2F3F /* Build configuration list for PBXNativeTarget "QuickDrawConverter" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E52B46222E4B1F86009F2F3F /* Debug */,
-				E52B46232E4B1F86009F2F3F /* Release */,
+				E52B46222E4B1F86009F2F3F /* Debug configuration for PBXNativeTarget "QuickDrawConverter" */,
+				E52B46232E4B1F86009F2F3F /* Release configuration for PBXNativeTarget "QuickDrawConverter" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		E59CDF632B42C0E500D7BB7B /* Build configuration list for PBXProject "QuickDrawViewer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E59CDF8E2B42C0E600D7BB7B /* Debug */,
-				E59CDF8F2B42C0E600D7BB7B /* Release */,
+				E59CDF8E2B42C0E600D7BB7B /* Debug configuration for PBXProject "QuickDrawViewer" */,
+				E59CDF8F2B42C0E600D7BB7B /* Release configuration for PBXProject "QuickDrawViewer" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		E59CDF902B42C0E600D7BB7B /* Build configuration list for PBXNativeTarget "QuickDrawViewer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E59CDF912B42C0E600D7BB7B /* Debug */,
-				E59CDF922B42C0E600D7BB7B /* Release */,
+				E59CDF912B42C0E600D7BB7B /* Debug configuration for PBXNativeTarget "QuickDrawViewer" */,
+				E59CDF922B42C0E600D7BB7B /* Release configuration for PBXNativeTarget "QuickDrawViewer" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		E59CDF932B42C0E600D7BB7B /* Build configuration list for PBXNativeTarget "QuickDrawViewerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E59CDF942B42C0E600D7BB7B /* Debug */,
-				E59CDF952B42C0E600D7BB7B /* Release */,
+				E59CDF942B42C0E600D7BB7B /* Debug configuration for PBXNativeTarget "QuickDrawViewerTests" */,
+				E59CDF952B42C0E600D7BB7B /* Release configuration for PBXNativeTarget "QuickDrawViewerTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

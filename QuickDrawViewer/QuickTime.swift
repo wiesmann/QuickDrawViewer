@@ -108,6 +108,7 @@
 import os
 import Foundation
 
+// MARK: - Errors
 enum QuickTimeError: LocalizedError {
   case missingQuickTimePayload(quicktimeOpcode: QuickTimeOpcode);
   case missingQuickTimeData(quicktimeImage: QuickTimeIdsc);
@@ -116,7 +117,7 @@ enum QuickTimeError: LocalizedError {
   case missingClut(quicktimeImage: QuickTimeIdsc);
 }
 
-// Representation of a converted image
+// MARK: - Representation of a converted image
 struct ConvertedImageMeta : PixMapMetadata {
   let rowBytes: Int;
   let cmpSize: Int;
@@ -132,6 +133,7 @@ enum QuickTimePictureDataStatus {
   case unchanged;
   case patched;
   case decoded(decodedMetaData: PixMapMetadata);
+  case yuv420(data: YUV420Image);
 }
 
 struct QuickTimeBitDepth : OptionSet {
@@ -173,7 +175,7 @@ struct QuickTimeQuality : RawRepresentable, CustomStringConvertible {
 class QuickTimeIdsc : CustomStringConvertible, @unchecked Sendable {
   var description: String {
     var result = "'\(compressionName)' ";
-    result += "codec: '\(codecType)' (\(compressorDevelopper))";
+    result += "codec: '\(codecType)' ";
     result += " version \(imageVersion).\(imageRevision)";
     result += " dimensions: \(dimensions), @ \(resolution)";
     if frameCount > 1 {
@@ -433,6 +435,9 @@ func patchQuickTimeImage(quicktimeImage : inout QuickTimeIdsc) throws {
       try cinepak.load(data: data);
       quicktimeImage.dataStatus = .decoded(decodedMetaData: cinepak);
       quicktimeImage.data = Data(cinepak.pixmap)
+    case "qktk":
+      let yuv = try decodeQTKND(dimensions: quicktimeImage.dimensions, data: data);
+      quicktimeImage.dataStatus = .yuv420(data: yuv);
     case let c where c.hasPrefix("dv") || c == "h263":
       let dvimage = try DVImage(codec: quicktimeImage.codecType, dimensions: quicktimeImage.dimensions);
       try dvimage.load(data: data);

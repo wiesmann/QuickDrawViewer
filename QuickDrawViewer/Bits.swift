@@ -20,6 +20,13 @@ extension SIMD4<UInt8> {
   }
 }
 
+extension Int {
+  /// Returns the integer value clamped to the 8-bit unsigned range (0 to 255).
+  var clampedToByteRange: Int {
+    return Int(UInt8(clamping: self))
+  }
+}
+
 /// Convert some integer type into a sequence of boolean, starting from the most significant bit.
 /// - Parameter from: number to convert
 /// - Returns: an array of boolean
@@ -51,3 +58,31 @@ func byteArrayBE<T>(from value: T) -> [UInt8] where T: FixedWidthInteger {
   withUnsafeBytes(of: value.bigEndian, Array.init)
 }
 
+
+struct BitReader {
+  private let data: [UInt8]
+  private var byteOffset = 0
+  private var bitCount = 0
+  private var buffer: UInt64 = 0
+
+  init(data: [UInt8]) { self.data = data }
+
+  mutating func skipBytes(_ count: Int) -> Void {
+    byteOffset += count;
+  }
+
+  mutating func getbits(_ count: Int) -> Int? {
+    guard count > 0 else { return nil }
+    while bitCount < count {
+      guard byteOffset < data.count else { return nil }
+      // Change: shift left instead of using bit position
+      buffer = (buffer << 8) | UInt64(data[byteOffset])
+      bitCount += 8
+      byteOffset += 1
+    }
+    bitCount -= count
+    // Change: extract from top bits
+    let result = Int((buffer >> bitCount) & ((1 << count) - 1))
+    return result
+  }
+}
