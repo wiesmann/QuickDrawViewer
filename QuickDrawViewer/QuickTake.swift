@@ -113,37 +113,22 @@ private func sharpForDelta(_ v: Int) -> Int {
     }
   }
 
-  let responseCurve: [UInt16] = [
-    0,1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,
-    28,29,30,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,53,
-    54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,74,75,76,77,78,
-    79,80,81,82,83,84,86,88,90,92,94,97,99,101,103,105,107,110,112,114,116,
-    118,120,123,125,127,129,131,134,136,138,140,142,144,147,149,151,153,155,
-    158,160,162,164,166,168,171,173,175,177,179,181,184,186,188,190,192,195,
-    197,199,201,203,205,208,210,212,214,216,218,221,223,226,230,235,239,244,
-    248,252,257,261,265,270,274,278,283,287,291,296,300,305,309,313,318,322,
-    326,331,335,339,344,348,352,357,361,365,370,374,379,383,387,392,396,400,
-    405,409,413,418,422,426,431,435,440,444,448,453,457,461,466,470,474,479,
-    483,487,492,496,500,508,519,531,542,553,564,575,587,598,609,620,631,643,
-    654,665,676,687,698,710,721,732,743,754,766,777,788,799,810,822,833,844,
-    855,866,878,889,900,911,922,933,945,956,967,978,989,1001,1012,1023 ];
-
-  /// Apply response curve and move into height × width buffer.
+  /// Convert to float and  move into height × width buffer.
+  /// The response curve was making things worse.
   var output = [Float](repeating: 0, count: width * height)
   for row in 0..<height {
     for col in 0..<width {
-      let index = Int(pixel[row + 2][col + 2]);
-      let v = Float(responseCurve[index]);
-      output[row * width + col] = v / 1024;
+      //let index = Int(pixel[row + 2][col + 2]);
+      // let v = Float(responseCurve[index]);
+      let v = Float(pixel[row + 2][col + 2]) / 255.0;
+      output[row * width + col] = v;
     }
   }
 
   return output
 }
 
-func average(_ a: UInt8, _ b: UInt8) -> UInt8 {
-  return UInt8(clamping: (Int(a) + Int(b)) / 2)
-}
+
 
 
 func convertCMYGToYuv(cmyg: [Float], width: Int, height: Int) -> YUV420Image {
@@ -162,28 +147,27 @@ func convertCMYGToYuv(cmyg: [Float], width: Int, height: Int) -> YUV420Image {
       let cyan = cmyg[offset + width];
       let yellow = cmyg[offset + width + 1];
 
-      let luma = (green + magenta + cyan + yellow) / 4;
+      // Use harmonic mean to approximate 45° angle between components.
+      let r = harmonicMean(magenta, yellow);
+      let g = harmonicMean(cyan, yellow);
+      let b = harmonicMean(cyan, magenta);
 
-      let r = (magenta + yellow - luma).clampToUnit;
-      let g = (cyan + yellow - luma).clampToUnit;
-      let b = (cyan + magenta - luma).clampToUnit;
-
-      let average_green = (g + green) / 2;
+      let average_green = average(g, green);
 
       // Get U/V for the block
-      let (_, u, v) = rgb2Yuv(
-        r: r, g: average_green, b: b);
+      let yuv = rgb2Yuv(
+        r: r, g: average_green, b: b, temperature: 0.00, saturation: 5.0);
       // Use raw sensor values as luminance
-      yPlane[offset] = green.normalizedByte;
-      yPlane[offset + 1] = magenta.normalizedByte;
-      yPlane[offset + width] = cyan.normalizedByte;
-      yPlane[offset + width + 1] = yellow.normalizedByte;
+      yPlane[offset] = average(green.normalizedByte, yuv.y);
+      yPlane[offset + 1] = average(magenta.normalizedByte, yuv.y);
+      yPlane[offset + width] = average(cyan.normalizedByte, yuv.y);
+      yPlane[offset + width + 1] = average(yellow.normalizedByte, yuv.y);
       let halfOffset = (row / 2 * halfWidth) + (col / 2)
-      uPlane[halfOffset] = u;
-      vPlane[halfOffset] = v;
+      uPlane[halfOffset] = yuv.u;
+      vPlane[halfOffset] = yuv.v;
     }
   }
-  let yCorrected = boostShadowsSelective(yPlane, strength: 1.5, threshold: 64);
+  let yCorrected = boostShadowsSelective(yPlane, strength: 1.2, threshold: 64);
   return YUV420Image(width: width, height: height, yPlane: yCorrected, uPlane: uPlane, vPlane: vPlane)
 }
 

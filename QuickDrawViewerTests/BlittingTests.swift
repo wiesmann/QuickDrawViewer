@@ -37,4 +37,23 @@ final class BlittingTests : XCTestCase {
     let white = yuv2Rgb(y: 255.0, u: 0.0, v: 0.0);
     XCTAssertEqual(white.bytes, [0xff, 0xff, 0xff]);
   }
+
+  func testYuvRoundTripGray() throws {
+    let yuv = rgb2Yuv(r: 0.5, g: 0.5, b: 0.5);
+    XCTAssertEqual(yuv.y, 127, accuracy: 1)
+    XCTAssertEqual(yuv.u, 127, accuracy: 1);
+    XCTAssertEqual(yuv.v, 127, accuracy: 1);
+    let rgb = yuv2Rgb(yuv: yuv);
+    XCTAssertEqual(rgb.r, 127, accuracy: 2)
+    XCTAssertEqual(rgb.b, 127, accuracy: 2);
+    XCTAssertEqual(rgb.b, 127, accuracy: 2);
+  }
+
+  func testYuvRoundTripCyan() throws {
+    let yuv = rgb2Yuv(r: 1.0, g:0, b: 1.0);
+    let rgb = yuv2Rgb(yuv: yuv);
+    XCTAssertEqual(rgb.r, 253, accuracy: 3)
+    XCTAssertEqual(rgb.g, 0, accuracy: 3);
+    XCTAssertEqual(rgb.b, 253, accuracy: 3);
+  }
 }

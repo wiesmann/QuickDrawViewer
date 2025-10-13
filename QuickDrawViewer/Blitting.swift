@@ -15,11 +15,15 @@ enum BlittingError : Error {
   case unsupportedDepth(depth : Int);
 }
 
-func roundTo(_ value: FixedPoint, multipleOf: Int) -> Int {
-  return (value.rounded + (multipleOf - 1)) / multipleOf * multipleOf;
-}
+// MARK: -Number utilities
 
 extension Float {
+  // Get the [0…1] value to a byte.
+  var normalizedByte : UInt8 {
+    let v = Int(self * 255);
+    return UInt8(clamping: v);
+  }
+
   // Get the value clamped to the [0…1] range
   var clampToUnit: Float {
     if self < 0.0 {
@@ -30,13 +34,29 @@ extension Float {
     }
     return self;
   }
+}
 
+extension Double {
   // Get the [0…1] value to a byte.
   var normalizedByte : UInt8 {
     let v = Int(self * 255);
     return UInt8(clamping: v);
   }
 }
+
+
+func average(_ a: UInt8, _ b: UInt8) -> UInt8 {
+  return UInt8(clamping: (Int(a) + Int(b)) / 2)
+}
+
+func average <T : FloatingPoint> (_ a: T, _ b: T)  -> T {
+  return (a + b) / 2;
+}
+
+func harmonicMean <T : FloatingPoint> (_ a: T, _ b: T) -> T {
+  return (2 * a * b) / (a + b);
+}
+
 
 // MARK: -RGB Utilities
 /// Struct to hold an classical RGB8 value
@@ -51,6 +71,12 @@ struct RGB8 : Hashable, Sendable {
     self.r = simd.x;
     self.g = simd.y;
     self.b = simd.z;
+  }
+
+  init(red_double: Double, green_double: Double, blue_double: Double) {
+    self.r = red_double.normalizedByte;
+    self.g = green_double.normalizedByte;
+    self.b = blue_double.normalizedByte;
   }
 
   var bytes : [UInt8] {
@@ -146,65 +172,74 @@ func makeAlphaOpaque(argb : [UInt8]) -> [UInt8] {
 }
 
 // MARK: -YUV Utilities
+
+struct YUV8 {
+  init(y: UInt8, u: UInt8, v: UInt8) {
+    self.y = y;
+    self.u = u;
+    self.v = v;
+  }
+
+  init(dy : Double, du: Double, dv: Double) {
+    self.y = dy.normalizedByte;
+    self.u = du.normalizedByte;
+    self.v = dv.normalizedByte;
+  }
+
+  let y: UInt8;
+  let u: UInt8;
+  let v: UInt8;
+};
+
 /// Convert YUV floating point values to RGB bytes.
 /// - Parameters:
-///   - y: luminence in the 0-255 range
-///   - u: u chrominance in the -127 - 128 range
-///   - v: v chrominance in the -127 - 128 range
+///   - y: luminence in the [0…1]
+///   - u: u chrominance in the [-0.5…0.5] range
+///   - v: v chrominance in the [-0.5…0.5] range
 /// - Returns: rgb bytes
 func yuv2Rgb(y : Double, u: Double, v: Double) -> RGB8 {
-  let r = Int(y + (1.370705 * v));
-  let g = Int(y - (0.698001 * v) - 0.337633 * u);
-  let b = Int(y + (1.732446 * u));
-  return RGB8(r: UInt8(clamping: r), g: UInt8(clamping: g), b: UInt8(clamping: b));
+  let r = y + (1.370705 * v);
+  let g = y - (0.698001 * v) - 0.337633 * u;
+  let b = y + (1.732446 * u);
+  return RGB8(r: r.normalizedByte, g: g.normalizedByte, b: b.normalizedByte);
 }
 
-func yuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> RGB8 {
-  let nu = Double(u) - 128;
-  let nv = Double(v) - 128;
-  let ny = Double(y);
+func yuv2Rgb(yuv: YUV8) -> RGB8 {
+  return yuv2Rgb(y: Double(yuv.y) / 255, u: Double(yuv.u) / 255 - 0.5, v: Double(yuv.v) / 255 - 0.5);
+}
+
+
+/// It would be nice to use something like the accelerate framework to decode this.
+/// Sadly this particular version uses _signed_ int8 for u and v, not a cut-off of 128.
+/// So we code it explicitely.
+/// - Parameters:
+///   - y: luma value
+///   - u: u chroma value
+///   - v: v chroma value
+/// - Returns: converted RGB color
+func signedYuv2Rgb(y: UInt8, u: UInt8, v: UInt8) -> RGB8 {
+  let ny = Double(y) / 255;
+  let nu = Double(Int8(bitPattern: u)) / 255;
+  let nv = Double(Int8(bitPattern: v)) / 255;
   return yuv2Rgb(y: ny, u: nu, v: nv);
 }
 
-func rgb2Y <T : BinaryInteger> (r: T, g: T, b: T) -> UInt8 {
-  let rPart = 77 * Int(r)
-  let gPart = 150 * Int(g)
-  let bPart = 29 * Int(b)
-  let sum = rPart + gPart + bPart
-  let y = sum >> 8
-  return UInt8(clamping: y)
-}
+// BT.601 conversion
+// Y =  0.299*R + 0.587*G + 0.114*B
+// U = -0.147*R - 0.289*G + 0.436*B
+// V =  0.615*R - 0.515*G - 0.100*B
 
 func rgb2Y(r: Float, g: Float, b: Float) -> UInt8 {
   let y = 0.299 * r + 0.587 * g + 0.114 * b;
   return y.normalizedByte;
 }
 
-func rgb2Yuv(r: Float, g: Float, b: Float, temperature : Float = 0.0, saturation : Float = 1.0) -> (y: UInt8, u: UInt8, v: UInt8) {
+func rgb2Yuv(r: Float, g: Float, b: Float, temperature : Float = 0.0, saturation : Float = 1.0) -> YUV8 {
   let rr = r + temperature;
   let bb = b - temperature;
   let u = Int((-0.169 * rr - 0.331 * g + 0.5 * bb) * saturation * 255) + 128;
   let v = Int((0.5 * rr - 0.419 * g - 0.081 * bb) * saturation * 255) + 128;
-  return (y: rgb2Y(r: rr, g: b, b:bb), u: UInt8(clamping: u), v: UInt8(clamping: v));
-}
-
-func rgb2Yuv <T : BinaryInteger> (r: T, g: T, b: T) -> (y: UInt8, u: UInt8, v: UInt8) {
-  // BT.601 conversion using fixed-point arithmetic (8-bit fractional part)
-  // Y =  0.299*R + 0.587*G + 0.114*B
-  // U = -0.147*R - 0.289*G + 0.436*B + 128
-  // V =  0.615*R - 0.515*G - 0.100*B + 128
-  let rv = Int(r);
-  let gv = Int(g);
-  let bv = Int(b);
-  let y = (77 * rv + 150 * gv + 29 * bv) >> 8
-  let u = ((-38 * rv - 74 * gv + 112 * bv) >> 8) + 128
-  let v = ((157 * rv - 132 * gv - 25 * bv) >> 8) + 128
-
-  return (
-    y: UInt8(clamping: y),
-    u: UInt8(clamping: u),
-    v: UInt8(clamping: v)
-  )
+  return YUV8(y: rgb2Y(r: rr, g: g, b:bb), u: UInt8(clamping: u), v: UInt8(clamping: v));
 }
 
 func boostShadowsSelective(_ yValues: [UInt8], strength: Float = 0.5, threshold: UInt8 = 128) -> [UInt8] {
@@ -219,8 +254,6 @@ func boostShadowsSelective(_ yValues: [UInt8], strength: Float = 0.5, threshold:
     return pixel
   }
 }
-
-
 
 /// Get the number of channels and component size (int bits) associated with a color depth.
 /// - Parameter depth: color depth (in bits)

@@ -153,6 +153,10 @@ public struct FixedPoint : CustomStringConvertible, Comparable, AdditiveArithmet
   }
 }
 
+func roundTo(_ value: FixedPoint, multipleOf: Int) -> Int {
+  return (value.rounded + (multipleOf - 1)) / multipleOf * multipleOf;
+}
+
 extension QuickDrawDataReader {
   
   func readFixed() throws -> FixedPoint {
