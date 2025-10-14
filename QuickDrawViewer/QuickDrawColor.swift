@@ -7,6 +7,7 @@
 
 import Foundation
 
+// MARK: - RGB Color
 /// Quickdraw stores RGB colours in 3 × 16 bit values.
 /// Struct represents them as 64 bit value.
 struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
@@ -69,7 +70,8 @@ struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   static let yellow = RGBColor(red8: 0xff, green8: 0xff, blue8: 0x00);
 }
 
-// CMYK color as a 64 bit quantity.
+// MARK: - CMYK Color
+/// CMYK color as a 64 bit quantity.
 struct CMKYColor : RawRepresentable {
   init(rawValue : UInt64) {
     self.rawValue = rawValue;
@@ -99,6 +101,7 @@ struct CMKYColor : RawRepresentable {
   }
 }
 
+// MARK: - QuickDraw 1 Color
 /// QuickDraw 1 color plane / plotter colours.
 /// The 8 pre-defined colours are represented by their 1 bit representation
 enum QD1Color : UInt32 {
@@ -125,11 +128,9 @@ enum QD1Color : UInt32 {
     let k = UInt16(rawValue >> 6 & 0x01) * UInt16.max;
     return CMKYColor(cyan: c, magenta: m, yellow: y, black: k);
   }
-  
 }
 
-
-
+// MARK: - QuickDraw Color Union
 enum QDColor : CustomStringConvertible {
   var description: String {
     switch self {
@@ -164,7 +165,7 @@ enum QDColor : CustomStringConvertible {
   }
 }
 
-/// Standard Apple colour tables.
+// MARK: - Standard Apple colour tables.
 let clut1Raw : [UInt16] = [0x0000, 0x0001, 0x8000, 0x0001, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000 ];
 let clut2Raw : [UInt16] = [0x0000, 0x0002, 0x8000, 0x0003, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0x0000, 0xACAC, 0xACAC, 0xACAC, 0x0000, 0x5555, 0x5555, 0x5555, 0x0000, 0x0000, 0x0000, 0x0000];
 let clut3Raw : [UInt16] = [0x0000, 0x007f, 0x8000, 0x0007, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xFC00, 0xF37D, 0x052F, 0x0000, 0xF2D7, 0x0856, 0x84EC, 0x0000, 0xDD6B, 0x08C2, 0x06A2, 0x0000, 0x0241, 0xAB54, 0xEAFF, 0x0000, 0x0000, 0x8000, 0x11B0,0x0000,  0x0000, 0x0000, 0xD400, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF];
