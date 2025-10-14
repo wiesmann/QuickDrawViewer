@@ -145,6 +145,7 @@ The library basically parses QuickDraw version 1 and version 2 files and support
   * Cinepak (`CVID`) – Decoded to palette or RGB 
   * Digital Video variants (`dvc `, `dvcp`, `dv5n`, `dvpp`, `dv5p`) - Decoded to RGB Using Core Video
   * `h263` – Decoded to RGB using Core Video.
+  * `qktk` – [Pictures captured with the QuickTake 100 Camera](https://wiesmann.codiferes.net/wordpress/archives/41564).
 
 Some basic comment parsing is used to improve images, in particular:
 
