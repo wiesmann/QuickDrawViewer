@@ -9,6 +9,12 @@ import Foundation
 
 /// This file contains all the code related to region processing.
 
+private struct OpenRect {
+  let dhStart: Int // Horizontal start index (exclusive)
+  let dhEnd: Int   // Horizontal end index (exclusive)
+  let dvStart: Int // Vertical start line index (exclusive)
+}
+
 /// A single, raw line of the QuickDraw region.
 /// bitmap is one _byte_ per pixel.
 struct QDRegionLine {
@@ -114,15 +120,50 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], 
     }
   }
   /// Convert to rectangles
-  /// TODO: combine matching rects between lines
-  var rects : [QDRect] = [];
-  for (l, line) in bitLines.enumerated() {
-    let ranges = BitLineToRanges(line:line);
-    for r in ranges {
-      let topLeft = boundingBox.topLeft + QDDelta(dv: l, dh: r.lowerBound);
-      let bottomRight = topLeft + QDDelta(dv : 1, dh : r.count);
-      rects.append(QDRect(topLeft:topLeft, bottomRight: bottomRight));
+  /// This map tracks rectangles that are currently growing vertically.
+  // Key: dhStart -> OpenRect
+  var activeRects: [Int: OpenRect] = [:]
+  var rects: [QDRect] = []
+
+  for y in 0...bitLines.count {
+    let currentRanges: [Range<Int>] = (y < bitLines.count) ? Array(BitLineToRanges(line: bitLines[y])) : []
+
+    // Create a set of horizontal start points for quick lookup of new ranges.
+    var rangesToProcess: Set<Int> = Set(currentRanges.map { $0.lowerBound })
+
+    var nextActiveRects: [Int: OpenRect] = [:]
+
+    // Close and continue
+    for (dhStart, openRect) in activeRects {
+      if currentRanges.contains(where: {
+        $0.lowerBound == dhStart && $0.upperBound == openRect.dhEnd
+      }) {
+        // Case 1: Continuation. The segment continues on the current line l.
+        nextActiveRects[dhStart] = openRect
+        rangesToProcess.remove(dhStart) // Mark this range as used for continuation
+      } else {
+        // Case 2: Closure. The segment is NOT present on line l, so the active rectangle ends at line l-1.
+        let topLeft = boundingBox.topLeft + QDDelta(dv: openRect.dvStart, dh: openRect.dhStart)
+
+        // Calculate BottomRight: The vertical end is line l (exclusive). The horizontal end is dhEnd.
+        let bottomRight = boundingBox.topLeft + QDDelta(dv: y, dh: openRect.dhEnd)
+
+        rects.append(QDRect(topLeft: topLeft, bottomRight: bottomRight))
+      }
     }
+
+    // Start new blocks
+    for dhStart in rangesToProcess {
+      // These are ranges that did not match an existing active rectangle.
+      guard let newRange = currentRanges.first(where: { $0.lowerBound == dhStart }) else { continue }
+
+      // Case 3: New Start. Begin tracking a new rectangle starting at line l.
+      let newRect = OpenRect(dhStart: newRange.lowerBound, dhEnd: newRange.upperBound, dvStart: y)
+      nextActiveRects[dhStart] = newRect
+    }
+
+    // Update the active list for the next line's iteration.
+    activeRects = nextActiveRects
   }
   return (rects, bitLines);
 }
