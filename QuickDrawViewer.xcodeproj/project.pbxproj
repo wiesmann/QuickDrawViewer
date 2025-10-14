@@ -99,6 +99,9 @@
 		E554EE5F2B9DF68800D56DF7 /* QuickDrawPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = E554EE5D2B9DF68800D56DF7 /* QuickDrawPattern.swift */; };
 		E55E05F72B61A74A00EA1AD8 /* RoadPizza.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */; };
 		E55E05F82B61A74A00EA1AD8 /* RoadPizza.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */; };
+		E563017D2E9EE75F00E67FD8 /* VideoDecoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = E563017C2E9EE75300E67FD8 /* VideoDecoding.swift */; };
+		E563017E2E9EE75F00E67FD8 /* VideoDecoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = E563017C2E9EE75300E67FD8 /* VideoDecoding.swift */; };
+		E563017F2E9EE75F00E67FD8 /* VideoDecoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = E563017C2E9EE75300E67FD8 /* VideoDecoding.swift */; };
 		E574829B2B990DBC004A6409 /* Animation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E574829A2B990DBC004A6409 /* Animation.swift */; };
 		E574829C2B990DBC004A6409 /* Animation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E574829A2B990DBC004A6409 /* Animation.swift */; };
 		E59CDF6C2B42C0E500D7BB7B /* QuickDrawViewerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59CDF6B2B42C0E500D7BB7B /* QuickDrawViewerApp.swift */; };
@@ -189,6 +192,7 @@
 		E55E05F42B6193D200EA1AD8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E55E05F52B61943300EA1AD8 /* License.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = License.txt; sourceTree = "<group>"; };
 		E55E05F62B61A74A00EA1AD8 /* RoadPizza.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadPizza.swift; sourceTree = "<group>"; };
+		E563017C2E9EE75300E67FD8 /* VideoDecoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDecoding.swift; sourceTree = "<group>"; };
 		E574829A2B990DBC004A6409 /* Animation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animation.swift; sourceTree = "<group>"; };
 		E59CDF682B42C0E500D7BB7B /* QuickDrawViewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickDrawViewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E59CDF6B2B42C0E500D7BB7B /* QuickDrawViewerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawViewerApp.swift; sourceTree = "<group>"; };
@@ -315,6 +319,7 @@
 				E574829A2B990DBC004A6409 /* Animation.swift */,
 				E52FEB042BACC269004E8BB4 /* QuickDrawPort.swift */,
 				E59CDFAB2B42EE0A00D7BB7B /* QuickDrawRender.swift */,
+				E563017C2E9EE75300E67FD8 /* VideoDecoding.swift */,
 				E59CDF712B42C0E600D7BB7B /* Assets.xcassets */,
 				E59CDF762B42C0E600D7BB7B /* Info.plist */,
 				E59CDF772B42C0E600D7BB7B /* QuickDrawViewer.entitlements */,
@@ -480,6 +485,7 @@
 				E5A42B622E9457580011FFB5 /* QuickTake.swift in Sources */,
 				E52B46372E4B232A009F2F3F /* QuickDrawParser.swift in Sources */,
 				E52B46382E4B232A009F2F3F /* QuickDrawErrors.swift in Sources */,
+				E563017E2E9EE75F00E67FD8 /* VideoDecoding.swift in Sources */,
 				E52B46392E4B232A009F2F3F /* QuickDrawOpcodes.swift in Sources */,
 				E52B463A2E4B232A009F2F3F /* QuickDrawComment.swift in Sources */,
 				E52B463B2E4B232A009F2F3F /* QuickDrawReader.swift in Sources */,
@@ -538,6 +544,7 @@
 				E554EE5E2B9DF68800D56DF7 /* QuickDrawPattern.swift in Sources */,
 				E574829B2B990DBC004A6409 /* Animation.swift in Sources */,
 				E53BBF502BCFD30F00D9350A /* QuickDrawPoint.swift in Sources */,
+				E563017F2E9EE75F00E67FD8 /* VideoDecoding.swift in Sources */,
 				E554EE5B2B9DBDE100D56DF7 /* Blitting.swift in Sources */,
 				E59CDF702B42C0E500D7BB7B /* ContentView.swift in Sources */,
 			);
@@ -569,6 +576,7 @@
 				E50ADB982B599CE1009EA7AF /* QuickDrawViewerApp.swift in Sources */,
 				E5CDA02E2B4450FB008DC6D6 /* ImageWrapper.swift in Sources */,
 				E59CDFB62B42EE0A00D7BB7B /* QuickDrawRender.swift in Sources */,
+				E563017D2E9EE75F00E67FD8 /* VideoDecoding.swift in Sources */,
 				E53BBF642BD30EE600D9350A /* PackBitTests.swift in Sources */,
 				E53BBF5A2BD05EFB00D9350A /* QuickDrawText.swift in Sources */,
 				E554EE562B9BB4B100D56DF7 /* QuickTimeGraphics.swift in Sources */,

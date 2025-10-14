@@ -9,31 +9,7 @@ import Foundation
 import CoreMedia
 import VideoToolbox
 
-func createCMBlockBuffer(from data: Data) throws -> CMBlockBuffer  {
-  var blockBuffer: CMBlockBuffer?
 
-  // Convert Data to a byte pointer
-  let dataPointer = UnsafeMutableRawPointer(mutating: (data as NSData).bytes)
-  let dataLength = data.count
-
-  // Create a CMBlockBuffer
-  let status = CMBlockBufferCreateWithMemoryBlock(
-    allocator: kCFAllocatorDefault,
-    memoryBlock: dataPointer,
-    blockLength: dataLength,
-    blockAllocator: kCFAllocatorNull,
-    customBlockSource: nil,
-    offsetToData: 0,
-    dataLength: dataLength,
-    flags: 0,
-    blockBufferOut: &blockBuffer
-  )
-
-  guard status == kCMBlockBufferNoErr else {
-    throw NSError(domain: "CMBlockBufferCreateWithMemoryBlock", code: Int(status), userInfo: nil);
-  }
-  return blockBuffer!
-}
 
 // Generic decoder that uses Core Video to decode one video frame.
 class DVImage : PixMapMetadata, @unchecked Sendable {

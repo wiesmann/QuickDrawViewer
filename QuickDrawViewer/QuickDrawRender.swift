@@ -7,10 +7,7 @@
 // Renderer based on Core Graphics, Image-IO and Core-Text.
 
 import Foundation
-import Accelerate
-import CoreVideo
 import CoreGraphics
-import VideoToolbox
 import CoreText
 import ImageIO
 import AppKit
@@ -166,67 +163,7 @@ extension UInt16 {
   }
 }
 
-// MARK: - Yuv image to CG Image logic
-extension YUV420Image {
-  func toCGImage() -> CGImage? {
-    // Create CVPixelBuffer from YUV planes
-    var pixelBuffer: CVPixelBuffer?
-    let status = CVPixelBufferCreate(
-      kCFAllocatorDefault,
-      width,
-      height,
-      kCVPixelFormatType_420YpCbCr8Planar,
-      nil,
-      &pixelBuffer
-    )
 
-    guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
-      return nil
-    }
-
-    CVPixelBufferLockBaseAddress(buffer, [])
-    defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
-
-    // Copy Y plane
-    let yDest = CVPixelBufferGetBaseAddressOfPlane(buffer, 0)
-    let yBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(buffer, 0)
-    yPlane.withUnsafeBytes { yPtr in
-      for row in 0..<height {
-        let srcOffset = row * width
-        let dstOffset = row * yBytesPerRow
-        memcpy(yDest!.advanced(by: dstOffset), yPtr.baseAddress!.advanced(by: srcOffset), width)
-      }
-    }
-
-    // Copy U plane
-    let uDest = CVPixelBufferGetBaseAddressOfPlane(buffer, 1)
-    let uBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(buffer, 1)
-    uPlane.withUnsafeBytes { uPtr in
-      for row in 0..<(height / 2) {
-        let srcOffset = row * (width / 2)
-        let dstOffset = row * uBytesPerRow
-        memcpy(uDest!.advanced(by: dstOffset), uPtr.baseAddress!.advanced(by: srcOffset), width / 2)
-      }
-    }
-
-    // Copy V plane
-    let vDest = CVPixelBufferGetBaseAddressOfPlane(buffer, 2)
-    let vBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(buffer, 2)
-    vPlane.withUnsafeBytes { vPtr in
-      for row in 0..<(height / 2) {
-        let srcOffset = row * (width / 2)
-        let dstOffset = row * vBytesPerRow
-        memcpy(vDest!.advanced(by: dstOffset), vPtr.baseAddress!.advanced(by: srcOffset), width / 2)
-      }
-    }
-
-    // Convert CVPixelBuffer to CGImage
-    var cgImage: CGImage?
-    VTCreateCGImageFromCVPixelBuffer(buffer, options: nil, imageOut: &cgImage)
-
-    return cgImage
-  }
-}
 
 /// Blend two colors, it seems we need AppKit for this.
 /// - Parameters:

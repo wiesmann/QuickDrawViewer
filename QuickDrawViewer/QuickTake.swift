@@ -118,8 +118,6 @@ private func sharpForDelta(_ v: Int) -> Int {
   var output = [Float](repeating: 0, count: width * height)
   for row in 0..<height {
     for col in 0..<width {
-      //let index = Int(pixel[row + 2][col + 2]);
-      // let v = Float(responseCurve[index]);
       let v = Float(pixel[row + 2][col + 2]) / 255.0;
       output[row * width + col] = v;
     }
@@ -127,8 +125,6 @@ private func sharpForDelta(_ v: Int) -> Int {
 
   return output
 }
-
-
 
 
 func convertCMYGToYuv(cmyg: [Float], width: Int, height: Int) -> YUV420Image {
