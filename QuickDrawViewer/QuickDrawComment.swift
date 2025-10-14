@@ -112,8 +112,6 @@ struct IccProfile {
   let data : Data?;
 }
 
-
-
 enum CommentPayload : Sendable {
   case noPayload;
   case dataPayload(creator: MacTypeCode, data: Data);
@@ -131,7 +129,6 @@ enum CommentPayload : Sendable {
   case customClipPayLoad(creator: MacTypeCode);
   case clarisPayload(claris: ClarisPayload);
 }
-
 
 extension QuickDrawDataReader {
   /// See Technote 091: Optimizing for the LaserWriter—Picture Comments

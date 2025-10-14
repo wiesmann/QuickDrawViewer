@@ -21,7 +21,7 @@ enum CinepakError : Error {
   case unsupportChunkType(_ type: CinepakChunk.ChunkType);
 }
 
-/// A cinepak is divided in strips which describe a band of the picture.
+/// A cinepak is divided in stripes which describe a band of the picture.
 class CinepakStripeDescriptor: CustomStringConvertible, @unchecked Sendable {
   enum StripeType : UInt16 {
     // Stripe that describes its own codebook entries.

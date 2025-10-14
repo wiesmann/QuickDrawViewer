@@ -15,10 +15,11 @@ class MacPaintImage : PixMapMetadata, @unchecked Sendable {
 
   static let width : Int = 576;
   static let height : Int = 720;
+
+  /// Some online documents claim that MacPaint sometime have a longer header.
+  /// This is technically not the case, but typically a symptom that the file is in AppleSingle format.
   static let fileHeaderSize = 512;
 
-
-  // Macpaint files sometimes contain more
   func load(data : Data) throws {
     let a = Array(data);
     self.bitmap = try decompressPackBit(

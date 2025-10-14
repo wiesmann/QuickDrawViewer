@@ -34,6 +34,8 @@ enum CoreGraphicRenderError : LocalizedError {
   case missingGradient(message: String);
 }
 
+// MARK: - Glue extensions between Core Graphics and QuickDraw
+
 /// Make CGImageSourceStatus return some usable information.
 extension CGImageSourceStatus : @retroactive CustomStringConvertible {
   public var description: String {
@@ -162,8 +164,6 @@ extension UInt16 {
     return CGFloat(self) / CGFloat(UInt16.max);
   }
 }
-
-
 
 /// Blend two colors, it seems we need AppKit for this.
 /// - Parameters:
