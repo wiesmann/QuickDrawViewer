@@ -1086,7 +1086,9 @@ class QuickdrawCGRenderer : QuickDrawRenderer, QuickDrawPort {
     self.picture = picture;
     let origin = CGPoint(qd_point: picture.frame.topLeft);
     ctx.translateBy(x: -origin.x, y: -origin.y);
-
+    /// Clear the rendering context, this used to be transparent, since OS X 26, it seems to be black.
+    ctx.setFillColor(CGColor.white);
+    ctx.fill([CGRect(qdrect: picture.frame)]);
     // TODO: figure out when this should be turned on.
     // Scaling causes regressions on old pictures.
     /*let vScale = QDResolution.defaultResolution.vRes.value / picture.resolution.vRes.value;
