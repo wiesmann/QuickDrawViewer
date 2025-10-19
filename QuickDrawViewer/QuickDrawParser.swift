@@ -31,7 +31,7 @@ class QDParser {
   /// Decode a single opcode
   /// - Parameter opcode: numerical opcode identifier
   /// - Returns: an OpCode instance
-  func decode(opcode: UInt16) throws -> OpCode {
+  static func decode(opcode: UInt16) throws -> OpCode {
     switch opcode {
       case 0x00: return NoOp();
       case 0x01: return RegionOp(same: false, verb: QDVerb.clip);
@@ -145,7 +145,7 @@ class QDParser {
   func parseOne(picture: inout QDPicture) throws -> Bool {
     
     let codeValue = try dataReader.readOpcode(version: picture.version);
-    var opcode = try decode(opcode: codeValue);
+    var opcode = try QDParser.decode(opcode: codeValue);
     if let reserved = opcode as? ReservedOp {
       let p = String(format: "%04X", dataReader.position - 2) ;
       let code = String(format: "%04X", reserved.code) ;

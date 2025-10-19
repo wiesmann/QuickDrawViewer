@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Black and white pattern (8×8 pixels)
+// MARK: - Black and white pattern (8×8 pixels)
 struct QDPattern : Equatable, PixMapMetadata, RawRepresentable, Sendable {
   
   init(rawValue: UInt64) {
@@ -70,7 +70,13 @@ struct QDPattern : Equatable, PixMapMetadata, RawRepresentable, Sendable {
   static let batmanGray = QDPattern(bytes: [0x88, 0x00, 0x22, 0x88, 0x00, 0x22]);
 }
 
+extension QuickDrawDataReader {
+  func readPattern() throws -> QDPattern {
+    return QDPattern(bytes:try readUInt8(bytes: 8));
+  }
+}
 
+// MARK: - Union type with patterns
 enum QDPixPattern  {
   case bw(pattern: QDPattern);
   case color(pattern: QDPattern, color: QDColor);
@@ -102,9 +108,4 @@ enum QDPixPattern  {
 
 }
 
-extension QuickDrawDataReader {
-  func readPattern() throws -> QDPattern {
-    return QDPattern(bytes:try readUInt8(bytes: 8));
-  }
-}
 

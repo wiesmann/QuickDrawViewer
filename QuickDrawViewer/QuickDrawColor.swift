@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - RGB Color
 /// Quickdraw stores RGB colours in 3 × 16 bit values.
-/// Struct represents them as 64 bit value.
+/// Struct represents them as 64 bit value, with the 16 top bits empty.
 struct RGBColor : CustomStringConvertible, Hashable, RawRepresentable {
   
   let rawValue : UInt64;
@@ -104,6 +104,7 @@ struct CMKYColor : RawRepresentable {
 // MARK: - QuickDraw 1 Color
 /// QuickDraw 1 color plane / plotter colours.
 /// The 8 pre-defined colours are represented by their 1 bit representation
+/// CMYKRGBK
 enum QD1Color : UInt32 {
   case black =   0b000100001;
   case white =   0b000011110;
@@ -132,18 +133,7 @@ enum QD1Color : UInt32 {
 
 // MARK: - QuickDraw Color Union
 enum QDColor : CustomStringConvertible {
-  var description: String {
-    switch self {
-      case .rgb(let c):
-        return c.description;
-      case .qd1(let c):
-        return "\(c)";
-      case .cmyk(let c, let n):
-        return "\(c) (\(String(describing: n))";
-      case .blend(let a, let b, let w):
-        return "\(a) / \(b) \(w)";
-    }
-  }
+
   
   case rgb(rgb: RGBColor);
   case qd1(qd1: QD1Color);
@@ -163,9 +153,23 @@ enum QDColor : CustomStringConvertible {
         throw QuickDrawError.cannotConvertToRGB(color: self);
     }
   }
+
+  var description: String {
+    switch self {
+      case .rgb(let c):
+        return c.description;
+      case .qd1(let c):
+        return "\(c)";
+      case .cmyk(let c, let n):
+        return "\(c) (\(String(describing: n))";
+      case .blend(let a, let b, let w):
+        return "\(a) / \(b) \(w)";
+    }
+  }
 }
 
 // MARK: - Standard Apple colour tables.
+// –––––––––––––––––––––––––––––––––––––
 let clut1Raw : [UInt16] = [0x0000, 0x0001, 0x8000, 0x0001, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0x0000, 0x0000, 0x0000, 0x0000 ];
 let clut2Raw : [UInt16] = [0x0000, 0x0002, 0x8000, 0x0003, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0x0000, 0xACAC, 0xACAC, 0xACAC, 0x0000, 0x5555, 0x5555, 0x5555, 0x0000, 0x0000, 0x0000, 0x0000];
 let clut3Raw : [UInt16] = [0x0000, 0x007f, 0x8000, 0x0007, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xFC00, 0xF37D, 0x052F, 0x0000, 0xF2D7, 0x0856, 0x84EC, 0x0000, 0xDD6B, 0x08C2, 0x06A2, 0x0000, 0x0241, 0xAB54, 0xEAFF, 0x0000, 0x0000, 0x8000, 0x11B0,0x0000,  0x0000, 0x0000, 0xD400, 0x0000, 0xFFFF, 0xFFFF, 0xFFFF];
@@ -210,7 +214,8 @@ func makeGrayRamp() -> QDColorTable {
   return QDColorTable(clut: clut, id: 0x28, clutFlags:0x8000);
 }
 
-/// ColorTable, typically called  `CLUT`.
+// MARK: - ColorTable, typically called  `CLUT`.
+// –––––––––––––––––––––––––––––––––––––––––––––
 final class QDColorTable : CustomStringConvertible, Sendable {
   public var description: String {
     let string_flag = String(format: "%0X ", clutFlags);
@@ -314,6 +319,11 @@ extension QuickDrawDataReader {
     return QDColorTable(clut: clut, id: 0,  clutFlags: clutFlags);
   }
 }
+
+// MARK: - Gradient types
+// ––––––––––––––––––––––
+// Technically not part of QuickDraw, but a common expansion.
+
 
 enum GradientType {
   case linear(angleDegrees: Int);

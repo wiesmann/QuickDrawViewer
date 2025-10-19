@@ -7,8 +7,6 @@
 
 import Foundation
 
-
-
 /// Class that handles reading from the data object.
 /// Handles deserialisation of basic QuickDraw types.
 /// Reading of high-level objects (points, rectangles, regions), is handled in extensions along the type definitions.

@@ -9,7 +9,7 @@ import Foundation
 
 /// This file contains all the code related to region processing.
 
-private struct OpenRect {
+private struct RegionProcessingOpenRect {
   let dhStart: Int // Horizontal start index (exclusive)
   let dhEnd: Int   // Horizontal end index (exclusive)
   let dvStart: Int // Vertical start line index (exclusive)
@@ -122,7 +122,7 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], 
   /// Convert to rectangles
   /// This map tracks rectangles that are currently growing vertically.
   // Key: dhStart -> OpenRect
-  var activeRects: [Int: OpenRect] = [:]
+  var activeRects: [Int: RegionProcessingOpenRect] = [:]
   var rects: [QDRect] = []
 
   for y in 0...bitLines.count {
@@ -131,7 +131,7 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], 
     // Create a set of horizontal start points for quick lookup of new ranges.
     var rangesToProcess: Set<Int> = Set(currentRanges.map { $0.lowerBound })
 
-    var nextActiveRects: [Int: OpenRect] = [:]
+    var nextActiveRects: [Int: RegionProcessingOpenRect] = [:]
 
     // Close and continue
     for (dhStart, openRect) in activeRects {
@@ -158,7 +158,7 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], 
       guard let newRange = currentRanges.first(where: { $0.lowerBound == dhStart }) else { continue }
 
       // Case 3: New Start. Begin tracking a new rectangle starting at line l.
-      let newRect = OpenRect(dhStart: newRange.lowerBound, dhEnd: newRange.upperBound, dvStart: y)
+      let newRect = RegionProcessingOpenRect(dhStart: newRange.lowerBound, dhEnd: newRange.upperBound, dvStart: y)
       nextActiveRects[dhStart] = newRect
     }
 
@@ -168,7 +168,8 @@ func DecodeRegionData(boundingBox: QDRect, data: [UInt16]) throws -> ([QDRect], 
   return (rects, bitLines);
 }
 
-
+// MARK: - QuickDraw Region Structure
+//
 struct QDRegion : CustomStringConvertible {
   
   public var description: String {
@@ -187,7 +188,8 @@ struct QDRegion : CustomStringConvertible {
   static func forRect(rect: QDRect) -> QDRegion {
     return QDRegion(boundingBox: rect, rects:[], bitlines:[[]]);
   }
-  
+
+  // Empty region
   static let empty = QDRegion(
     boundingBox: QDRect.empty, rects: [], bitlines: []);
    

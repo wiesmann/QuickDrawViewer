@@ -291,9 +291,7 @@ struct PolygonOp : OpCode, PortOperation, @unchecked Sendable {
   var poly: QDPolygon?;
 }
 
-/// ------------
-/// Line operations
-/// ------------
+// MARK: - Line Operations
 
 enum LineDestination {
   case unset;
@@ -360,10 +358,8 @@ struct LineOp : OpCode, PortOperation, CustomStringConvertible {
   var end : LineDestination = .unset;
 }
 
-
-/// -------------
-/// Color operations
-/// -------------
+// MARK: - Color Operations
+// ------------------------
 
 struct ColorOp : OpCode, PenStateOperation, CustomStringConvertible {
   
@@ -394,8 +390,9 @@ struct ColorOp : OpCode, PenStateOperation, CustomStringConvertible {
 }
 
 
-// Pen operations
-// --------------
+// MARK: - Pen operations
+// ----------------------
+
 struct PatternOp : OpCode, PenStateOperation  {
   func execute(penState: inout QDPenState) throws {
     switch verb {
@@ -479,9 +476,8 @@ struct TextModeOp : OpCode, FontStateOperation {
   var mode : QuickDrawMode = QuickDrawMode.defaultMode;
 }
 
-/// --------------------------------------------------------
-/// Font operations
-/// --------------------------------------------------------
+// MARK: - Font operations
+// -----------------------
 
 struct FontOp : OpCode, FontStateOperation {
   func execute(fontState: inout QDFontState) {
@@ -655,9 +651,8 @@ struct LongTextOp : OpCode, PortOperation {
   var text : String = "";
 }
 
-/// ---------------
-/// Bitmap op-codes
-/// ---------------
+// MARK: - Bitmap/Pixmap op-codes
+// ------------------------------
 
 struct BitRectOpcode : OpCode {
   
