@@ -24,19 +24,19 @@ class QuickDrawDataReader {
       throw QuickDrawError.quickDrawIoError(message:"Initial positon \(position)  is negative");
     }
     self.data = data;
-    self.position = position;
+    self.currentIndex = position;
   }
   
   func peekUInt8() throws -> UInt8 {
-    guard position < data.count else {
-      throw QuickDrawError.quickDrawIoError(message:"Peek at \(position) beyond \(data.count)");
+    guard currentIndex < data.count else {
+      throw QuickDrawError.quickDrawIoError(message:"Peek at \(currentIndex) beyond \(data.count)");
     }
-    return data[position];
+    return data[currentIndex];
   }
   
   func readUInt8() throws -> UInt8 {
     let value = try peekUInt8();
-    position += 1;
+    currentIndex += 1;
     return value;
   }
   
@@ -51,9 +51,9 @@ class QuickDrawDataReader {
   }
   
   func readSlice(bytes: Data.Index) throws -> ArraySlice<UInt8> {
-    let start = self.position;
-    self.position += bytes;
-    let end = self.position;
+    let start = self.currentIndex;
+    self.currentIndex += bytes;
+    let end = self.currentIndex;
     guard end <= data.count else {
       throw QuickDrawError.quickDrawIoError(message:"ReadSlice \(bytes):\(end) beyond \(data.count)");
     }
@@ -64,12 +64,12 @@ class QuickDrawDataReader {
     guard bytes >= 0 else {
       throw QuickDrawError.quickDrawIoError(message: "Negative amount of bytes \(bytes)");
     }
-    let end = position + bytes;
+    let end = currentIndex + bytes;
     guard end <= data.count else {
       throw QuickDrawError.quickDrawIoError(message:"Read \(bytes):\(end) beyond \(data.count)");
     }
-    let result = data.subdata(in: position..<position + bytes);
-    position += bytes;
+    let result = data.subdata(in: currentIndex..<currentIndex + bytes);
+    currentIndex += bytes;
     return result;
   }
   
@@ -169,8 +169,8 @@ class QuickDrawDataReader {
         let opcode = try readUInt8()
         return UInt16(opcode);
       case 2:
-        if (position % 2) == 1 {
-          position+=1;
+        if (currentIndex % 2) == 1 {
+          currentIndex+=1;
         }
         let opcode = try readUInt16()
         return opcode;
@@ -180,14 +180,14 @@ class QuickDrawDataReader {
   }
   
   func skip(bytes: Data.Index) -> Void {
-    position += bytes;
+    currentIndex += bytes;
   }
   
   var remaining : Int {
-    return data.count - position;
+    return data.count - currentIndex;
   }
   
-  var position: Data.Index;
+  var currentIndex: Data.Index;
   var data: Data;
   var filename : String?;
 }

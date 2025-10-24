@@ -147,7 +147,7 @@ class QDParser {
     let codeValue = try dataReader.readOpcode(version: picture.version);
     var opcode = try QDParser.decode(opcode: codeValue);
     if let reserved = opcode as? ReservedOp {
-      let p = String(format: "%04X", dataReader.position - 2) ;
+      let p = String(format: "%04X", dataReader.currentIndex - 2) ;
       let code = String(format: "%04X", reserved.code) ;
       logger.log(level: .debug, "Reserved opcode \(code) encountered at \(p)");
     }

@@ -70,7 +70,7 @@ class TargaImage : PixMapMetadata, @unchecked Sendable {
     }
     let paletteSize = try reader.readUInt16LE();
     let paletteDepth = try reader.readUInt8();
-    assert(reader.position == 8);
+    assert(reader.currentIndex == 8);
     // Image specification
     let xOrigin = try reader.readUInt16LE();
     let yOrigin = try reader.readUInt16LE();
