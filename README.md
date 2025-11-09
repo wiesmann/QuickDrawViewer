@@ -182,6 +182,10 @@ I wrote a small [Python script](QuickDrawViewer/pict_de_rez.py) for converting t
 This can be useful for [recovering data from clipping or from applications](https://wiesmann.codiferes.net/wordpress/archives/41107). 
 
 
+## FAQ 
+
+If you have questions, please have a look at the [FAQ](docs/FAQ.md)
+
 ## License 
 
 The code is distributed under the [Apache 2.0 License](License.txt).
