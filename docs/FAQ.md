@@ -26,6 +26,7 @@ Your best bet for getting pixel correct rendering is to run a Mac emulator, like
 ### Could you export the embedded image files?
 
 If the QuickTime container holds a single image in a format that is supported externally, like JPEG or TIFF, it would sense to export that content (extraction) and avoid all the possibly lossy conversions.
+
 This is a feature I'm looking into implementing.
 
 ### Can you support codec `WXYZ`? 
@@ -40,7 +41,7 @@ No.
 
 ### Is SVG support planed? 
 
-No. If you feel like implementing it, you are most welcome, but this is not something I'm interested in doing. The SVG format is complex, and few programs except web-browers support it. My primary goal was making a simple program that would three things:
+Not at this time. My primary goal was making a simple program that would do three things:
 
 * Allow me hack around quickly with minimal back-end work.
 * Display the pictures in the application.
@@ -48,9 +49,13 @@ No. If you feel like implementing it, you are most welcome, but this is not some
 
 SVG fullfill none of these goals. 
 
-Rendering to SVG would require a different rendering back-end, with additional conversion logic, as SVG can only embed limited Bitmap formats (PNG and JPG), so while vector instructions could be dispatched directly, pixmap (including patterns) would need to be rendered and exported as PNG data.
+If you feel like implementing it, you are most welcome, I tried to structure the code in a way that makes this possible, as the parser is separated from the renderer.
 
-This would be quite cumbersome for QuickTime rendering, as embedded TIFF or TARGA data would need to be converted into PNG. There are plenty of libraries that can do this, but this would increase the scope of the project. 
+SVG is a format, not an API, so this would involve either using a framework to generate the SVG, or write that logic directly. 
+
+The rendering back-end would need to have additional logic, as SVG has only embed limited Bitmap formats (PNG and JPG), so while vector instructions could be dispatched directly, pixmap (including patterns) would need to be rendered and exported as PNG data.
+
+If you want generate a single file, and not a bunch of scattered resources, the PNG need to be encoded using the `data` protocol, which basically stores the Base-64 version inside the SVG. PICT files are by no mean space-efficient, but this would really make large files. 
 
 Some features like ICC colour profiles are _theoretically_ supported, but browswer support is limited.
 
@@ -60,6 +65,7 @@ Some features like ICC colour profiles are _theoretically_ supported, but browsw
 
 No. Even though the Swift language is cross-platform, QuickDraw viewer relies on many frameworks like CoreGraphics, CoreText and CoreImage for back-end rendering. The parser probably compiles fine of most platforms, but the renderer won't. 
 
-There is an open-source project to implement a [CoreGraphics alternative](https://github.com/OpenSwiftUIProject/OpenCoreGraphics), but that is only one component, as you would also need an equivalent to CoreText and CoreImage to get any basic rendering working. A more reasonable solution for Linux would be to render to SVG and use some SVG renderer, see above.
+There is an open-source project to implement a [CoreGraphics alternative](https://github.com/OpenSwiftUIProject/OpenCoreGraphics), but that is only one component, as you would also need an equivalent to CoreText and CoreImage to get any basic rendering working. 
 
+A more reasonable solution for Linux would probably be to build an SVG renderer and make a command-line tool. Actual rendering can be done using another program, for instance a web-browser.
 
