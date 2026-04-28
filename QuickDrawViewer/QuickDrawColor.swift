@@ -132,7 +132,7 @@ enum QD1Color : UInt32 {
 }
 
 // MARK: - QuickDraw Color Union
-enum QDColor : CustomStringConvertible {
+enum QDColor : CustomStringConvertible, Sendable {
 
   
   case rgb(rgb: RGBColor);
